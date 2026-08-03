@@ -49,6 +49,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Myra.Samples.DataGrid", "..
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Myra.Samples.CustomWidgets.NvgSharp", "..\samples\Myra.Samples.CustomWidgets.NvgSharp\Myra.Samples.CustomWidgets.NvgSharp.csproj", "{5B20CFF6-44F0-F0D7-A299-7DF86B8F6AE1}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SourceAnalyzers", "SourceAnalyzers", "{753F5160-C3F9-42D3-B8EA-4D7B5354234D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyraXaml", "..\src\MyraXaml\MyraXaml.csproj", "{3B2A546D-F33A-4718-AF5A-9615D03673B2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -143,6 +147,10 @@ Global
 		{5B20CFF6-44F0-F0D7-A299-7DF86B8F6AE1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5B20CFF6-44F0-F0D7-A299-7DF86B8F6AE1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5B20CFF6-44F0-F0D7-A299-7DF86B8F6AE1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3B2A546D-F33A-4718-AF5A-9615D03673B2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3B2A546D-F33A-4718-AF5A-9615D03673B2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3B2A546D-F33A-4718-AF5A-9615D03673B2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3B2A546D-F33A-4718-AF5A-9615D03673B2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -165,6 +173,7 @@ Global
 		{649CA0D2-B07C-6A13-9CEF-396FC33DA3F7} = {EAB0AA24-7185-4897-A866-AE87AF3F2E0B}
 		{1D2546B8-ECB4-786C-1FA0-11F8AF5270A7} = {EAB0AA24-7185-4897-A866-AE87AF3F2E0B}
 		{5B20CFF6-44F0-F0D7-A299-7DF86B8F6AE1} = {EAB0AA24-7185-4897-A866-AE87AF3F2E0B}
+		{3B2A546D-F33A-4718-AF5A-9615D03673B2} = {753F5160-C3F9-42D3-B8EA-4D7B5354234D}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {35ACDF4E-2CE2-46B1-A19F-35DC131069A1}
