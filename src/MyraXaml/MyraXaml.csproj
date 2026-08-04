@@ -4,7 +4,7 @@
     <BuildOutputTargetFolder>tools</BuildOutputTargetFolder>
     <CopyLocalLockFileAssemblies Condition="$(TargetFramework) == 'netstandard2.0'">true</CopyLocalLockFileAssemblies>
     <DebugType>embedded</DebugType>
-    <DefineConstants>$(DefineConstants);BUILDTASK;XAMLX_CECIL_INTERNAL;XAMLX_INTERNAL</DefineConstants>
+    <DefineConstants>$(DefineConstants);BUILDTASK;</DefineConstants>
     <EnableNETAnalyzers>false</EnableNETAnalyzers>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <IncludeSymbols>false</IncludeSymbols>
@@ -23,6 +23,10 @@
     <Compile Include="$(XamlXCecilSourcePath)/**/*.cs" Exclude="$(XamlXCecilSourcePath)/obj/**/*.cs" LinkBase="XamlIl.Cecil" />
     <PackageReference Include="Microsoft.Build.Framework" Version="18.8.2" PrivateAssets="All" />
     <PackageReference Include="Mono.Cecil" Version="0.11.6" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Myra\Myra.MonoGame.csproj" />
   </ItemGroup>
 
 </Project>
