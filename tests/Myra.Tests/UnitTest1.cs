@@ -10,12 +10,12 @@ namespace Myra.Tests
         {
             var compiler = new MyraXamlCompiler();
             var parser = new MyraXamlParser(compiler.Configuration);
-            var document = parser.Parse("test.xaml", 
+            var document = parser.Parse("test.xaml",
                 """
-                <Grid xmlns="https://github.com/MyraUI/Myra">
+                <Grid xmlns="https://github.com/MyraUI/Myra"> 
                     <Button>
                         <Label Text="Hello world!" />
-                    </Button>
+                    </Button> 
                 </Grid>
                 """);
             compiler.Transform(document);

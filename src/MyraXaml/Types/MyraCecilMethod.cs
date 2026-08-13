@@ -10,17 +10,19 @@ namespace Myra.Xaml.Types
 
     public class MyraCecilMethod : IXamlMethod
     {
+        private readonly IXamlAssembly? _assembly;
         private readonly MethodReference _method; 
-        private readonly IXamlType _declaringType;
-
+        private readonly TypeReference _declaringTypeReference;
+        private readonly Dictionary<GenericParameter, TypeReference> _genericMap;
 
         public virtual object Id => _method;
         public virtual string Name => _method.Name;
 
 
-        public virtual IXamlType DeclaringType =>
-            _declaringType;
+        public virtual IXamlType DeclaringType 
+            => _declaringType ??= new MyraCecilType(_declaringTypeReference, _assembly);
 
+        private IXamlType? _declaringType;
 
         public virtual bool IsPublic =>
             _method.Resolve()?.IsPublic ?? false;
@@ -53,30 +55,40 @@ namespace Myra.Xaml.Types
 
         public virtual IXamlType ReturnType =>
             new MyraCecilType(
-                _method.ReturnType,
-                _declaringType.Assembly);
+                ResolveType(_method.ReturnType),
+                _assembly);
 
 
         public virtual IReadOnlyList<IXamlType> Parameters =>
             _method.Parameters
-                .Select(x => new MyraCecilType(x.ParameterType, _declaringType.Assembly))
+                .Select(x => new MyraCecilType(ResolveType(x.ParameterType), _assembly))
                 .ToArray();
 
+        private TypeReference ResolveType(TypeReference type)
+        {
+            if (type is GenericParameter gp && _genericMap.TryGetValue(gp, out var actual))
+            {
+                return actual;
+            }
 
+            return type;
+        }
+
+         
         public virtual IReadOnlyList<IXamlCustomAttribute> CustomAttributes =>
             CreateCustomAttributes();
 
 
         public virtual IReadOnlyList<IXamlType> GenericParameters =>
             _method.GenericParameters
-                .Select(x => new MyraCecilType(x, _declaringType.Assembly))
+                .Select(x => new MyraCecilType(ResolveType(x), _assembly))
                 .ToArray();
 
 
         public virtual IReadOnlyList<IXamlType> GenericArguments =>
             _method is GenericInstanceMethod generic
                 ? generic.GenericArguments
-                    .Select(x => new MyraCecilType(x,_declaringType.Assembly))
+                    .Select(x => new MyraCecilType(ResolveType(x), _assembly))
                     .ToArray()
                 : Array.Empty<IXamlType>();
 
@@ -85,10 +97,27 @@ namespace Myra.Xaml.Types
             _method;
 
 
-        public MyraCecilMethod(MethodReference method, IXamlType declaringType)
+        public MyraCecilMethod(MethodReference method, TypeReference declaringType, IXamlAssembly? assembly)
         {
-            _method = method;
-            _declaringType = declaringType;
+            _assembly = assembly;
+            _method = method ?? throw new ArgumentNullException(nameof(method));
+            _declaringTypeReference = declaringType ?? throw new ArgumentNullException(nameof(declaringType));
+            _genericMap = BuildMap(declaringType);
+        }
+
+        public static Dictionary<GenericParameter, TypeReference> BuildMap(TypeReference type)
+        {
+            var map = new Dictionary<GenericParameter, TypeReference>();
+
+            if (type is GenericInstanceType git)
+            {
+                var def = git.ElementType.Resolve();
+
+                for (int i = 0; i < def.GenericParameters.Count; i++)
+                    map[def.GenericParameters[i]] = git.GenericArguments[i];
+            }
+
+            return map;
         }
 
 
@@ -106,33 +135,28 @@ namespace Myra.Xaml.Types
                 generic.GenericArguments.Add(((MyraCecilType)argument).TypeReference);
             }
 
-            return new MyraCecilMethod(generic, _declaringType);
+            return new MyraCecilMethod(generic, _declaringTypeReference, _assembly);
         }
 
 
         public virtual IXamlParameterInfo GetParameterInfo(int index)
         {
-            return new MyraCecilParameterInfo(_method.Parameters[index], _declaringType);
+            return new MyraCecilParameterInfo(_method.Parameters[index], DeclaringType);
         }
 
 
-        private IReadOnlyList<IXamlCustomAttribute> CreateCustomAttributes()
+        private IXamlCustomAttribute[] CreateCustomAttributes()
         {
             var definition = _method.Resolve();
 
-            if (definition == null ||
-                !definition.HasCustomAttributes)
+            if (definition == null || !definition.HasCustomAttributes)
             {
                 return Array.Empty<IXamlCustomAttribute>();
             }
 
 
             return definition.CustomAttributes
-                .Select(x =>
-                    (IXamlCustomAttribute)
-                        new MyraCecilCustomAttribute(
-                            x,
-                            _declaringType))
+                .Select(x => new MyraCecilCustomAttribute(x, DeclaringType))
                 .ToArray();
         }
 

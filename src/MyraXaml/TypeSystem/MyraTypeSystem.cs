@@ -17,8 +17,7 @@ namespace Myra.Xaml.TypeSystem
             _cache = new ReflectionCache();
             _cache.RegisterAssembly(typeof(System.ComponentModel.ITypeDescriptorContext).Assembly);
             _cache.RegisterAssembly(typeof(System.ComponentModel.TypeConverterAttribute).Assembly);
-            _cache.RegisterAssembly(typeof(ContentAttribute).Assembly);
-            _cache.RegisterAssembly(typeof(System.ComponentModel.TypeConverterAttribute).Assembly);
+            _cache.RegisterAssembly(typeof(ContentAttribute).Assembly); 
             WellKnownTypes = new XamlTypeWellKnownTypes(this);
         }
 

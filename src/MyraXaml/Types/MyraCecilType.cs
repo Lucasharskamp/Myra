@@ -63,7 +63,17 @@ namespace Myra.Xaml.Types
 
             // Methods declared on this type
             foreach (var method in resolved.Methods)
-                yield return new MyraCecilMethod(method, this);
+            {
+                var reference = _type.Module.ImportReference(method);
+
+                if (_type is GenericInstanceType generic)
+                    reference = BindGenericMethod(reference, generic);
+
+                yield return new MyraCecilMethod(
+                    reference,
+                    _type,
+                    Assembly);
+            }
 
             // Interface methods are part of the contract as well
             foreach (var iface in resolved.Interfaces)
@@ -73,8 +83,98 @@ namespace Myra.Xaml.Types
                     continue;
 
                 foreach (var method in ifaceType.Methods)
-                    yield return new MyraCecilMethod(method, this);
+                {
+                    var reference = ifaceType.Module.ImportReference(method);
+
+                    if (_type is GenericInstanceType generic)
+                        reference = BindGenericMethod(reference, generic);
+
+                    yield return new MyraCecilMethod(
+                        reference,
+                        _type,
+                        Assembly);
+                }
             }
+        }
+
+        public static MethodReference BindGenericMethod(MethodReference method, GenericInstanceType declaringType)
+        {
+            var bound = new MethodReference(
+                method.Name,
+                SubstituteType(method.ReturnType, declaringType),
+                declaringType)
+            {
+                HasThis = method.HasThis,
+                ExplicitThis = method.ExplicitThis,
+                CallingConvention = method.CallingConvention
+            };
+
+            foreach (var parameter in method.Parameters)
+            {
+                bound.Parameters.Add(
+                    new ParameterDefinition(
+                        SubstituteType(parameter.ParameterType, declaringType)));
+            }
+
+            foreach (var gp in method.GenericParameters)
+            {
+                bound.GenericParameters.Add(
+                    new GenericParameter(
+                        gp.Name,
+                        bound));
+            }
+
+            return bound;
+        }
+
+        private static TypeReference SubstituteType(TypeReference type, GenericInstanceType context)
+        {
+            if (type is GenericParameter gp)
+            {
+                // Generic parameters of ICollection<T>, IList<T>, etc.
+                if (gp.Position < context.GenericArguments.Count)
+                    return context.GenericArguments[gp.Position];
+
+                return type;
+            }
+
+            if (type is GenericInstanceType generic)
+            {
+                var result =
+                    new GenericInstanceType(
+                        SubstituteType(
+                            generic.ElementType,
+                            context));
+
+                foreach (var argument in generic.GenericArguments)
+                {
+                    result.GenericArguments.Add(
+                        SubstituteType(argument, context));
+                }
+
+                return result;
+            }
+
+            if (type is ArrayType array)
+            {
+                return new ArrayType(
+                    SubstituteType(array.ElementType, context),
+                    array.Rank);
+            }
+
+            if (type is ByReferenceType byRef)
+            {
+                return new ByReferenceType(
+                    SubstituteType(byRef.ElementType, context));
+            }
+
+            if (type is PointerType pointer)
+            {
+                return new PointerType(
+                    SubstituteType(pointer.ElementType, context));
+            }
+
+            return type;
         }
 
 
@@ -134,16 +234,34 @@ namespace Myra.Xaml.Types
         public bool IsEnum => _type.Resolve()?.IsEnum ?? false;
 
         public IReadOnlyList<IXamlType> Interfaces =>
-            _type.Resolve()?
+            _interfaces ??= _type.Resolve()
                 .Interfaces
-                .Select(x =>
-                    (IXamlType)new MyraCecilType(
-                        x.InterfaceType,
-                        Assembly))
-                .ToArray()
-                ??
-                Array.Empty<IXamlType>();
+                .Select(x => new MyraCecilType(ApplyGenericContext(x.InterfaceType), Assembly))
+                .ToArray();
 
+        private IReadOnlyList<IXamlType>? _interfaces;
+
+        private TypeReference ApplyGenericContext(TypeReference type)
+        {
+            if (_type is not GenericInstanceType instance)
+                return type;
+
+            if (type is GenericParameter gp)
+                return instance.GenericArguments[gp.Position];
+
+            if (type is GenericInstanceType git)
+            {
+                var clone = new GenericInstanceType(
+                    ApplyGenericContext(git.ElementType));
+
+                foreach (var arg in git.GenericArguments)
+                    clone.GenericArguments.Add(ApplyGenericContext(arg));
+
+                return clone;
+            }
+
+            return type;
+        }
 
         public bool IsInterface =>
             _type.Resolve()?.IsInterface ?? false;
@@ -157,7 +275,7 @@ namespace Myra.Xaml.Types
             TypeReference type,
             IXamlAssembly? assembly)
         {
-            _type = type;
+            _type = type ?? throw new ArgumentNullException(nameof(type));
             Assembly = assembly;
         }
 

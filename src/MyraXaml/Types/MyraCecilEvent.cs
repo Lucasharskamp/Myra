@@ -27,7 +27,8 @@ namespace Myra.Xaml.Types
                 ? null
                 : new MyraCecilMethod(
                     _event.AddMethod,
-                    _declaringType);
+                    _event.Resolve().EventType,
+                    null);
 
 
         public EventDefinition EventDefinition =>

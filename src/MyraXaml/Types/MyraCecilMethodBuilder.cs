@@ -26,7 +26,7 @@ namespace Myra.Xaml.Types
         public MyraCecilMethodBuilder(
             MethodDefinition definition,
             MyraCecilType declaringType,
-            MyraCecilILEmitter generator) : base(definition, declaringType)
+            MyraCecilILEmitter generator) : base(definition, definition.Resolve().DeclaringType, null)
         {
             _definition = definition;
             DeclaringType = declaringType;

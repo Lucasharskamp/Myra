@@ -5,7 +5,7 @@ using Mono.Cecil;
 using XamlX.TypeSystem;
 
 namespace Myra.Xaml.Types
-{ 
+{
 
     public sealed class MyraCecilProperty : IXamlProperty
     {
@@ -22,16 +22,83 @@ namespace Myra.Xaml.Types
 
 
         public IXamlType PropertyType =>
-            new MyraCecilType(
-                _property.PropertyType,
-                _declaringType.Assembly);
-         
+            _propertyType ??= new MyraCecilType(_property.PropertyType, _declaringType.Assembly);
+
+        private IXamlType? _propertyType;
+
         public IXamlMethod? Setter =>
-            _property.SetMethod == null
-                ? null
-                : _setter ??= new MyraCecilMethod(
-                    _property.SetMethod,
-                    PropertyType);
+            GetSetter();
+
+        private IXamlMethod? GetSetter()
+        {
+            if (_setter != null)
+                return _setter;
+
+            var propertyDefinition = _property.Resolve();
+
+            if (_property.SetMethod != null)
+            {
+                _setter = new MyraCecilMethod(
+                                _property.SetMethod,
+                                propertyDefinition.PropertyType,
+                                DeclaringType.Assembly);
+                return _setter;
+            }
+
+            var propertyDefinitionResolved = propertyDefinition.PropertyType.Resolve();
+            var newSetter = FindCollectionAdder(); 
+            return _setter;
+             
+
+        }
+
+        private IXamlMethod? FindCollectionAdder()
+        {
+            var propertyType = _property.PropertyType;
+
+            var resolved = propertyType.Resolve();
+            if (resolved == null)
+                return null;
+
+            // Search direct methods
+            var add =
+                resolved.Methods.FirstOrDefault(m =>
+                    m.Name == "Add" && m.IsPublic && !m.IsStatic &&  m.Parameters.Count == 1);
+
+            if (add != null)
+            {
+                return new MyraCecilMethod(
+                    add,
+                    propertyType,
+                    DeclaringType.Assembly);
+            }
+
+            // Search interfaces (IList<T>, ICollection<T>, etc.)
+            foreach (var iface in resolved.Interfaces)
+            {
+                var ifaceType = iface.InterfaceType;
+
+                var ifaceResolved = ifaceType.Resolve();
+                if (ifaceResolved == null)
+                    continue;
+
+                var ifaceAdd =
+                    ifaceResolved.Methods.FirstOrDefault(m =>
+                        m.Name == "Add" &&
+                        m.IsPublic && !m.IsStatic && m.Parameters.Count == 1);
+
+                if (ifaceAdd != null)
+                {
+                    var bound = ifaceType is GenericInstanceType generic
+                        ? MyraCecilType.BindGenericMethod(ifaceAdd, generic)
+                        : ifaceAdd;
+                    
+                    return new MyraCecilMethod(bound, ifaceType, DeclaringType.Assembly);
+                }
+            }
+
+            return null;
+        }
 
         private IXamlMethod? _setter;
 
@@ -41,15 +108,13 @@ namespace Myra.Xaml.Types
                 ? null
                 : _getter ??= new MyraCecilMethod(
                     _property.GetMethod,
-                    PropertyType);
+                    _property.Resolve().PropertyType,
+                    DeclaringType.Assembly);
         private IXamlMethod? _getter;
 
         public IReadOnlyList<IXamlType> IndexerParameters =>
             _property.Parameters
-                .Select(x =>
-                    (IXamlType)new MyraCecilType(
-                        x.ParameterType,
-                        _declaringType.Assembly))
+                .Select(x => new MyraCecilType(x.ParameterType, _declaringType.Assembly))
                 .ToArray();
 
 
@@ -73,23 +138,17 @@ namespace Myra.Xaml.Types
                 return Array.Empty<IXamlCustomAttribute>();
 
             return _property.CustomAttributes
-                .Select(x =>
-                    (IXamlCustomAttribute)
-                        new MyraCecilCustomAttribute(
-                            x,
-                            _declaringType))
+                .Select(x => new MyraCecilCustomAttribute(x, _declaringType))
                 .ToArray();
         }
 
 
-        public bool Equals(
-            IXamlProperty? other)
+        public bool Equals(IXamlProperty? other)
         {
             return other is MyraCecilProperty property &&
                    property._property.FullName ==
                    _property.FullName;
         }
-
 
         public override bool Equals(object? obj)
         {
