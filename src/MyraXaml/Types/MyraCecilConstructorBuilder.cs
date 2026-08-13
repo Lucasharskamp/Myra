@@ -1,33 +1,26 @@
-﻿using System.Collections.Generic;
-using Mono.Cecil;
-using System.Linq;
-using XamlX.TypeSystem;
+﻿using Mono.Cecil;
 using Myra.Xaml.Compiler;
+using System.Collections.Generic;
+using System.Linq;
+using XamlX.IL;
+using XamlX.TypeSystem;
 
 namespace Myra.Xaml.Types
 { 
 
     public sealed class MyraCecilConstructorBuilder
-        : IXamlConstructorBuilder<MyraCecilILEmitter>
+        : IXamlConstructorBuilder<IXamlILEmitter>
     {
         private readonly MethodDefinition _constructor;
 
-        private readonly MyraCecilILEmitter _generator;
-
-
-        public object Id =>
-            _constructor;
-
-
-        public string Name =>
-            _constructor.Name;
-
+        private readonly IXamlILEmitter _generator;
+         
+        public object Id => _constructor;
+        public string Name => _constructor.Name;
 
         public IXamlType DeclaringType { get; }
 
-
-        public bool IsPublic =>
-            _constructor.IsPublic;
+        public bool IsPublic => _constructor.IsPublic;
 
 
         public bool IsStatic =>
@@ -40,14 +33,14 @@ namespace Myra.Xaml.Types
                 .ToArray();
 
 
-        public MyraCecilILEmitter Generator =>
+        public IXamlILEmitter Generator =>
             _generator;
 
 
         public MyraCecilConstructorBuilder(
             MethodDefinition constructor,
             IXamlType declaringType,
-            MyraCecilILEmitter generator)
+            IXamlILEmitter generator)
         {
             _constructor = constructor;
             DeclaringType = declaringType;

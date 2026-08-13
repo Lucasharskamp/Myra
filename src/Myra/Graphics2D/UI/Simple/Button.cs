@@ -80,8 +80,16 @@ namespace Myra.Graphics2D.UI
 		/// Initializes a new instance of the <see cref="Button"/> class with the specified style.
 		/// </summary>
 		/// <param name="styleName">The name of the style to apply. Defaults to the default stylesheet style.</param>
-		public Button(string styleName = Stylesheet.DefaultStyleName) : this(Stylesheet.Current, styleName)
+		public Button(string styleName) : this(Stylesheet.Current, styleName)
 		{
+		}
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Button"/> class with the specified style.
+        /// </summary>
+        public Button() : this(Stylesheet.Current, "")
+		{
+
 		}
 
 		internal override IDictionary GetStylesDictionary(Stylesheet stylesheet) => stylesheet.ButtonStyles;

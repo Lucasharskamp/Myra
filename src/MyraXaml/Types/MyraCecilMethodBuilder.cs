@@ -3,18 +3,19 @@ using Myra.Xaml.Compiler;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using XamlX.IL;
 using XamlX.TypeSystem;
 
 namespace Myra.Xaml.Types
 {
      
-    public sealed class MyraCecilMethodBuilder : MyraCecilMethod, IXamlMethodBuilder<MyraCecilILEmitter>
+    public sealed class MyraCecilMethodBuilder : MyraCecilMethod, IXamlMethodBuilder<IXamlILEmitter>
     {
         private readonly MethodDefinition _definition;
 
         public MethodDefinition MethodDefinition => _definition;
 
-        public MyraCecilILEmitter Generator { get; }
+        public IXamlILEmitter Generator { get; }
 
         public override object Id => _definition;
         public override string Name => _definition.Name;
@@ -25,8 +26,8 @@ namespace Myra.Xaml.Types
 
         public MyraCecilMethodBuilder(
             MethodDefinition definition,
-            MyraCecilType declaringType,
-            MyraCecilILEmitter generator) : base(definition, definition.Resolve().DeclaringType, null)
+            IXamlType declaringType,
+            IXamlILEmitter generator) : base(definition, definition.Resolve().DeclaringType, null)
         {
             _definition = definition;
             DeclaringType = declaringType;

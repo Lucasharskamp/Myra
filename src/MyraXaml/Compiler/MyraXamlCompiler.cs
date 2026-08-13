@@ -1,10 +1,11 @@
-﻿using Myra.Attributes;
-using Myra.Xaml.TypeSystem;
+﻿using Mono.Cecil;
+using Myra.Attributes;
+using Myra.Xaml.Types;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using XamlX.Ast;
-using XamlX.Compiler;
+using System.Linq;
+using XamlX.Ast; 
 using XamlX.Emit;
 using XamlX.IL;
 using XamlX.Transform;
@@ -15,43 +16,80 @@ namespace Myra.Xaml.Compiler
       
     public sealed class MyraXamlCompiler
     {
-        public MyraTypeSystem TypeSystem { get; }
+        public CecilTypeSystem TypeSystem { get; }
 
         public TransformerConfiguration Configuration { get; }
 
-        public XamlLanguageEmitMappings<MyraCecilILEmitter, XamlILNodeEmitResult> EmitMappings { get; }
+        public XamlLanguageEmitMappings<IXamlILEmitter, XamlILNodeEmitResult> EmitMappings { get; }
 
-        private readonly CompilerImpl _compiler;
+        private readonly XamlILCompiler _compiler;
 
         public MyraXamlCompiler()
         {
-            TypeSystem = new MyraTypeSystem();
+            var assemblies = AppDomain.CurrentDomain.GetAssemblies()
+                .Select(a => a.GetModules()[0].FullyQualifiedName)
+                .ToList();
+
+            assemblies.AddRange([typeof(System.Runtime.CompilerServices.CompilerGeneratedAttribute).Assembly.GetModules()[0].FullyQualifiedName,
+                    typeof(ITypeDescriptorContext).Assembly.GetModules()[0].FullyQualifiedName,
+                    typeof(TypeConverterAttribute).Assembly.GetModules()[0].FullyQualifiedName,
+                    typeof(ContentAttribute).Assembly.GetModules()[0].FullyQualifiedName]);
+
+            TypeSystem = new CecilTypeSystem(assemblies, null);
 
             Configuration = CreateConfiguration(TypeSystem);
 
-            EmitMappings = new XamlLanguageEmitMappings<MyraCecilILEmitter, XamlILNodeEmitResult>();
+            EmitMappings = new XamlLanguageEmitMappings<IXamlILEmitter, XamlILNodeEmitResult>();
 
-            _compiler = new CompilerImpl(Configuration, EmitMappings);
+            _compiler = new XamlILCompiler(Configuration, EmitMappings, true);
         }
+         
 
         public void Transform(XamlDocument document)
         {
-            _compiler.Transform(document);
+            _compiler.Transform(document); 
         }
+
+        public void Compile(
+            XamlDocument document, 
+            TypeDefinition type,
+            string namespaceInfoClassName = "__XamlNamespaceInfo",
+            string? baseUri = null,
+            IFileSource? fileSource = null)
+        {
+            // The XamlIL compiler expects the document to already have been
+            // transformed into its imperative representation. 
+            var typeBuilder = TypeSystem.CreateTypeBuilder(type, true);
+            var contextType = _compiler.CreateContextType(typeBuilder);
+
+            _compiler.Compile(
+                document,
+                typeBuilder,
+                contextType,
+                "InitializeComponent",
+                "Build",
+                namespaceInfoClassName,
+                baseUri,
+                fileSource); 
+        }
+
 
         public AstTransformationContext CreateTransformationContext(XamlDocument document)
         {
             return _compiler.CreateTransformationContext(document);
         }
 
-        private static TransformerConfiguration CreateConfiguration(MyraTypeSystem typeSystem)
+        public static TransformerConfiguration CreateConfiguration(CecilTypeSystem typeSystem)
         {
             var typeMappings = new XamlLanguageTypeMappings(typeSystem);
 
-            var contentProperty = typeSystem.FindType(nameof(ContentAttribute));
+            var contentProperty = typeSystem.FindType(typeof(ContentAttribute).FullName)
+                ?? throw new InvalidOperationException("Cannot find ContentAttribute!");
             typeMappings.ContentAttributes.Add(contentProperty);
 
-            var typeConverter = typeSystem.FindType(nameof(TypeConverterAttribute));
+            var typeConverter = typeSystem.FindType(typeof(TypeConverterAttribute).FullName)
+                ?? throw new InvalidOperationException("Cannot find TypeConverterAttribute!");
+
             typeMappings.TypeConverterAttributes.Add(typeConverter);
 
             var mappings = new XamlXmlnsMappings();
@@ -76,44 +114,6 @@ namespace Myra.Xaml.Compiler
                 customValueConverter: null,
                 identifierGenerator: null,
                 diagnosticsHandler: null);
-        }
-         
-
-        private sealed class CompilerImpl : XamlCompiler<MyraCecilILEmitter, XamlILNodeEmitResult>
-        {
-            public CompilerImpl(
-                TransformerConfiguration configuration,
-                XamlLanguageEmitMappings<MyraCecilILEmitter, XamlILNodeEmitResult> emitMappings)
-                : base(configuration, emitMappings, fillWithDefaults: true)
-            {
-            }
-
-            protected override XamlEmitContext<MyraCecilILEmitter, XamlILNodeEmitResult>
-                InitCodeGen(
-                    IFileSource file,
-                    IXamlTypeBuilder<MyraCecilILEmitter> declaringType,
-                    MyraCecilILEmitter emitter,
-                    XamlRuntimeContext<MyraCecilILEmitter, XamlILNodeEmitResult> runtimeContext,
-                    bool needContextLocal)
-            {
-                IXamlLocal? contextLocal = null;
-
-                if (needContextLocal)
-                {
-                    contextLocal = emitter.GetLocal(
-                        _configuration.TypeSystem.FindType("XamlX.XamlRuntimeContext")!);
-                }
-
-                return new MyraXamlEmitContext(
-                    emitter,
-                    _configuration,
-                    _emitMappings,
-                    runtimeContext,
-                    contextLocal,
-                    declaringType,
-                    file,
-                    Emitters);
-            }
         }
     }
 }

@@ -387,16 +387,24 @@ namespace Myra.Graphics2D.UI
 		/// <summary>
 		/// Initializes a new instance of the <see cref="Grid"/> class.
 		/// </summary>
-		public Grid(string styleName = Stylesheet.DefaultStyleName) : this(Stylesheet.Current, styleName)
+		public Grid(string styleName) : this(Stylesheet.Current, styleName)
 		{
 		}
 
-		/// <summary>
-		/// Gets the width of the column at the specified index.
-		/// </summary>
-		/// <param name="index">The column index.</param>
-		/// <returns>The column width in pixels.</returns>
-		public int GetColumnWidth(int index) => _layout.GetColumnWidth(index);
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Grid"/> class.
+        /// </summary>
+        public Grid() : this(Stylesheet.Current, Stylesheet.DefaultStyleName)
+        {
+        }
+
+
+        /// <summary>
+        /// Gets the width of the column at the specified index.
+        /// </summary>
+        /// <param name="index">The column index.</param>
+        /// <returns>The column width in pixels.</returns>
+        public int GetColumnWidth(int index) => _layout.GetColumnWidth(index);
 
 		/// <summary>
 		/// Gets the height of the row at the specified index.

@@ -7,7 +7,7 @@ using XamlX.TypeSystem;
 namespace Myra.Xaml.Types
 { 
 
-    public sealed class MyraCecilType : IXamlType
+    public class MyraCecilType : IXamlType
     {
         private readonly TypeReference _type;
 
@@ -285,7 +285,7 @@ namespace Myra.Xaml.Types
 
         }
 
-        private static TypeReference ResolveReflectionType(Type type, AssemblyDefinition assembly)
+        public static TypeReference ResolveReflectionType(Type type, AssemblyDefinition assembly)
         { 
             var module = assembly.MainModule;
 

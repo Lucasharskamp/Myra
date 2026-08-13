@@ -1,5 +1,4 @@
-﻿using Myra.Xaml.Types;
-using Myra.Xaml.TypeSystem;
+﻿using Myra.Xaml.Types; 
 using System.IO;
 using System.Linq;
 using System.Xml;
@@ -17,16 +16,13 @@ namespace Myra.Xaml.Compiler
         private XmlReader _reader = null!;
 
 
-        public MyraXamlParser(
-            TransformerConfiguration configuration)
+        public MyraXamlParser(TransformerConfiguration configuration)
         {
             _configuration = configuration;
         }
 
 
-        public XamlDocument Parse(
-            string fileName,
-            string text)
+        public XamlDocument Parse(string fileName, string text)
         {
             using var stringReader = new StringReader(text);
 
