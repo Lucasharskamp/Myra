@@ -1,8 +1,6 @@
 ﻿using Mono.Cecil;
-using Myra.Xaml.Compiler;
-using Myra.Xaml.Types;
+using Myra.Xaml.Compiler; 
 using System.Runtime.CompilerServices;
-using XamlX.TypeSystem;
 using Xunit;
 
 namespace Myra.Tests
@@ -53,13 +51,8 @@ namespace Myra.Tests
             }
         }
     }
-
-    [CompilerGenerated]
+     
     public partial class Foo
     {
-        public Foo()
-        {
-
-        }
     }
 }

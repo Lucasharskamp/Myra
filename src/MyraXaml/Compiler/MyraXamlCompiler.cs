@@ -1,6 +1,5 @@
 ﻿using Mono.Cecil;
-using Myra.Attributes;
-using Myra.Xaml.Types;
+using Myra.Attributes; 
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -59,7 +58,7 @@ namespace Myra.Xaml.Compiler
         {
             // The XamlIL compiler expects the document to already have been
             // transformed into its imperative representation. 
-            var typeBuilder = TypeSystem.CreateTypeBuilder(type, true);
+            var typeBuilder = TypeSystem.CreateTypeBuilder(type, false);
             var contextType = _compiler.CreateContextType(typeBuilder);
 
             _compiler.Compile(
