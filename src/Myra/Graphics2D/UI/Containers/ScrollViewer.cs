@@ -373,11 +373,18 @@ namespace Myra.Graphics2D.UI
 		/// Initializes a new instance of the <see cref="ScrollViewer"/> class.
 		/// </summary>
 		/// <param name="styleName">The name of the style to apply to the scroll viewer.</param>
-		public ScrollViewer(string styleName = Stylesheet.DefaultStyleName) : this(Stylesheet.Current, styleName)
+		public ScrollViewer(string styleName) : this(Stylesheet.Current, styleName)
 		{
 		}
 
-		private void MoveThumb(int delta)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ScrollViewer"/> class.
+        /// </summary>
+        public ScrollViewer() : this(Stylesheet.Current, Stylesheet.DefaultStyleName)
+        {
+        }
+
+        private void MoveThumb(int delta)
 		{
 			var scrollPosition = ScrollPosition;
 

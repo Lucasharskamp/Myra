@@ -47,6 +47,14 @@ namespace Myra.Graphics2D.Brushes
 			Color = color;
 		}
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SolidBrush"/> class as <see cref="Color.White"/>
+        /// </summary>
+        public SolidBrush()
+		{
+
+		}
+
 		/// <summary>
 		/// Initializes a new instance of the <see cref="SolidBrush"/> class with the specified color name.
 		/// </summary>

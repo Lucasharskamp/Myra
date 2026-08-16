@@ -32,10 +32,17 @@ namespace Myra.Graphics2D.UI
 		/// Initializes a new instance of the <see cref="VerticalSplitPane"/> class with the specified style.
 		/// </summary>
 		/// <param name="styleName">The name of the style to apply. Defaults to the default stylesheet style.</param>
-		public VerticalSplitPane(string styleName = Stylesheet.DefaultStyleName) : this(Stylesheet.Current, styleName)
+		public VerticalSplitPane(string styleName) : this(Stylesheet.Current, styleName)
 		{
 		}
 
-		internal override IDictionary GetStylesDictionary(Stylesheet stylesheet) => stylesheet.VerticalSplitPaneStyles;
+        /// <summary>
+        /// Initializes a new instance of the <see cref="VerticalSplitPane"/> class.
+        /// </summary>
+        public VerticalSplitPane() : this(Stylesheet.Current, Stylesheet.DefaultStyleName)
+        {
+        }
+
+        internal override IDictionary GetStylesDictionary(Stylesheet stylesheet) => stylesheet.VerticalSplitPaneStyles;
 	}
 }

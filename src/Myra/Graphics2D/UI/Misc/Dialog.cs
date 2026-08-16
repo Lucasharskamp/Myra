@@ -94,15 +94,22 @@ namespace Myra.Graphics2D.UI
 		/// Initializes a new instance of the <see cref="Dialog"/> class with the specified style.
 		/// </summary>
 		/// <param name="styleName">The name of the style to apply. Defaults to the default stylesheet style.</param>
-		public Dialog(string styleName = Stylesheet.DefaultStyleName) : this(Stylesheet.Current, styleName)
+		public Dialog(string styleName) : this(Stylesheet.Current, styleName)
 		{
 		}
 
-		/// <summary>
-		/// Handles key down events for the dialog, including confirm and close key shortcuts.
-		/// </summary>
-		/// <param name="k">The key that was pressed.</param>
-		public override void OnKeyDown(Keys k)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Dialog"/> class.
+        /// </summary>
+        public Dialog() : this(Stylesheet.Current, Stylesheet.DefaultStyleName)
+        {
+        }
+
+        /// <summary>
+        /// Handles key down events for the dialog, including confirm and close key shortcuts.
+        /// </summary>
+        /// <param name="k">The key that was pressed.</param>
+        public override void OnKeyDown(Keys k)
 		{
 			FireKeyDown(k);
 

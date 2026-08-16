@@ -31,13 +31,21 @@ namespace Myra.Graphics2D.UI
 		/// Initializes a new instance of the <see cref="Panel"/> class with the specified style name.
 		/// </summary>
 		/// <param name="styleName">The name of the style to apply to this panel.</param>
-		public Panel(string styleName = Stylesheet.DefaultStyleName) : this(Stylesheet.Current, styleName)
+		public Panel(string styleName) : this(Stylesheet.Current, styleName)
 		{
 		}
-		/// <summary>
-		/// Arranges child controls at the same location in the panel bounds.
-		/// </summary>
-		protected override void InternalArrange()
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Panel"/> class.
+        /// </summary> 
+        public Panel() : this(Stylesheet.Current, Stylesheet.DefaultStyleName)
+        {
+        }
+
+        /// <summary>
+        /// Arranges child controls at the same location in the panel bounds.
+        /// </summary>
+        protected override void InternalArrange()
 		{
 			foreach (var control in ChildrenCopy)
 			{

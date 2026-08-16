@@ -246,14 +246,21 @@ namespace Myra.Graphics2D.UI
 		/// Initializes a new instance of the <see cref="Window"/> class with the specified style.
 		/// </summary>
 		/// <param name="styleName">The name of the style to apply. Defaults to the default stylesheet style.</param>
-		public Window(string styleName = Stylesheet.DefaultStyleName) : this(Stylesheet.Current, styleName)
+		public Window(string styleName) : this(Stylesheet.Current, styleName)
 		{
 		}
 
-		/// <summary>
-		/// Arranges the window and centers it on the desktop if it hasn't been manually placed.
-		/// </summary>
-		protected override void InternalArrange()
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Window"/> class.
+        /// </summary> 
+        public Window() : this(Stylesheet.Current, Stylesheet.DefaultStyleName)
+        {
+        }
+
+        /// <summary>
+        /// Arranges the window and centers it on the desktop if it hasn't been manually placed.
+        /// </summary>
+        protected override void InternalArrange()
 		{
 			base.InternalArrange();
 

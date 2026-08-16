@@ -1,6 +1,6 @@
 ﻿using Myra.Xaml.Types; 
 using System.IO;
-using System.Linq;
+using System.Linq; 
 using System.Xml;
 using XamlX;
 using XamlX.Ast; 
@@ -12,31 +12,30 @@ namespace Myra.Xaml.Compiler
     public sealed class MyraXamlParser
     {
         private readonly TransformerConfiguration _configuration;
-
-        private XmlReader _reader = null!;
-
-
+         
+         
         public MyraXamlParser(TransformerConfiguration configuration)
         {
             _configuration = configuration;
         }
 
 
-        public XamlDocument Parse(string fileName, string text)
+        public XamlDocument Parse(string text)
         {
             using var stringReader = new StringReader(text);
 
-            using var xml = XmlReader.Create(stringReader,
+            using var xmlReader = XmlReader.Create(stringReader,
                     new XmlReaderSettings
                     {
                         IgnoreComments = true,
                         IgnoreWhitespace = false
                     });
 
-            _reader = xml;
-            MoveToContent();
+            // read until we hit content to work with.
+            while (xmlReader.Read() && xmlReader.NodeType != XmlNodeType.Element)
+            { }
 
-            var root = ParseElement();
+            var root = ParseElement(xmlReader);
 
             return new XamlDocument
             {
@@ -44,36 +43,36 @@ namespace Myra.Xaml.Compiler
             };
         }
 
-        private XamlAstObjectNode ParseElement()
+        private XamlAstObjectNode ParseElement(XmlReader reader)
         {
-            var lineInfo = GetLineInfo();
+            var lineInfo = GetLineInfo(reader);
 
-            var type = ResolveType(_reader.NamespaceURI, _reader.LocalName);
+            var type = ResolveType(reader.NamespaceURI, reader.LocalName);
 
             var node = new XamlAstObjectNode(lineInfo, new XamlAstClrTypeReference(lineInfo,  type, false));
 
-            ParseAttributes(node);
+            ParseAttributes(reader, node);
 
-            if (!_reader.IsEmptyElement)
+            if (!reader.IsEmptyElement)
             {
-                _reader.Read();
+                reader.Read();
 
-                while (_reader.NodeType != XmlNodeType.EndElement)
+                while (reader.NodeType != XmlNodeType.EndElement)
                 {
-                    if (_reader.NodeType == XmlNodeType.Element)
+                    if (reader.NodeType == XmlNodeType.Element)
                     {
-                        node.Children.Add(ParseElement());
+                        node.Children.Add(ParseElement(reader));
                     }
-                    else if (_reader.NodeType == XmlNodeType.Text &&
-                             !string.IsNullOrWhiteSpace(_reader.Value))
+                    else if (reader.NodeType == XmlNodeType.Text &&
+                             !string.IsNullOrWhiteSpace(reader.Value))
                     {
                         node.Children.Add(
                             new XamlAstTextNode(
-                                GetLineInfo(),
-                                _reader.Value));
+                                GetLineInfo(reader),
+                                reader.Value));
                     }
 
-                    _reader.Read();
+                    reader.Read();
                 }
             }
 
@@ -81,39 +80,39 @@ namespace Myra.Xaml.Compiler
         }
 
 
-        private void ParseAttributes(XamlAstObjectNode node)
+        private void ParseAttributes(XmlReader reader, XamlAstObjectNode node)
         {
-            if (!_reader.HasAttributes)
+            if (!reader.HasAttributes)
                 return;
 
 
-            while (_reader.MoveToNextAttribute())
+            while (reader.MoveToNextAttribute())
             {
-                if (_reader.Prefix == "xmlns" ||
-                    _reader.Name.StartsWith("xmlns"))
+                if (reader.Prefix == "xmlns" ||
+                    reader.Name.StartsWith("xmlns"))
                     continue;
 
-                var lineInfo = GetLineInfo();
+                var lineInfo = GetLineInfo(reader);
                 var objectType = ((XamlAstClrTypeReference)node.Type).Type;
 
-                var property = objectType.Properties.FirstOrDefault(x => x.Name == _reader.LocalName);
+                var property = objectType.Properties.FirstOrDefault(x => x.Name == reader.LocalName);
 
                 if (property == null)
                 {
                     throw new XamlParseException(
-                        $"Property '{_reader.LocalName}' " +
+                        $"Property '{reader.LocalName}' " +
                         $"does not exist on '{objectType.FullName}'.",
                         lineInfo.Line,
                         lineInfo.Position);
                 }
 
                 var propertyReference = new XamlAstClrProperty(lineInfo, property, _configuration);
-                var value = new XamlAstTextNode(lineInfo, _reader.Value);
+                var value = new XamlAstTextNode(lineInfo, reader.Value);
                 node.Children.Add(new XamlAstXamlPropertyValueNode(lineInfo, propertyReference, value, isAttributeSyntax: true));
             }
 
 
-            _reader.MoveToElement();
+            reader.MoveToElement();
         }
 
         private IXamlType ResolveType(string xmlns, string name)
@@ -136,20 +135,11 @@ namespace Myra.Xaml.Compiler
                 return regularType;
 
             throw new XamlParseException($"Unable to resolve type '{name}'", 0, 0);
-        }
+        } 
 
-
-        private void MoveToContent()
+        private IXamlLineInfo GetLineInfo(XmlReader reader)
         {
-            while (_reader.Read() &&
-                   _reader.NodeType != XmlNodeType.Element)
-            {
-            }
-        }
-
-        private IXamlLineInfo GetLineInfo()
-        {
-            if (_reader is IXmlLineInfo lineInfo && lineInfo.HasLineInfo())
+            if (reader is IXmlLineInfo lineInfo && lineInfo.HasLineInfo())
             {
                 return new MyraLineInfo(lineInfo.LineNumber, lineInfo.LinePosition);
             }

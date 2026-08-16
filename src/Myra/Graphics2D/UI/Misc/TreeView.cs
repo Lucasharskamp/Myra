@@ -116,15 +116,22 @@ namespace Myra.Graphics2D.UI
 		/// Initializes a new instance of the <see cref="TreeView"/> class with the specified style.
 		/// </summary>
 		/// <param name="styleName">The name of the style to apply. Defaults to the default stylesheet style.</param>
-		public TreeView(string styleName = Stylesheet.DefaultStyleName) : this(Stylesheet.Current, styleName)
+		public TreeView(string styleName) : this(Stylesheet.Current, styleName)
 		{
 		}
 
-		/// <summary>
-		/// Handles keyboard input for tree navigation (Up, Down, and Enter keys).
-		/// </summary>
-		/// <param name="k">The key being pressed.</param>
-		public override void OnKeyDown(Keys k)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TreeView"/> class.
+        /// </summary>
+        public TreeView() : this(Stylesheet.Current, Stylesheet.DefaultStyleName)
+        {
+        }
+
+        /// <summary>
+        /// Handles keyboard input for tree navigation (Up, Down, and Enter keys).
+        /// </summary>
+        /// <param name="k">The key being pressed.</param>
+        public override void OnKeyDown(Keys k)
 		{
 			base.OnKeyDown(k);
 

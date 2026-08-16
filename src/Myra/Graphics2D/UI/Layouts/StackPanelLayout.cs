@@ -91,7 +91,14 @@ namespace Myra.Graphics2D.UI
 			DefaultProportion = Proportion.StackPanelDefault;
 		}
 
-		private void UpdateWidgets(IEnumerable<Widget> widgets)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="StackPanelLayout"/> class.
+        /// </summary> 
+        public StackPanelLayout() : this(Orientation.Vertical)
+        { 
+        }
+
+        private void UpdateWidgets(IEnumerable<Widget> widgets)
 		{
 			var index = 0;
 			Proportions.Clear();

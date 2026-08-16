@@ -721,11 +721,18 @@ namespace Myra.Graphics2D.UI.Data
 		/// Initializes a new instance of the <see cref="DataGrid"/> class using the current stylesheet.
 		/// </summary>
 		/// <param name="styleName">The name of the style to apply from the current stylesheet.</param>
-		public DataGrid(string styleName = Stylesheet.DefaultStyleName) : this(Stylesheet.Current, styleName)
+		public DataGrid(string styleName) : this(Stylesheet.Current, styleName)
 		{
 		}
 
-		private void RebuildColumns()
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DataGrid"/> class.
+        /// </summary>
+        public DataGrid() : this(Stylesheet.Current, Stylesheet.DefaultStyleName)
+        {
+        }
+
+        private void RebuildColumns()
 		{
 			_grid.ColumnsProportions.Clear();
 

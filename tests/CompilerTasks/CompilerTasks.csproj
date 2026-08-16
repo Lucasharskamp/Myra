@@ -9,10 +9,27 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MonoGame.Framework.DesktopGL" Version="$(AppMonoGameVersion)" />
+    <PackageReference Include="MonoGame.Framework.DesktopGL" Version="$(AppMonoGameVersion)" /> 
+    <ProjectReference Include="..\..\src\Myra\Myra.MonoGame.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Myra\Myra.MonoGame.csproj" />
+    <MyraXaml Include="**\*.xaml" /> 
   </ItemGroup>
+ 
+  <UsingTask 
+    TaskFactory="MyraXamlTaskFactory"
+    TaskName="MyraXamlCompileTask"
+    AssemblyFile="..\..\src\MyraXaml\bin\Debug\netstandard2.0\Myra.Xaml.dll"  />
+
+  <Target Name="MyraXamlCompile" AfterTargets="Build" Condition="'$(DesignTimeBuild)' != 'true'">
+    <MyraXamlCompileTask 
+      TargetPath="$(TargetPath)" 
+      XamlFiles="@(MyraXaml)"
+      RootNamespace="$(RootNamespace)" 
+      ProjectDirectory="$(MSBuildProjectDirectory)" 
+      ReferenceAssemblies="@(ReferencePath)"
+      Debug="$(DebugSymbols)" />
+
+  </Target>
 </Project>

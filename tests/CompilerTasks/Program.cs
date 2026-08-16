@@ -8,8 +8,7 @@ namespace Myra.CompilerTasks
     {
         static void Main(string[] args)
         {
-            using (var game = new MainWindowTestGame())
-                game.Run();
+            Console.WriteLine("Hello world!");
         }
     }
 }

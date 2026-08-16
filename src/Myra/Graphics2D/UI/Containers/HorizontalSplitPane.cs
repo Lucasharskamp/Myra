@@ -26,10 +26,17 @@ namespace Myra.Graphics2D.UI
 		/// Initializes a new instance of the <see cref="HorizontalSplitPane"/> class with the specified style.
 		/// </summary>
 		/// <param name="styleName">The name of the style to apply. Defaults to the default stylesheet style.</param>
-		public HorizontalSplitPane(string styleName = Stylesheet.DefaultStyleName) : this(Stylesheet.Current, styleName)
+		public HorizontalSplitPane(string styleName) : this(Stylesheet.Current, styleName)
 		{
 		}
 
-		internal override IDictionary GetStylesDictionary(Stylesheet stylesheet) => stylesheet.HorizontalSplitPaneStyles;
+        /// <summary>
+        /// Initializes a new instance of the <see cref="HorizontalSplitPane"/> class.
+        /// </summary>
+        public HorizontalSplitPane() : this(Stylesheet.Current, Stylesheet.DefaultStyleName)
+        {
+        }
+
+        internal override IDictionary GetStylesDictionary(Stylesheet stylesheet) => stylesheet.HorizontalSplitPaneStyles;
 	}
 }

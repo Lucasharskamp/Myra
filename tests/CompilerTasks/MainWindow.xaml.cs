@@ -1,8 +1,9 @@
-using Myra.Graphics2D.UI;
 
-public partial class MainWindow : Window
+namespace Myra.CompilerTasks;
+
+public partial class MainWindow 
 {  
     public MainWindow()
-    { 
+    {  
     } 
 }
