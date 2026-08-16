@@ -5,7 +5,6 @@ using Myra.Xaml.Compiler;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 
 namespace Myra.Xaml
 { 
@@ -176,7 +175,7 @@ namespace Myra.Xaml
             TypeDefinition targetType,
             string fileContents,
             string fileName)
-        { 
+        {  
             var document = new MyraXamlParser(compiler.Configuration).Parse(fileContents);
 
             compiler.Transform(document);
@@ -224,37 +223,16 @@ namespace Myra.Xaml
                 return explicitClass;
 
             var fullXamlPath = Path.GetFullPath(xamlPath);
-            var fullProjectDirectory = Path.GetFullPath(ProjectDirectory);
-#if !NET6_0_OR_GREATER
-            var relativePath = PathNetCore.GetRelativePath(fullProjectDirectory, fullXamlPath);
-#else
-            var relativePath = Path.GetRelativePath(fullProjectDirectory, fullXamlPath);
-#endif
-            var directory = Path.GetDirectoryName(relativePath);
+            var fullProjectDirectory = Directory.GetParent(Path.GetFullPath(ProjectDirectory)); 
+            var relativePath = PathNetCore.GetRelativePath(fullProjectDirectory.FullName, fullXamlPath);
+            var directory = Path.GetDirectoryName(relativePath).Replace('\\', '.');
 
             var name = Path.GetFileNameWithoutExtension(relativePath);
 
             if (string.IsNullOrWhiteSpace(name))
                 return null;
 
-            var namespaceParts = new List<string>();
-
-            if (!string.IsNullOrWhiteSpace(RootNamespace))
-                namespaceParts.Add(RootNamespace);
-
-            if (!string.IsNullOrWhiteSpace(directory))
-            {
-                namespaceParts.AddRange(
-                    directory
-                        .Split(
-                            [Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar],
-                            StringSplitOptions.RemoveEmptyEntries)
-                        .Where(x => x != "."));
-            }
-
-            namespaceParts.Add(name);
-
-            return string.Join(".", namespaceParts);
+            return directory + "." + name;
         }
     }
 }

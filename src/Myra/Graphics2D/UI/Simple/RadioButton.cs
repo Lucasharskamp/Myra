@@ -62,11 +62,18 @@ namespace Myra.Graphics2D.UI
 		/// Initializes a new instance of the <see cref="RadioButton"/> class with the specified style.
 		/// </summary>
 		/// <param name="styleName">The name of the style to apply. Defaults to the default stylesheet style.</param>
-		public RadioButton(string styleName = Stylesheet.DefaultStyleName) : this(Stylesheet.Current, styleName)
+		public RadioButton(string styleName) : this(Stylesheet.Current, styleName)
 		{
 		}
 
-		internal override IDictionary GetStylesDictionary(Stylesheet stylesheet) => stylesheet.RadioButtonStyles;
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RadioButton"/> class.
+        /// </summary>
+        public RadioButton() : this(Stylesheet.Current, Stylesheet.DefaultStyleName)
+        {
+        }
+
+        internal override IDictionary GetStylesDictionary(Stylesheet stylesheet) => stylesheet.RadioButtonStyles;
 
 		/// <summary>
 		/// Handles the pressed state change, deselecting other radio buttons in the same parent when this button is pressed.

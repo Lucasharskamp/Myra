@@ -5,15 +5,9 @@ using Myra.Graphics2D.UI;
 
 namespace Myra.Samples.DebugConsole
 {
-	public partial class GamePanel
+	public partial class GamePanel : Panel
 	{
-		public GamePanel()
-		{
-			BuildUI();
-
-			_buttonDebugPanel.Click += _buttonDebugPanel_Click;
-			_buttonModalDebugPanel.Click += _buttonModalDebugPanel_Click;
-		}
+		public bool ButtonsEnabled { get; set; }
 
 		private void ShowDebugPanel(bool isModal)
 		{
@@ -24,14 +18,12 @@ namespace Myra.Samples.DebugConsole
 				IsModal = isModal
 			};
 
-			_buttonDebugPanel.Enabled = false;
-			_buttonModalDebugPanel.Enabled = false;
-
-			debugPanel.Removed += (s, a) =>
+			ButtonsEnabled = false;
+			 
+            debugPanel.Removed += (s, a) =>
 			{
-				_buttonDebugPanel.Enabled = true;
-				_buttonModalDebugPanel.Enabled = true;
-			};
+				ButtonsEnabled = true;
+            };
 
 			Desktop.Widgets.Add(debugPanel);
 		}

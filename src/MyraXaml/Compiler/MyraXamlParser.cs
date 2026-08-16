@@ -45,6 +45,7 @@ namespace Myra.Xaml.Compiler
 
         private XamlAstObjectNode ParseElement(XmlReader reader)
         {
+            System.Diagnostics.Debugger.Launch();
             var lineInfo = GetLineInfo(reader);
 
             var type = ResolveType(reader.NamespaceURI, reader.LocalName);
@@ -94,21 +95,56 @@ namespace Myra.Xaml.Compiler
 
                 var lineInfo = GetLineInfo(reader);
                 var objectType = ((XamlAstClrTypeReference)node.Type).Type;
+                IXamlAstPropertyReference? memberReference = null;
 
-                var property = objectType.Properties.FirstOrDefault(x => x.Name == reader.LocalName);
+                // try properties
+                var property = objectType.GetAllProperties().FirstOrDefault(x => x.Name == reader.LocalName);
 
-                if (property == null)
+                if (property != null)
                 {
-                    throw new XamlParseException(
-                        $"Property '{reader.LocalName}' " +
-                        $"does not exist on '{objectType.FullName}'.",
-                        lineInfo.Line,
-                        lineInfo.Position);
+                    memberReference = new XamlAstClrProperty(lineInfo, property, _configuration);
+                    var value = new XamlAstTextNode(lineInfo, reader.Value);
+                    node.Children.Add(new XamlAstXamlPropertyValueNode(lineInfo, memberReference, value, isAttributeSyntax: true));
+                    continue;
                 }
+                
+                
+                // Events
+                var @event = objectType
+                    .GetAllEvents()
+                    .FirstOrDefault(x => x.Name == reader.LocalName);
 
-                var propertyReference = new XamlAstClrProperty(lineInfo, property, _configuration);
-                var value = new XamlAstTextNode(lineInfo, reader.Value);
-                node.Children.Add(new XamlAstXamlPropertyValueNode(lineInfo, propertyReference, value, isAttributeSyntax: true));
+                if (@event != null)
+                {
+                    var handlerType = @event.DeclaringType;
+
+                    var method = objectType
+                        .FindMethod(m => m.Name == reader.Value);
+
+                    if (method == null)
+                        throw new XamlParseException(
+                            $"Event handler '{reader.Value}' does not exist on '{objectType.FullName}'.",
+                            lineInfo.Line,
+                            lineInfo.Position);
+
+                    var methodNode = new XamlAstTextNode(lineInfo, reader.Value);
+
+                    var delegateNode = new XamlLoadMethodDelegateNode(
+                        lineInfo,
+                        methodNode,
+                        handlerType,
+                        method); 
+                    node.Children.Add(delegateNode);
+                    continue;
+                }
+                 
+                throw new XamlParseException(
+                    $"Property or event '{reader.LocalName}' " +
+                    $"does not exist on '{objectType.FullName}'.",
+                    lineInfo.Line,
+                    lineInfo.Position); 
+                 
+               
             }
 
 

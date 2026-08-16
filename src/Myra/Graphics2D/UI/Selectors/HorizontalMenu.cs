@@ -73,11 +73,18 @@ namespace Myra.Graphics2D.UI
 		/// Initializes a new instance of the <see cref="HorizontalMenu"/> class with the specified style.
 		/// </summary>
 		/// <param name="styleName">The name of the style to apply. Defaults to the default stylesheet style.</param>
-		public HorizontalMenu(string styleName = Stylesheet.DefaultStyleName) : this(Stylesheet.Current, styleName)
+		public HorizontalMenu(string styleName) : this(Stylesheet.Current, styleName)
 		{
 		}
 
-		internal override IDictionary GetStylesDictionary(Stylesheet stylesheet) => stylesheet.HorizontalMenuStyles;
+        /// <summary>
+        /// Initializes a new instance of the <see cref="HorizontalMenu"/>.
+        /// </summary> 
+        public HorizontalMenu() : this(Stylesheet.Current, Stylesheet.DefaultStyleName)
+        {
+        }
+
+        internal override IDictionary GetStylesDictionary(Stylesheet stylesheet) => stylesheet.HorizontalMenuStyles;
 
 		/// <summary>
 		/// Handles keyboard input for horizontal menu navigation using left and right arrow keys.

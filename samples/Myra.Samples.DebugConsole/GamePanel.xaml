@@ -1,0 +1,40 @@
+<Panel xmlns="https://github.com/MyraUI/Myra"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">  
+  <Label Text="Game Screen" Top="100" HorizontalAlignment="Center" />
+  <HorizontalStackPanel Top="50">
+    <RadioButton>
+      <Label Text="Radio 1" />
+    </RadioButton>
+    <RadioButton>
+      <Label Text="Radio 2" />
+    </RadioButton>
+    <RadioButton>
+      <Label Text="Radio 3" />
+    </RadioButton>
+    <RadioButton>
+      <Label Text="Radio 4" />
+    </RadioButton>
+  </HorizontalStackPanel>
+  <HorizontalStackPanel Spacing="8" Top="300">
+    <Button>
+      <Label Text="Button 1" />
+    </Button>
+    <Button>
+      <Label Text="Button 2" />
+    </Button>
+    <Button>
+      <Label Text="Button 3" />
+    </Button>
+    <Button>
+      <Label Text="Button 4" />
+    </Button>
+  </HorizontalStackPanel>
+  <HorizontalStackPanel Spacing="8" VerticalAlignment="Bottom">
+    <Button Enabled="{Binding ButtonsEnabled}" Click="{Binding _buttonDebugPanel_Click}">
+      <Label Text="Show Debug Panel" />
+    </Button>
+    <Button  Enabled="{Binding ButtonsEnabled}"  Click="{Binding _buttonModalDebugPanel_Click}">
+      <Label Text="Show Debug Panel Modal" />
+    </Button>
+  </HorizontalStackPanel>
+</Panel>

@@ -76,11 +76,18 @@ namespace Myra.Graphics2D.UI
 		/// Initializes a new instance of the <see cref="VerticalMenu"/> class with the specified style.
 		/// </summary>
 		/// <param name="styleName">The name of the style to apply. Defaults to the default stylesheet style.</param>
-		public VerticalMenu(string styleName = Stylesheet.DefaultStyleName) : this(Stylesheet.Current, styleName)
+		public VerticalMenu(string styleName) : this(Stylesheet.Current, styleName)
 		{
 		}
 
-		internal override IDictionary GetStylesDictionary(Stylesheet stylesheet) => stylesheet.VerticalMenuStyles;
+        /// <summary>
+        /// Initializes a new instance of the <see cref="VerticalMenu"/> class.
+        /// </summary>
+        public VerticalMenu() : this(Stylesheet.Current, Stylesheet.DefaultStyleName)
+        {
+        }
+
+        internal override IDictionary GetStylesDictionary(Stylesheet stylesheet) => stylesheet.VerticalMenuStyles;
 
 		/// <summary>
 		/// Handles keyboard input for vertical menu navigation using up and down arrow keys.
