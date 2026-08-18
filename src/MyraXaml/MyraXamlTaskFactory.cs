@@ -1,6 +1,7 @@
-﻿using System;
+﻿using Microsoft.Build.Framework; 
+using System;
 using System.Collections.Generic;
-using Microsoft.Build.Framework; 
+using XamlX.TypeSystem;
 
 namespace Myra.Xaml
 {
@@ -9,7 +10,7 @@ namespace Myra.Xaml
         public string FactoryName => nameof(MyraXamlTaskFactory);
 
         public Type TaskType => typeof(MyraXamlCompileTask);
-
+          
         private TaskPropertyInfo[] TaskParameters { get; set; } = [];
 
         public bool Initialize(
@@ -68,7 +69,12 @@ namespace Myra.Xaml
         public TaskPropertyInfo[] GetTaskParameters() => TaskParameters;
 
         public void CleanupTask(ITask task)
-        { 
+        {   
+            if (task is MyraXamlCompileTask xamlTask)
+            {
+                xamlTask.TypeSystem?.Dispose();
+                xamlTask.TypeSystem = null;
+            }
         }
 
         public bool TaskTypeIsTaskFactory => true;

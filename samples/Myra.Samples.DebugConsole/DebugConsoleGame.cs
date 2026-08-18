@@ -57,5 +57,12 @@ namespace Myra.Samples.DebugConsole
 			GraphicsDevice.Clear(Color.Black);
 			_desktop.Render();
 		}
+
+        protected override void Dispose(bool disposing)
+        {
+			_graphics.Dispose();
+			_desktop.Dispose();
+            base.Dispose(disposing);
+        }
 	}
 }

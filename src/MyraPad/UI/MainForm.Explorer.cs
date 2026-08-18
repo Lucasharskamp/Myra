@@ -8,6 +8,7 @@ using Myra.Utility;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reflection;
 using System.Xml;
@@ -55,7 +56,7 @@ partial class MainForm
 					break;
 				}
 
-				var asContainer = parent as IContainer;
+				var asContainer = parent as IContainer<ObservableCollection<Widget>>;
 				if (asContainer != null)
 				{
 					asContainer.Widgets.Add((Widget)child);

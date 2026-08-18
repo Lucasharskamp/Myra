@@ -6,6 +6,8 @@ using System.Runtime.InteropServices;
 using System.Text;
 using XamlX;
 using XamlX.Ast;
+using XamlX.Emit;
+using XamlX.IL;
 using XamlX.Transform;
 using XamlX.TypeSystem;
 
@@ -57,7 +59,7 @@ namespace Myra.Xaml.Transformers
                 throw new XamlLoadException("Cannot find code-behind in build!", property);
             }
 
-            var rootPropertyNode = new XamlAstContextLocalNode(property, rootType);
+            var thisNode = new XamlAstThisNode(property, rootType);
 
             // check if we're dealing with a code-behind property.
             var codeBehindProperty = rootType
@@ -75,13 +77,13 @@ namespace Myra.Xaml.Transformers
                 var clrUiProperty = new XamlAstClrProperty(property, uiProperty, context.Configuration);
                 var clrCodeBehindProperty = new XamlAstClrProperty(property, codeBehindProperty, context.Configuration);
                 var codeBehindValue = new XamlStaticOrTargetedReturnMethodCallNode(
-                                           value,
-                                           new XamlWrappedMethod(clrCodeBehindProperty.Getter!),
-                                           null);
+                                           property,
+                                           clrCodeBehindProperty.Getter!,
+                                           [thisNode]);
 
                 return new XamlPropertyAssignmentNode(
                     property,
-                    clrUiProperty,
+                    clrCodeBehindProperty,
                     clrUiProperty.Setters,
                     [codeBehindValue]);
             }
@@ -121,10 +123,9 @@ namespace Myra.Xaml.Transformers
                     valueNode);
             }
 
-            var delegateNode = new XamlLoadMethodDelegateNode(valueNode, rootPropertyNode, delegateType, handler);
-            return new XamlPropertyAssignmentNode(
-                valueNode,
-                new XamlAstClrProperty(property, property.Name, rootType, handler),
+            var delegateNode = new XamlLoadMethodDelegateNode(valueNode, thisNode, delegateType, handler);
+            return new XamlPropertyAssignmentNode(valueNode,
+                new XamlAstClrProperty(text, property.Name, rootType, handler), 
                 [new XamlDirectCallPropertySetter(codeBehindEvent.Add)],
                 [delegateNode]);
         }
@@ -185,9 +186,7 @@ namespace Myra.Xaml.Transformers
                     var handlerParameter = method.Parameters[i];
                     var delegateParameter = delegateInvoke.Parameters[i];
 
-                    if (!IsCompatible(
-                            handlerParameter,
-                            delegateParameter))
+                    if (!IsCompatible(handlerParameter, delegateParameter))
                     {
                         compatible = false;
                         break;
@@ -208,6 +207,30 @@ namespace Myra.Xaml.Transformers
             return handlerParameter.Equals(delegateParameter)
                 || handlerParameter.IsAssignableFrom(delegateParameter)
                 || delegateParameter.IsAssignableFrom(handlerParameter);
+        }
+    }
+
+    sealed class XamlAstThisNode :
+        XamlAstNode,
+        IXamlAstValueNode,
+        IXamlAstEmitableNode<IXamlILEmitter, XamlILNodeEmitResult>
+    {
+        public XamlAstThisNode(
+            IXamlLineInfo lineInfo,
+            IXamlType type)
+            : base(lineInfo)
+        {
+            Type = new XamlAstClrTypeReference(this, type, false);
+        }
+
+        public IXamlAstTypeReference Type { get; }
+
+        public XamlILNodeEmitResult Emit(
+            XamlEmitContext<IXamlILEmitter, XamlILNodeEmitResult> context,
+            IXamlILEmitter codeGen)
+        {
+            codeGen.Ldarg_0();
+            return XamlILNodeEmitResult.Type(0, Type.GetClrType());
         }
     }
 }

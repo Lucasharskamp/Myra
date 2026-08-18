@@ -5,6 +5,7 @@ using Mono.Collections.Generic;
 using Myra.Xaml.Compiler;
 using System;
 using System.IO;
+using System.Linq;
 using XamlX.Parsers;
 using XamlX.TypeSystem;
 
@@ -12,8 +13,7 @@ namespace Myra.Xaml
 { 
 
     public sealed class MyraXamlCompileTask : Microsoft.Build.Utilities.Task
-    {
-
+    { 
         public static TypeDefinition? CurrentClass { get; set; }
 
         [Required]
@@ -31,6 +31,8 @@ namespace Myra.Xaml
         public ITaskItem[] ReferenceAssemblies { get; set; } = [];
 
         public bool Debug { get; set; }
+
+        public CecilTypeSystem? TypeSystem { get; set; }
 
         public override bool Execute()
         {
@@ -51,24 +53,13 @@ namespace Myra.Xaml
                 }
 
                 Log.LogMessage(MessageImportance.Normal, "Myra XAML: weaving '{0}'.", TargetPath);
-
-                var resolver = new DefaultAssemblyResolver();
-
-                foreach (var asm in ReferenceAssemblies)
-                {
-                    var path = asm.ItemSpec;
-
-                    if (!File.Exists(path))
-                        continue;
-
-                    var directory = Path.GetDirectoryName(path);
-
-                    if (!string.IsNullOrEmpty(directory))
-                        resolver.AddSearchDirectory(directory);
-                }
-
-
-                var compiler = new MyraXamlCompiler(TargetPath, ReferenceAssemblies);
+                var assemblies = ReferenceAssemblies
+                    .Select(x => x.ItemSpec)
+                    .Where(File.Exists)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+                TypeSystem = new CecilTypeSystem(assemblies, TargetPath);
+                var compiler = new MyraXamlCompiler(TypeSystem);
 
                 var assembly = compiler.TypeSystem.GetAssembly(compiler.TypeSystem.FindAssembly(Path.GetFileNameWithoutExtension(TargetPath)!)!);
 

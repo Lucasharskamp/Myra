@@ -1,0 +1,4 @@
+[*.{cs,vb}]
+dotnet_diagnostic.CA1063.severity = error
+dotnet_diagnostic.CA2025.severity = error
+dotnet_diagnostic.CA2213.severity = error

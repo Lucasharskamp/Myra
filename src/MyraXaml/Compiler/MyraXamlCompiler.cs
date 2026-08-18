@@ -4,7 +4,8 @@ using Mono.Cecil.Cil;
 using Myra.Xaml.Transformers;
 using Myra.Xaml.Types;
 using System;
-using System.Collections.Generic; 
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq; 
 using System.Text;
@@ -18,7 +19,7 @@ using XamlX.TypeSystem;
 namespace Myra.Xaml.Compiler
 {
       
-    public sealed class MyraXamlCompiler
+    public sealed class MyraXamlCompiler 
     {
         public CecilTypeSystem TypeSystem { get; }
 
@@ -28,15 +29,9 @@ namespace Myra.Xaml.Compiler
 
         private readonly XamlILCompiler _compiler;
 
-        public MyraXamlCompiler(string? targetPath, ITaskItem[] referenceAssemblies)
+        public MyraXamlCompiler(CecilTypeSystem typeSystem)
         {
-            var assemblies = referenceAssemblies
-                .Select(x => x.ItemSpec)
-                .Where(File.Exists)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToList(); 
-
-            TypeSystem = new CecilTypeSystem(assemblies, targetPath);
+            TypeSystem = typeSystem;
  
             Configuration = CreateConfiguration(TypeSystem);
 
@@ -60,18 +55,12 @@ namespace Myra.Xaml.Compiler
             string fileName,
             string fileContents)
         {
-            var typeBuilder = TypeSystem.CreateTypeBuilder(targetType, false);
-
-            var contextTypeBuilder =
-                typeBuilder.DefineSubType(Configuration.WellKnownTypes.Object, "Context",  XamlVisibility.Private);
-
-            var contextType = _compiler.CreateContextType(contextTypeBuilder);
-
-            var populate = _compiler.DefinePopulateMethod(typeBuilder, document, buildMethodName, XamlVisibility.Public);
+            var typeBuilder = TypeSystem.CreateTypeBuilder(targetType, false);  
+            var populate = _compiler.DefinePopulateMethod(typeBuilder, document, buildMethodName, XamlVisibility.Public, false, false);
 
             _compiler.Compile(
                 document,
-                contextType,
+                null,
                 populate,
                 typeBuilder,
                 buildMethod: null,
@@ -121,10 +110,7 @@ namespace Myra.Xaml.Compiler
                 xmlnsMappings: mappings,
                 customValueConverter: null,
                 identifierGenerator: null,
-                diagnosticsHandler: null)
-            {
-                IncludeServiceProvider = false,
-            };
+                diagnosticsHandler: null);
         }
 
 
