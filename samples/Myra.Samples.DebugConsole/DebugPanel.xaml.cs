@@ -8,14 +8,13 @@ namespace Myra.Samples.DebugConsole
 	{
 		public event EventHandler Removed;
 
-		private void _buttonHideDebug_Click(object sender, MyraEventArgs e)
+        public void ButtonHideDebug_Click(object sender, MyraEventArgs e)
 		{
 			RemoveFromDesktop();
-
-			var ev = Removed;
-			if (ev != null)
+			 
+			if (Removed != null)
 			{
-				ev(this, EventArgs.Empty);
+                Removed(this, EventArgs.Empty);
 			}
 		}
 	}

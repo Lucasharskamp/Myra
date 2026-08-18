@@ -1,13 +1,14 @@
 ﻿using Microsoft.Build.Framework;
 using Mono.Cecil;
-using Myra.Attributes;
+using Mono.Cecil.Cil;
+using Myra.Xaml.Transformers;
 using Myra.Xaml.Types;
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
+using System.Collections.Generic; 
 using System.IO;
-using System.Linq;
+using System.Linq; 
 using System.Text;
+using XamlX;
 using XamlX.Ast; 
 using XamlX.Emit;
 using XamlX.IL;
@@ -42,36 +43,16 @@ namespace Myra.Xaml.Compiler
             EmitMappings = new XamlLanguageEmitMappings<IXamlILEmitter, XamlILNodeEmitResult>();
 
             _compiler = new XamlILCompiler(Configuration, EmitMappings, true);
+            _compiler.Transformers.Insert(8, new CodeBehindReferenceTransformer());
         }
-         
+
 
         public void Transform(XamlDocument document)
         {
             _compiler.Transform(document); 
         }
 
-        public void Compile(
-            XamlDocument document, 
-            TypeDefinition type,
-            string namespaceInfoClassName = "__XamlNamespaceInfo",
-            string? baseUri = null,
-            IFileSource? fileSource = null)
-        {
-            // The XamlIL compiler expects the document to already have been
-            // transformed into its imperative representation. 
-            var typeBuilder = TypeSystem.CreateTypeBuilder(type, false);
-            var contextType = _compiler.CreateContextType(typeBuilder);
-
-            _compiler.Compile(
-                document,
-                typeBuilder,
-                contextType,
-                "InitializeComponent",
-                null,
-                namespaceInfoClassName,
-                baseUri,
-                fileSource); 
-        }
+        private const string buildMethodName = "InitializeComponent";
 
         public void CompileInto(
             XamlDocument document, 
@@ -82,20 +63,11 @@ namespace Myra.Xaml.Compiler
             var typeBuilder = TypeSystem.CreateTypeBuilder(targetType, false);
 
             var contextTypeBuilder =
-                typeBuilder.DefineSubType(
-                    Configuration.WellKnownTypes.Object,
-                    "Context",
-                    XamlVisibility.Private);
+                typeBuilder.DefineSubType(Configuration.WellKnownTypes.Object, "Context",  XamlVisibility.Private);
 
-            var contextType =
-                _compiler.CreateContextType(contextTypeBuilder);
+            var contextType = _compiler.CreateContextType(contextTypeBuilder);
 
-            var populate =
-                _compiler.DefinePopulateMethod(
-                    typeBuilder,
-                    document,
-                    "InitializeComponent",
-                    XamlVisibility.Public);
+            var populate = _compiler.DefinePopulateMethod(typeBuilder, document, buildMethodName, XamlVisibility.Public);
 
             _compiler.Compile(
                 document,
@@ -109,6 +81,7 @@ namespace Myra.Xaml.Compiler
                 fileSource: new MyraFileSource(fileName, Encoding.UTF8.GetBytes(fileContents)));
 
             typeBuilder.CreateType();
+            EnsureBuildMethodCalled(targetType);
         }
 
 
@@ -116,7 +89,7 @@ namespace Myra.Xaml.Compiler
         {
             var typeMappings = new XamlLanguageTypeMappings(typeSystem);
 
-            var contentProperty = typeSystem.FindType(typeof(ContentAttribute).FullName!)
+            var contentProperty = typeSystem.FindType("Myra.Attributes.ContentAttribute")
                 ?? throw new InvalidOperationException("Cannot find ContentAttribute!");
             typeMappings.ContentAttributes.Add(contentProperty);
 
@@ -134,6 +107,13 @@ namespace Myra.Xaml.Compiler
                     (myraAssembly, "Myra.Graphics2D.UI.Styles")
                 });
 
+            mappings.Namespaces.Add(
+                  XamlNamespaces.Xaml2006,
+                  new List<(IXamlAssembly, string ns)>
+                  {
+                      (myraAssembly, "Myra.Markup")
+                  });
+
             return new TransformerConfiguration(
                 typeSystem,
                 defaultAssembly: myraAssembly,
@@ -143,13 +123,81 @@ namespace Myra.Xaml.Compiler
                 identifierGenerator: null,
                 diagnosticsHandler: null)
             {
-                IncludeServiceProvider = false
+                IncludeServiceProvider = false,
             };
         }
 
-        private string GetModule<T>()
+
+        private static void EnsureBuildMethodCalled(TypeDefinition type)
         {
-            return typeof(T).Assembly.GetModules()[0].FullyQualifiedName;
+            var module = type.Module;
+
+            var constructor = type.Methods.FirstOrDefault(m =>
+                m.IsConstructor &&
+                !m.IsStatic &&
+                m.Parameters.Count == 0);
+
+            var buildMethod = type.Methods.First(m => m.Name == buildMethodName);
+
+            if (constructor == null)
+            {
+                constructor = new MethodDefinition(
+                    ".ctor",
+                    MethodAttributes.Public |
+                    MethodAttributes.HideBySig |
+                    MethodAttributes.SpecialName |
+                    MethodAttributes.RTSpecialName,
+                    module.TypeSystem.Void);
+
+                type.Methods.Add(constructor);
+
+                var il = constructor.Body.GetILProcessor();
+
+                // base()
+                var baseConstructor = type.BaseType?
+                    .Resolve()?
+                    .Methods
+                    .FirstOrDefault(m =>
+                        m.IsConstructor &&
+                        !m.IsStatic &&
+                        m.Parameters.Count == 0);
+
+                if (baseConstructor == null)
+                    throw new InvalidOperationException(
+                        $"Unable to find parameterless base constructor for '{type.FullName}'.");
+
+                il.Append(il.Create(OpCodes.Ldarg_0));
+                il.Append(il.Create(OpCodes.Call, module.ImportReference(baseConstructor)));
+
+                // this.InitializeComponent();
+                il.Append(il.Create(OpCodes.Ldarg_0));
+                il.Append(il.Create(OpCodes.Call, module.ImportReference(buildMethod)));
+
+                il.Append(il.Create(OpCodes.Ret));
+
+                return;
+            }
+
+            // Existing constructor:
+            // insert this.InitializeComponent() immediately before ret.
+            var processor = constructor.Body.GetILProcessor();
+
+            var ret = constructor.Body.Instructions
+                .FirstOrDefault(i => i.OpCode == OpCodes.Ret);
+
+            if (ret == null)
+                throw new InvalidOperationException(
+                    $"Constructor '{constructor.FullName}' has no ret instruction.");
+
+            processor.InsertBefore(
+                ret,
+                processor.Create(OpCodes.Ldarg_0));
+
+            processor.InsertBefore(
+                ret,
+                processor.Create(
+                    OpCodes.Call,
+                    module.ImportReference(buildMethod)));
         }
     }
 }

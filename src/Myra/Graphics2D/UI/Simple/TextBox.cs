@@ -471,12 +471,19 @@ namespace Myra.Graphics2D.UI
 		/// Initializes a new instance of the <see cref="TextBox"/> class with the specified style.
 		/// </summary>
 		/// <param name="styleName">The name of the style to apply. Defaults to the default stylesheet style.</param>
-		public TextBox(string styleName = Stylesheet.DefaultStyleName) : this(Stylesheet.Current, styleName)
+		public TextBox(string styleName) : this(Stylesheet.Current, styleName)
 		{
 		}
 
-		// Prevent double-click from propagating to parent widgets
-		private void TextBox_TouchDoubleClickStopPropagation(object sender, MyraEventArgs e)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TextBox"/> class.
+        /// </summary>
+        public TextBox() : this(Stylesheet.Current, Stylesheet.DefaultStyleName)
+        {
+        }
+
+        // Prevent double-click from propagating to parent widgets
+        private void TextBox_TouchDoubleClickStopPropagation(object sender, MyraEventArgs e)
 		{
 			e.StopPropagation();
 			InputEventsManager.StopPropagation(InputEventType.TouchDown);

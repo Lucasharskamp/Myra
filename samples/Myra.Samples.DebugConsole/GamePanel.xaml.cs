@@ -28,13 +28,12 @@ namespace Myra.Samples.DebugConsole
 			Desktop.Widgets.Add(debugPanel);
 		}
 
-		private void _buttonDebugPanel_Click(object sender, MyraEventArgs e)
+        public void ButtonDebugPanel_Click(object sender, MyraEventArgs e)
 		{
 			ShowDebugPanel(false);
-
 		}
 
-		private void _buttonModalDebugPanel_Click(object sender, MyraEventArgs e)
+		public void ButtonModalDebugPanel_Click(object sender, MyraEventArgs e)
 		{
 			ShowDebugPanel(true);
 		}

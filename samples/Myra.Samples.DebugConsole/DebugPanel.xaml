@@ -17,7 +17,7 @@
     <Label Text="Command:" />
     <TextBox />
   </HorizontalStackPanel>
-  <Button HorizontalAlignment="Center" Click="{Binding _buttonHideDebug_Click}">
+  <Button HorizontalAlignment="Center" Click="ButtonHideDebug_Click">
     <Label Text="Hide Debug Panel" />
   </Button>
 </VerticalStackPanel>

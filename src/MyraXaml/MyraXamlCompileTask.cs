@@ -1,16 +1,21 @@
 ﻿using Microsoft.Build.Framework; 
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Mono.Collections.Generic;
 using Myra.Xaml.Compiler;
 using System;
-using System.Collections.Generic;
 using System.IO;
+using XamlX.Parsers;
+using XamlX.TypeSystem;
 
 namespace Myra.Xaml
 { 
 
     public sealed class MyraXamlCompileTask : Microsoft.Build.Utilities.Task
     {
+
+        public static TypeDefinition? CurrentClass { get; set; }
+
         [Required]
         public string TargetPath { get; set; } = default!;
 
@@ -33,23 +38,54 @@ namespace Myra.Xaml
             {
                 if (!File.Exists(TargetPath))
                 {
-                    Log.LogError(
-                        "Myra XAML: target assembly '{0}' does not exist.",
-                        TargetPath);
+                    Log.LogError("Myra XAML: target assembly '{0}' does not exist.", TargetPath);
 
                     return false;
                 }
 
                 if (XamlFiles.Length == 0)
                 {
-                    Log.LogMessage(
-                        MessageImportance.Low,
-                        "Myra XAML: no XAML files found.");
+                    Log.LogMessage(MessageImportance.Low, "Myra XAML: no XAML files found.");
 
                     return true;
                 }
 
-                CompileAssembly();
+                Log.LogMessage(MessageImportance.Normal, "Myra XAML: weaving '{0}'.", TargetPath);
+
+                var resolver = new DefaultAssemblyResolver();
+
+                foreach (var asm in ReferenceAssemblies)
+                {
+                    var path = asm.ItemSpec;
+
+                    if (!File.Exists(path))
+                        continue;
+
+                    var directory = Path.GetDirectoryName(path);
+
+                    if (!string.IsNullOrEmpty(directory))
+                        resolver.AddSearchDirectory(directory);
+                }
+
+
+                var compiler = new MyraXamlCompiler(TargetPath, ReferenceAssemblies);
+
+                var assembly = compiler.TypeSystem.GetAssembly(compiler.TypeSystem.FindAssembly(Path.GetFileNameWithoutExtension(TargetPath)!)!);
+
+                foreach (var item in XamlFiles)
+                {
+                    CompileXamlFile(compiler, assembly, item);
+                }
+
+                var writerParameters = new WriterParameters
+                {
+                    WriteSymbols = Debug,
+                    SymbolWriterProvider = new PortablePdbWriterProvider()
+                };
+
+                assembly.Write(TargetPath, writerParameters);
+
+                Log.LogMessage(MessageImportance.Normal, "Myra XAML: finished weaving '{0}'.", TargetPath);
 
                 return !Log.HasLoggedErrors;
             }
@@ -58,53 +94,6 @@ namespace Myra.Xaml
                 Log.LogErrorFromException(ex, showStackTrace: true);
                 return false;
             }
-        }
-
-        private void CompileAssembly()
-        {
-            Log.LogMessage(
-                MessageImportance.Normal,
-                "Myra XAML: weaving '{0}'.",
-                TargetPath);
-
-            var resolver = new DefaultAssemblyResolver();
-
-            foreach (var asm in ReferenceAssemblies)
-            {
-                var path = asm.ItemSpec;
-
-                if (!File.Exists(path))
-                    continue;
-
-                var directory = Path.GetDirectoryName(path);
-
-                if (!string.IsNullOrEmpty(directory))
-                    resolver.AddSearchDirectory(directory);
-            }
-              
-
-            var compiler = new MyraXamlCompiler(TargetPath, ReferenceAssemblies);
-
-
-            var assembly = compiler.TypeSystem.GetAssembly(compiler.TypeSystem.FindAssembly(Path.GetFileNameWithoutExtension(TargetPath)!)!); 
-
-            foreach (var item in XamlFiles)
-            {
-                CompileXamlFile(compiler, assembly, item);
-            }
-
-            var writerParameters = new WriterParameters
-            {
-                WriteSymbols = Debug,
-                SymbolWriterProvider = new PortablePdbWriterProvider()
-            };
-
-            assembly.Write(TargetPath, writerParameters);
-
-            Log.LogMessage(
-                MessageImportance.Normal,
-                "Myra XAML: finished weaving '{0}'.",
-                TargetPath);
         }
 
         private void CompileXamlFile(MyraXamlCompiler compiler,  AssemblyDefinition assembly, ITaskItem item)
@@ -117,16 +106,11 @@ namespace Myra.Xaml
             if (!Path.IsPathRooted(xamlPath))
                 xamlPath = Path.GetFullPath(xamlPath);
 
-            Log.LogMessage(
-                MessageImportance.Normal,
-                "Myra XAML: compiling '{0}'.",
-                xamlPath);
+            Log.LogMessage(MessageImportance.Normal, "Myra XAML: compiling '{0}'.",  xamlPath);
 
             if (!File.Exists(xamlPath))
             {
-                Log.LogError(
-                    "Myra XAML: XAML file '{0}' does not exist.",
-                    xamlPath);
+                Log.LogError("Myra XAML: XAML file '{0}' does not exist.", xamlPath);
 
                 return;
             }
@@ -143,9 +127,9 @@ namespace Myra.Xaml
                 return;
             }
 
-            var targetType = FindType(assembly.MainModule, className!);
+            CurrentClass = FindType(assembly.MainModule, className!);
 
-            if (targetType == null)
+            if (CurrentClass == null)
             {
                 Log.LogError(
                     "Myra XAML: code-behind type '{0}' was not found in '{1}'. " +
@@ -159,34 +143,22 @@ namespace Myra.Xaml
             Log.LogMessage(
                 MessageImportance.Low,
                 "Myra XAML: code-behind type is '{0}'.",
-                targetType.FullName);
+                CurrentClass.FullName);
 
-            var text = File.ReadAllText(xamlPath);
-
-            CompileIntoType(
-                compiler,
-                targetType,
-                text,
-                xamlPath);
-        }
-
-        private void CompileIntoType(
-            MyraXamlCompiler compiler,
-            TypeDefinition targetType,
-            string fileContents,
-            string fileName)
-        {  
-            var document = new MyraXamlParser(compiler.Configuration).Parse(fileContents);
+            var text = File.ReadAllText(xamlPath); 
+            var document = XDocumentXamlParser.Parse(text);
 
             compiler.Transform(document);
 
-            compiler.CompileInto(document, targetType, fileName, fileContents);
-        }
+            compiler.CompileInto(document, CurrentClass, xamlPath, text);
+        } 
 
-        private static TypeDefinition? FindType(
-            ModuleDefinition module,
-            string fullName)
+        private static TypeDefinition? FindType(ModuleDefinition module, string fullName)
         {
+            if (fullName.Contains('+'))
+            {
+
+            }
             // Cecil uses '/' for nested types.
             fullName = fullName.Replace('+', '/');
 
@@ -194,7 +166,7 @@ namespace Myra.Xaml
         }
 
         private static TypeDefinition? FindTypeRecursive(
-            IEnumerable<TypeDefinition> types,
+            Collection<TypeDefinition> types,
             string fullName)
         {
             foreach (var type in types)
@@ -202,9 +174,7 @@ namespace Myra.Xaml
                 if (type.FullName == fullName)
                     return type;
 
-                var nested = FindTypeRecursive(
-                    type.NestedTypes,
-                    fullName);
+                var nested = FindTypeRecursive(type.NestedTypes, fullName);
 
                 if (nested != null)
                     return nested;
@@ -213,9 +183,7 @@ namespace Myra.Xaml
             return null;
         }
 
-        private string? GetClassName(
-            ITaskItem item,
-            string xamlPath)
+        private string? GetClassName(ITaskItem item, string xamlPath)
         {
             var explicitClass = item.GetMetadata("XamlClass");
 

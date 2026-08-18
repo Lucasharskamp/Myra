@@ -18,8 +18,8 @@ namespace Myra.Xaml
             string taskElementContents,
             IBuildEngine taskFactoryLoggingHost)
         {
-            TaskParameters = new[]
-            {
+            TaskParameters =
+            [
                 new TaskPropertyInfo(
                     nameof(MyraXamlCompileTask.TargetPath),
                     typeof(string),
@@ -55,7 +55,7 @@ namespace Myra.Xaml
                     typeof(ITaskItem[]),
                     output: false,
                     required: true)
-            };
+            ];
 
             return true;
         }

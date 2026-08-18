@@ -27,8 +27,4 @@
     <PackageReference Include="Microsoft.Build.Utilities.Core" Version="18.9.6" PrivateAssets="All" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Myra\Myra.MonoGame.csproj" />
-  </ItemGroup>
-
 </Project>
