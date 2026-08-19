@@ -7,7 +7,7 @@ namespace Myra.Samples.DebugConsole
 {
 	public partial class GamePanel : Panel
 	{
-		public bool ButtonsEnabled { get; set; }
+		public bool ButtonsEnabled { get; set; } = true;
 
 		private void ShowDebugPanel(bool isModal)
 		{

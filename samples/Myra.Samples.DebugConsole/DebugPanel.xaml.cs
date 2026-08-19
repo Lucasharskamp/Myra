@@ -4,7 +4,7 @@ using System;
 
 namespace Myra.Samples.DebugConsole
 {
-	public partial class DebugPanel : Panel
+	public partial class DebugPanel : VerticalStackPanel
 	{
 		public event EventHandler Removed;
 

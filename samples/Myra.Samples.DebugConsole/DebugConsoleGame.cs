@@ -37,17 +37,15 @@ namespace Myra.Samples.DebugConsole
 				Root = _gamePanel
 			};
 
-#if MONOGAME
-			// Inform Myra that external text input is available
-			// So it stops translating Keys to chars
-			Desktop.HasExternalTextInput = true;
+            // Inform Myra that external text input is available
+            // So it stops translating Keys to chars
+            _desktop.HasExternalTextInput = true;
 
 			// Provide that text input
 			Window.TextInput += (s, a) =>
 			{
-				Desktop.OnChar(a.Character);
-			};
-#endif
+                _desktop.OnChar(a.Character);
+			}; 
 		}
 
 		protected override void Draw(GameTime gameTime)

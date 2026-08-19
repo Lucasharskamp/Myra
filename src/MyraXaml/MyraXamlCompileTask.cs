@@ -111,8 +111,7 @@ namespace Myra.Xaml
             if (string.IsNullOrWhiteSpace(className))
             {
                 Log.LogError(
-                    "Myra XAML: could not determine the code-behind type for '{0}'. " +
-                    "Specify x:Class or the Myra XAML MSBuild metadata.",
+                    "Myra XAML: could not determine the code-behind type for '{0}'. ",
                     xamlPath);
 
                 return;

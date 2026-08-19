@@ -68,7 +68,8 @@ namespace Myra.Xaml.Transformers
 
             if (codeBehindProperty != null)
             {
-                var uiProperty = property.DeclaringType.GetAllProperties()
+                var uiProperty = property.DeclaringType
+                                    .GetAllProperties()
                                     .FirstOrDefault(p => p.Name == property.Name);
 
                 if (uiProperty == null)
