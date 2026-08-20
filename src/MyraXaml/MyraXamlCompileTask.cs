@@ -37,6 +37,7 @@ namespace Myra.Xaml
 
         public override bool Execute()
         {
+            AssemblyDefinition? assembly = null;
             try
             {
                 if (!File.Exists(TargetPath))
@@ -60,9 +61,9 @@ namespace Myra.Xaml
                     .Distinct(StringComparer.OrdinalIgnoreCase)
                     .ToList();
                 TypeSystem = new CecilTypeSystem(assemblies, TargetPath);
-                var compiler = new MyraXamlCompiler(TypeSystem);
+                using var compiler = new MyraXamlCompiler(TypeSystem);
 
-                var assembly = compiler.TypeSystem.GetAssembly(compiler.TypeSystem.FindAssembly(Path.GetFileNameWithoutExtension(TargetPath)!)!);
+                assembly = compiler.TypeSystem.GetAssembly(compiler.TypeSystem.FindAssembly(Path.GetFileNameWithoutExtension(TargetPath)!)!);
 
                 TypesContainer.INotifyPropertyChanged = compiler.TypeSystem.FindType(typeof(INotifyPropertyChanged).FullName)!; 
                 TypesContainer.PropertyChangedEventAdd = TypesContainer.INotifyPropertyChanged!.GetAllEvents()
@@ -91,6 +92,10 @@ namespace Myra.Xaml
             {
                 Log.LogErrorFromException(ex, showStackTrace: true);
                 return false;
+            }
+            finally
+            {
+                assembly?.Dispose();
             }
         }
 

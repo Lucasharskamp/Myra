@@ -36,7 +36,7 @@ namespace Myra.Xaml.Transformers
             if (TypesContainer.CurrentClass == null)
                 throw new InvalidOperationException("This should never happen!");
              
-            var thisNode = new XamlAstThisNode(property, TypesContainer.CurrentClass);
+            var thisNode = new XamlAstContextLocalNode(property, TypesContainer.CurrentClass);
 
             // check for event
             if (value is XamlAstTextNode text)
@@ -89,7 +89,8 @@ namespace Myra.Xaml.Transformers
                     [delegateNode]);
             }
 
-            // x:Binding
+            // now we do {x:Binding} directives, which we can place on properties or fields.
+            // (Note: Fields only support onetime assignments!)
             if (value is not XamlAstObjectNode objectNode)
                 return node;
 
@@ -103,25 +104,14 @@ namespace Myra.Xaml.Transformers
 
             // By default, binding goes one-way, unless specified otherwise
             // if the override is not correctly filled in, we throw.
-            BindingMode mode = BindingMode.OneWay;
-            if (parameters.TryGetValue("Mode", out var b) && !Enum.TryParse(b, out mode))
+            BindingMode bindingMode = BindingMode.OneWay;
+            if (parameters.TryGetValue("Mode", out var b) && !Enum.TryParse(b, out bindingMode))
             {
                 throw new XamlLoadException($"{b}' is not a valid value of type 'BindingMode'",
                     propertyNode);
             }
 
-            // check if we're dealing with a code-behind property.
-            var sourceProperty = TypesContainer.CurrentClass
-                .GetAllProperties()
-                .FirstOrDefault(e => e.Name == propertyNode.Text && e.Getter != null);
-
-            if (sourceProperty == null)
-            {
-                throw new XamlLoadException(
-                    $"Property '{propertyNode.Text}' was not found in code-behind class '{TypesContainer.CurrentClass.FullName}'",
-                    propertyNode);
-            }
-
+            // get the target property to aim at.
             var targetProperty = property.DeclaringType
                                 .GetAllProperties()
                                 .FirstOrDefault(p => p.Name == property.Name);
@@ -136,25 +126,54 @@ namespace Myra.Xaml.Transformers
             if (targetProperty.Setter == null)
             {
                 throw new XamlLoadException(
-                   $"Property '{targetProperty.Name}' on '{targetProperty.DeclaringType.FullName}' is not writable.",
+                   $"Property '{targetProperty.Name}' from '{targetProperty.DeclaringType.FullName}' is not writable.",
                    objectNode);
             }
 
-            var clrUiProperty = new XamlAstClrProperty(property, targetProperty, context.Configuration);
-            var clrCodeBehindProperty = new XamlAstClrProperty(property, sourceProperty, context.Configuration);
-            var codeBehindValue = new XamlStaticOrTargetedReturnMethodCallNode(
-                                        property,
-                                        clrCodeBehindProperty.Getter!,
-                                        [thisNode]);
+
+            var targetPropertyClr = new XamlAstClrProperty(property, targetProperty, context.Configuration);
+
+            // get the source property in the code-behind (or a field as fallback)
+            var sourceProperty = TypesContainer.CurrentClass
+                .GetAllProperties()
+                .FirstOrDefault(e => e.Name == propertyNode.Text && e.Getter != null);
+
+            if (sourceProperty == null)
+            {
+                var sourceField = TypesContainer.CurrentClass.GetAllFields()
+                    .FirstOrDefault(e => e.Name == propertyNode.Text);
+
+                if (sourceField == null)
+                {
+                    throw new XamlLoadException(
+                        $"No property or field named '{propertyNode.Text}' was not found in code-behind class '{TypesContainer.CurrentClass.FullName}'",
+                        propertyNode);
+                }
+
+                if (bindingMode != BindingMode.OneWay)
+                {
+                    throw new XamlLoadException("Field assignments can only be done on one-way binding mode!", propertyNode);
+                }
+
+                TransformerHelpers.EnsureAssignability(propertyNode, targetProperty, sourceField.Name, sourceField.FieldType);
+                var sourceFieldReference = new XamlAstFieldReference(propertyNode, sourceField, propertyNode);
+                return new XamlAstXamlPropertyValueNode(propertyNode, targetPropertyClr, sourceFieldReference, false);
+            }
+
+            TransformerHelpers.EnsureAssignability(propertyNode, targetProperty, sourceProperty.Name, sourceProperty.PropertyType);
+             
+            var sourceClrProperty = new XamlAstClrProperty(property, sourceProperty, context.Configuration);
+            var sourceValue = new XamlStaticOrTargetedReturnMethodCallNode(property, sourceClrProperty.Getter!, [thisNode]);
 
             var initialAssignment = new XamlPropertyAssignmentNode(
                 property,
-                clrCodeBehindProperty,
-                clrUiProperty.Setters,
-                [codeBehindValue]);
+                sourceClrProperty,
+                targetPropertyClr.Setters,
+                [sourceValue]);
 
             return initialAssignment;
         }
+         
 
         private static IXamlMethod? FindEventHandler(
             IXamlType rootType,

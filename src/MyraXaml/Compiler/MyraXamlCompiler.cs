@@ -17,7 +17,7 @@ using XamlX.TypeSystem;
 namespace Myra.Xaml.Compiler
 {
       
-    public sealed class MyraXamlCompiler 
+    public sealed class MyraXamlCompiler : IDisposable
     {
         public CecilTypeSystem TypeSystem { get; }
 
@@ -30,12 +30,11 @@ namespace Myra.Xaml.Compiler
         public MyraXamlCompiler(CecilTypeSystem typeSystem)
         {
             TypeSystem = typeSystem;
- 
             Configuration = CreateConfiguration(TypeSystem);
-
             EmitMappings = new XamlLanguageEmitMappings<IXamlILEmitter, XamlILNodeEmitResult>();
 
             _compiler = new XamlILCompiler(Configuration, EmitMappings, true);
+            _compiler.Transformers.Insert(8, new XamlNameDirectiveTransformer());
             _compiler.Transformers.Insert(8, new CodeBehindReferenceTransformer());
         }
 
@@ -183,6 +182,11 @@ namespace Myra.Xaml.Compiler
                 processor.Create(
                     OpCodes.Call,
                     module.ImportReference(buildMethod)));
+        }
+
+        public void Dispose()
+        {
+            TypeSystem.Dispose();
         }
     }
 }
