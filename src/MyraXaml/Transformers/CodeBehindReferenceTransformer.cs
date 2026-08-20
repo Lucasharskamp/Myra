@@ -1,22 +1,22 @@
-﻿using Mono.Cecil.Rocks;
+﻿using Myra.Xaml.Helpers;
+using Myra.Xaml.Types;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
 using XamlX;
 using XamlX.Ast;
-using XamlX.Emit;
-using XamlX.IL;
 using XamlX.Transform;
 using XamlX.TypeSystem;
 
 namespace Myra.Xaml.Transformers
 {
     /// <summary>
+    /// This transformer does two things: <br/>
+    /// <br/>
     /// Converts event attributes such as <c>&lt;Button Click="OnClick" /&gt;</c>
     /// into an XamlX delegate value targeting the event's add method. <br/>
-    /// The resulting AST is emitted by the normal XamlILCompiler.
+    /// The resulting AST is emitted by the normal XamlILCompiler.<br/>
+    /// <br/>
+    /// The properties set via Binding are tied to their code-behind properties.
     /// </summary>
     public sealed class CodeBehindReferenceTransformer : IXamlAstTransformer
     {
@@ -33,140 +33,127 @@ namespace Myra.Xaml.Transformers
 
             var value = valueNode.Values[0];
 
-            if (value is not XamlAstTextNode text)
-                return node;
+            if (TypesContainer.CurrentClass == null)
+                throw new InvalidOperationException("This should never happen!");
+             
+            var thisNode = new XamlAstThisNode(property, TypesContainer.CurrentClass);
 
-            var invokedValue = text.Text?.Trim();
-            if (string.IsNullOrEmpty(invokedValue))
+            // check for event
+            if (value is XamlAstTextNode text)
             {
-                throw new XamlLoadException(
-                    $"Property '{property.Name}' requires a value.",
-                    property);
-            }
-            // check if we're dealing with a hard-coded value.
-            // If so, we can return and let other transformers handle that.
-            if (IsHardCoded(context.Configuration.WellKnownTypes, property, invokedValue!))
-                return node;
+                var invokedValue = text.Text?.Trim();
 
-            if (MyraXamlCompileTask.CurrentClass == null)
-            {
-                throw new XamlLoadException("This should never happen", property);
-            }
+                if (string.IsNullOrEmpty(invokedValue))
+                {
+                    throw new XamlLoadException($"Property '{property.Name}' requires a value.", property);
+                }
 
-            var rootType = context.Configuration.TypeSystem.FindType(MyraXamlCompileTask.CurrentClass.FullName);
-            if (rootType == null)
-            {
-                throw new XamlLoadException("Cannot find code-behind in build!", property);
-            }
+                // Find an event with the same name as the "property".
+                var sourceEvent = property.DeclaringType
+                    .GetAllEvents()
+                    .FirstOrDefault(e => e.Name == property.Name);
 
-            var thisNode = new XamlAstThisNode(property, rootType);
-
-            // check if we're dealing with a code-behind property.
-            var codeBehindProperty = rootType
-                .GetAllProperties()
-                .FirstOrDefault(e => e.Name == invokedValue && e.Getter != null);
-
-            if (codeBehindProperty != null)
-            {
-                var uiProperty = property.DeclaringType
-                                    .GetAllProperties()
-                                    .FirstOrDefault(p => p.Name == property.Name);
-
-                if (uiProperty == null)
+                if (sourceEvent == null || sourceEvent.Add == null)
                     return node;
 
-                var clrUiProperty = new XamlAstClrProperty(property, uiProperty, context.Configuration);
-                var clrCodeBehindProperty = new XamlAstClrProperty(property, codeBehindProperty, context.Configuration);
-                var codeBehindValue = new XamlStaticOrTargetedReturnMethodCallNode(
-                                           property,
-                                           clrCodeBehindProperty.Getter!,
-                                           [thisNode]);
+                var delegateType = context.Configuration.TypeSystem.FindType("Myra.Events.MyraEventHandler")
+                    ?? throw new XamlLoadException(
+                        $"Unable to determine the delegate type for event '{sourceEvent.Name}'.",
+                        valueNode);
 
-                return new XamlPropertyAssignmentNode(
-                    property,
-                    clrCodeBehindProperty,
-                    clrUiProperty.Setters,
-                    [codeBehindValue]);
+                var invoke = delegateType
+                    .FindMethod(m => m.Name == "Invoke");
+
+                if (invoke == null)
+                {
+                    throw new XamlLoadException(
+                        $"Unable to find Invoke method on event delegate '{delegateType.GetFqn()}'.",
+                        valueNode);
+                }
+
+                var eventHandler = FindEventHandler(TypesContainer.CurrentClass, invokedValue!, invoke);
+
+                if (eventHandler == null)
+                {
+                    throw new XamlLoadException(
+                        $"Unable to find event handler '{invokedValue}' on " +
+                        $"'{TypesContainer.CurrentClass.GetFqn()}' compatible with event " +
+                        $"'{sourceEvent.Name}'.",
+                        valueNode);
+                }
+
+                var delegateNode = new XamlLoadMethodDelegateNode(valueNode, thisNode, delegateType, eventHandler);
+                return new XamlPropertyAssignmentNode(valueNode,
+                    new XamlAstClrProperty(text, property.Name, TypesContainer.CurrentClass, eventHandler),
+                    [new XamlDirectCallPropertySetter(sourceEvent.Add)],
+                    [delegateNode]);
             }
 
-
-            // Find an event with the same name as the "property".
-            var codeBehindEvent = property.DeclaringType
-                .GetAllEvents()
-                .FirstOrDefault(e => e.Name == property.Name);
-
-            if (codeBehindEvent == null || codeBehindEvent.Add == null)
+            // x:Binding
+            if (value is not XamlAstObjectNode objectNode)
                 return node;
 
-            var delegateType = context.Configuration.TypeSystem.FindType("Myra.Events.MyraEventHandler")
-                ?? throw new XamlLoadException(
-                    $"Unable to determine the delegate type for event '{codeBehindEvent.Name}'.",
-                    valueNode);
+            if (objectNode.Arguments.FirstOrDefault() is not XamlAstTextNode propertyNode)
+                return node;
 
-            var invoke = delegateType
-                .FindMethod(m => m.Name == "Invoke");
+            var parameters = objectNode.Children.Cast<XamlAstXamlPropertyValueNode>()
+                .ToDictionary(
+                    p => ((XamlAstClrProperty)p.Property).Name, 
+                    p => ((XamlAstTextNode)p.Values.First()).Text);
 
-            if (invoke == null)
+            // By default, binding goes one-way, unless specified otherwise
+            // if the override is not correctly filled in, we throw.
+            BindingMode mode = BindingMode.OneWay;
+            if (parameters.TryGetValue("Mode", out var b) && !Enum.TryParse(b, out mode))
+            {
+                throw new XamlLoadException($"{b}' is not a valid value of type 'BindingMode'",
+                    propertyNode);
+            }
+
+            // check if we're dealing with a code-behind property.
+            var sourceProperty = TypesContainer.CurrentClass
+                .GetAllProperties()
+                .FirstOrDefault(e => e.Name == propertyNode.Text && e.Getter != null);
+
+            if (sourceProperty == null)
             {
                 throw new XamlLoadException(
-                    $"Unable to find Invoke method on event delegate '{delegateType.GetFqn()}'.",
-                    valueNode);
+                    $"Property '{propertyNode.Text}' was not found in code-behind class '{TypesContainer.CurrentClass.FullName}'",
+                    propertyNode);
             }
 
-            var handler = FindEventHandler(rootType, invokedValue!, invoke);
+            var targetProperty = property.DeclaringType
+                                .GetAllProperties()
+                                .FirstOrDefault(p => p.Name == property.Name);
 
-            if (handler == null)
+            if (targetProperty == null)
             {
                 throw new XamlLoadException(
-                    $"Unable to find event handler '{invokedValue}' on " +
-                    $"'{rootType.GetFqn()}' compatible with event " +
-                    $"'{codeBehindEvent.Name}'.",
-                    valueNode);
+                    $"Property '{property.Name}' does not exist in type '{property.DeclaringType.FullName}'",
+                    objectNode);
             }
 
-            var delegateNode = new XamlLoadMethodDelegateNode(valueNode, thisNode, delegateType, handler);
-            return new XamlPropertyAssignmentNode(valueNode,
-                new XamlAstClrProperty(text, property.Name, rootType, handler), 
-                [new XamlDirectCallPropertySetter(codeBehindEvent.Add)],
-                [delegateNode]);
-        }
-
-        private bool IsHardCoded(XamlTypeWellKnownTypes wellKnownTypes, XamlAstClrProperty property, string text)
-        {
-
-            if (property.Getter == null)
-                return false;
-
-            // if the text starts with characters that make it ineligible for property/method names, return.
-            var firstChar = text[0];
-            if (Char.IsDigit(firstChar) || (Char.IsSymbol(firstChar) && firstChar != '_'))
-                return false;
-
-            var propertyType = property.Getter.ReturnType;
-
-            if (!propertyType.IsValueType || propertyType.IsEnum)
-                return false;
-
-            if (propertyType.IsNullable())
-                propertyType = propertyType.GenericArguments.FirstOrDefault() 
-                    ?? throw new XamlLoadException("Nullable type must have underlying main type!", property);
-             
-            if (propertyType == wellKnownTypes.Boolean)
+            if (targetProperty.Setter == null)
             {
-                return Boolean.TryParse(text, out _);
+                throw new XamlLoadException(
+                   $"Property '{targetProperty.Name}' on '{targetProperty.DeclaringType.FullName}' is not writable.",
+                   objectNode);
             }
 
-            if (propertyType == wellKnownTypes.Int32)
-            {
-                return Int64.TryParse(text, out _);
-            }
+            var clrUiProperty = new XamlAstClrProperty(property, targetProperty, context.Configuration);
+            var clrCodeBehindProperty = new XamlAstClrProperty(property, sourceProperty, context.Configuration);
+            var codeBehindValue = new XamlStaticOrTargetedReturnMethodCallNode(
+                                        property,
+                                        clrCodeBehindProperty.Getter!,
+                                        [thisNode]);
 
-            if (propertyType == wellKnownTypes.Double)
-            {
-                return Double.TryParse(text, out _);
-            }
-             
-            return false;
+            var initialAssignment = new XamlPropertyAssignmentNode(
+                property,
+                clrCodeBehindProperty,
+                clrUiProperty.Setters,
+                [codeBehindValue]);
+
+            return initialAssignment;
         }
 
         private static IXamlMethod? FindEventHandler(
@@ -208,30 +195,6 @@ namespace Myra.Xaml.Transformers
             return handlerParameter.Equals(delegateParameter)
                 || handlerParameter.IsAssignableFrom(delegateParameter)
                 || delegateParameter.IsAssignableFrom(handlerParameter);
-        }
-    }
-
-    sealed class XamlAstThisNode :
-        XamlAstNode,
-        IXamlAstValueNode,
-        IXamlAstEmitableNode<IXamlILEmitter, XamlILNodeEmitResult>
-    {
-        public XamlAstThisNode(
-            IXamlLineInfo lineInfo,
-            IXamlType type)
-            : base(lineInfo)
-        {
-            Type = new XamlAstClrTypeReference(this, type, false);
-        }
-
-        public IXamlAstTypeReference Type { get; }
-
-        public XamlILNodeEmitResult Emit(
-            XamlEmitContext<IXamlILEmitter, XamlILNodeEmitResult> context,
-            IXamlILEmitter codeGen)
-        {
-            codeGen.Ldarg_0();
-            return XamlILNodeEmitResult.Type(0, Type.GetClrType());
         }
     }
 }

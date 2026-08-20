@@ -1,11 +1,9 @@
-﻿using Microsoft.Build.Framework;
-using Mono.Cecil;
+﻿using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Myra.Xaml.Transformers;
 using Myra.Xaml.Types;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq; 
 using System.Text;
@@ -55,6 +53,7 @@ namespace Myra.Xaml.Compiler
             string fileName,
             string fileContents)
         {
+
             var typeBuilder = TypeSystem.CreateTypeBuilder(targetType, false);  
             var populate = _compiler.DefinePopulateMethod(typeBuilder, document, buildMethodName, XamlVisibility.Public, false, false);
 

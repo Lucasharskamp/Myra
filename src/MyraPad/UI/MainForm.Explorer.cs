@@ -56,7 +56,7 @@ partial class MainForm
 					break;
 				}
 
-				var asContainer = parent as IContainer<ObservableCollection<Widget>>;
+				var asContainer = parent as IContainer;
 				if (asContainer != null)
 				{
 					asContainer.Widgets.Add((Widget)child);

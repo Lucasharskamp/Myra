@@ -30,10 +30,10 @@
     </Button>
   </HorizontalStackPanel>
   <HorizontalStackPanel Spacing="8" VerticalAlignment="Bottom">
-    <Button Enabled="ButtonsEnabled" Click="ButtonDebugPanel_Click">
+    <Button Enabled="{x:Binding ButtonsEnabled}" Click="ButtonDebugPanel_Click">
       <Label Text="Show Debug Panel" />
     </Button>
-    <Button  Enabled="ButtonsEnabled" Click="ButtonModalDebugPanel_Click">
+    <Button  Enabled="{x:Binding ButtonsEnabled}" Click="ButtonModalDebugPanel_Click">
       <Label Text="Show Debug Panel Modal" />
     </Button>
   </HorizontalStackPanel>

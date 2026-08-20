@@ -3,7 +3,9 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Collections.Generic;
 using Myra.Xaml.Compiler;
+using Myra.Xaml.Helpers;
 using System;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using XamlX.Parsers;
@@ -14,7 +16,6 @@ namespace Myra.Xaml
 
     public sealed class MyraXamlCompileTask : Microsoft.Build.Utilities.Task
     { 
-        public static TypeDefinition? CurrentClass { get; set; }
 
         [Required]
         public string TargetPath { get; set; } = default!;
@@ -62,6 +63,12 @@ namespace Myra.Xaml
                 var compiler = new MyraXamlCompiler(TypeSystem);
 
                 var assembly = compiler.TypeSystem.GetAssembly(compiler.TypeSystem.FindAssembly(Path.GetFileNameWithoutExtension(TargetPath)!)!);
+
+                TypesContainer.INotifyPropertyChanged = compiler.TypeSystem.FindType(typeof(INotifyPropertyChanged).FullName)!; 
+                TypesContainer.PropertyChangedEventAdd = TypesContainer.INotifyPropertyChanged!.GetAllEvents()
+                        .First(e => e.Name == nameof(INotifyPropertyChanged.PropertyChanged)).Add!;
+                TypesContainer.PropertyChangedEventArgs = compiler.TypeSystem.FindType(typeof(PropertyChangedEventArgs).FullName)!;
+                TypesContainer.PropertyChangedEventHandler = compiler.TypeSystem.FindType(typeof(PropertyChangedEventHandler).FullName)!;
 
                 foreach (var item in XamlFiles)
                 {
@@ -117,9 +124,14 @@ namespace Myra.Xaml
                 return;
             }
 
-            CurrentClass = FindType(assembly.MainModule, className!);
+            TypesContainer.CurrentClassDefinition = FindType(assembly.MainModule, className!);
+            if (TypesContainer.CurrentClassDefinition == null)
+            {
+                throw new InvalidOperationException("This should never happen");
+            }
+            TypesContainer.CurrentClass = TypeSystem!.FindType(TypesContainer.CurrentClassDefinition.FullName);
 
-            if (CurrentClass == null)
+            if (TypesContainer.CurrentClass == null)
             {
                 Log.LogError(
                     "Myra XAML: code-behind type '{0}' was not found in '{1}'. " +
@@ -133,14 +145,14 @@ namespace Myra.Xaml
             Log.LogMessage(
                 MessageImportance.Low,
                 "Myra XAML: code-behind type is '{0}'.",
-                CurrentClass.FullName);
+                TypesContainer.CurrentClass.FullName);
 
             var text = File.ReadAllText(xamlPath); 
             var document = XDocumentXamlParser.Parse(text);
 
             compiler.Transform(document);
 
-            compiler.CompileInto(document, CurrentClass, xamlPath, text);
+            compiler.CompileInto(document, TypesContainer.CurrentClassDefinition, xamlPath, text);
         } 
 
         private static TypeDefinition? FindType(ModuleDefinition module, string fullName)
