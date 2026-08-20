@@ -6,6 +6,7 @@ using Myra.Xaml.Compiler;
 using Myra.Xaml.Helpers;
 using System;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using XamlX.Parsers;
@@ -129,14 +130,14 @@ namespace Myra.Xaml
                 return;
             }
 
-            TypesContainer.CurrentClassDefinition = FindType(assembly.MainModule, className!);
-            if (TypesContainer.CurrentClassDefinition == null)
+            var currentClassDefinition = FindTypeRecursive(assembly.MainModule.Types, className!);
+            if (currentClassDefinition == null)
             {
                 throw new InvalidOperationException("This should never happen");
             }
-            TypesContainer.CurrentClass = TypeSystem!.FindType(TypesContainer.CurrentClassDefinition.FullName);
+            var currentClass = TypeSystem!.FindType(currentClassDefinition.FullName);
 
-            if (TypesContainer.CurrentClass == null)
+            if (currentClass == null)
             {
                 Log.LogError(
                     "Myra XAML: code-behind type '{0}' was not found in '{1}'. " +
@@ -147,30 +148,24 @@ namespace Myra.Xaml
                 return;
             }
 
+            var assemblyMappings = compiler.Configuration.XmlnsMappings.Namespaces[MyraXamlCompiler.MyraMappings];
+            if (assemblyMappings.Any(a => a.ns != currentClass.Namespace && a.asm != currentClass.Assembly))
+            {
+                assemblyMappings.Add((currentClass.Assembly!, currentClass.Namespace!));
+            } 
+
             Log.LogMessage(
                 MessageImportance.Low,
                 "Myra XAML: code-behind type is '{0}'.",
-                TypesContainer.CurrentClass.FullName);
+                currentClass.FullName);
 
             var text = File.ReadAllText(xamlPath); 
             var document = XDocumentXamlParser.Parse(text);
 
             compiler.Transform(document);
 
-            compiler.CompileInto(document, TypesContainer.CurrentClassDefinition, xamlPath, text);
-        } 
-
-        private static TypeDefinition? FindType(ModuleDefinition module, string fullName)
-        {
-            if (fullName.Contains('+'))
-            {
-
-            }
-            // Cecil uses '/' for nested types.
-            fullName = fullName.Replace('+', '/');
-
-            return FindTypeRecursive(module.Types, fullName);
-        }
+            compiler.CompileInto(document, currentClassDefinition, xamlPath, text);
+        }  
 
         private static TypeDefinition? FindTypeRecursive(
             Collection<TypeDefinition> types,

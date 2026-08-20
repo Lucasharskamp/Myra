@@ -1,5 +1,6 @@
 ﻿using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Myra.Xaml.Helpers;
 using Myra.Xaml.Transformers;
 using Myra.Xaml.Types;
 using System;
@@ -47,29 +48,30 @@ namespace Myra.Xaml.Compiler
         private const string buildMethodName = "InitializeComponent";
 
         public void CompileInto(
-            XamlDocument document, 
-            TypeDefinition targetType,
+            XamlDocument document,  
+            TypeDefinition currentClassDefinition,
             string fileName,
             string fileContents)
-        {
-
-            var typeBuilder = TypeSystem.CreateTypeBuilder(targetType, false);  
-            var populate = _compiler.DefinePopulateMethod(typeBuilder, document, buildMethodName, XamlVisibility.Public, false, false);
+        { 
+            var typeBuilder = TypeSystem.CreateTypeBuilder(currentClassDefinition, false);
+            var populate = _compiler.DefinePopulateMethod(typeBuilder, document, buildMethodName, XamlVisibility.Private);
 
             _compiler.Compile(
-                document,
-                null,
+                document, 
+                _compiler.CreateContextType(typeBuilder),
                 populate,
                 typeBuilder,
-                buildMethod: null,
-                buildDeclaringType: null,
-                namespaceInfoBuilder: null,
-                baseUri: Path.GetDirectoryName(fileName),
-                fileSource: new MyraFileSource(fileName, Encoding.UTF8.GetBytes(fileContents)));
+                null,
+                null,
+                null,
+                Path.GetDirectoryName(fileName),
+                new MyraFileSource(fileName, Encoding.UTF8.GetBytes(fileContents)));
 
             typeBuilder.CreateType();
-            EnsureBuildMethodCalled(targetType);
+            EnsureBuildMethodCalled(currentClassDefinition);
         }
+
+        public const string MyraMappings = "https://github.com/MyraUI/Myra";
 
 
         public static TransformerConfiguration CreateConfiguration(CecilTypeSystem typeSystem)
@@ -86,7 +88,7 @@ namespace Myra.Xaml.Compiler
                                 ?? throw new InvalidOperationException("Could not find Myra assembly.");
 
             mappings.Namespaces.Add(
-                "https://github.com/MyraUI/Myra",
+                MyraMappings,
                 new List<(IXamlAssembly asm, string ns)>
                 {
                     (myraAssembly, "Myra.Graphics2D.UI"),
@@ -103,7 +105,7 @@ namespace Myra.Xaml.Compiler
 
             return new TransformerConfiguration(
                 typeSystem,
-                defaultAssembly: myraAssembly,
+                myraAssembly,
                 typeMappings,
                 xmlnsMappings: mappings,
                 customValueConverter: null,

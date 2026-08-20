@@ -1,4 +1,4 @@
-<VerticalStackPanel Spacing="8" Height="300" xmlns="https://github.com/MyraUI/Myra"
+<DebugPanel Spacing="8" Height="300" xmlns="https://github.com/MyraUI/Myra"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
   <HorizontalMenu>
     <MenuItem Text="&amp;Units">
@@ -20,4 +20,4 @@
   <Button HorizontalAlignment="Center" Click="ButtonHideDebug_Click">
     <Label Text="Hide Debug Panel" />
   </Button>
-</VerticalStackPanel>
+</DebugPanel>

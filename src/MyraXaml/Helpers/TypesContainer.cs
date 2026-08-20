@@ -10,16 +10,6 @@ namespace Myra.Xaml.Helpers
     internal static class TypesContainer
     {
         /// <summary>
-        /// Current XAML file code-behind type definition (only for use in Transformers!)
-        /// </summary>
-        public static TypeDefinition? CurrentClassDefinition { get; set; }
-
-        /// <summary>
-        /// / Current XAML file code-behind type (only for use in Transformers!)
-        /// </summary>
-        public static IXamlType? CurrentClass { get; set; }
-
-        /// <summary>
         /// <see cref="System.EventHandler"/> delegate.
         /// </summary>
         public static IXamlType EventHandler { get; set; } = default!;

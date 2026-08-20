@@ -1,4 +1,4 @@
-<Panel xmlns="https://github.com/MyraUI/Myra"
+<GamePanel xmlns="https://github.com/MyraUI/Myra"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">  
   <Label Text="Game Screen" Top="100" HorizontalAlignment="Center" />
   <HorizontalStackPanel Top="50">
@@ -37,4 +37,4 @@
       <Label Text="Show Debug Panel Modal" />
     </Button>
   </HorizontalStackPanel>
-</Panel>
+</GamePanel>

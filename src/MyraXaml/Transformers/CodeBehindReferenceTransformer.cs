@@ -25,18 +25,14 @@ namespace Myra.Xaml.Transformers
             if (node is not XamlAstXamlPropertyValueNode valueNode)
                 return node;
 
-            if (valueNode.Property is not XamlAstClrProperty property)
+            if (valueNode.Property is not XamlAstClrProperty targetProperty)
                 return node;
 
             if (valueNode.Values.Count != 1)
                 return node;
 
             var value = valueNode.Values[0];
-
-            if (TypesContainer.CurrentClass == null)
-                throw new InvalidOperationException("This should never happen!");
-             
-            var thisNode = new XamlAstContextLocalNode(property, TypesContainer.CurrentClass);
+            var rootClrType = context.RootObject.Type.GetClrType();
 
             // check for event
             if (value is XamlAstTextNode text)
@@ -45,13 +41,13 @@ namespace Myra.Xaml.Transformers
 
                 if (string.IsNullOrEmpty(invokedValue))
                 {
-                    throw new XamlLoadException($"Property '{property.Name}' requires a value.", property);
+                    throw new XamlLoadException($"Property '{targetProperty.Name}' requires a value.", targetProperty);
                 }
 
                 // Find an event with the same name as the "property".
-                var sourceEvent = property.DeclaringType
+                var sourceEvent = targetProperty.DeclaringType
                     .GetAllEvents()
-                    .FirstOrDefault(e => e.Name == property.Name);
+                    .FirstOrDefault(e => e.Name == targetProperty.Name);
 
                 if (sourceEvent == null || sourceEvent.Add == null)
                     return node;
@@ -71,20 +67,19 @@ namespace Myra.Xaml.Transformers
                         valueNode);
                 }
 
-                var eventHandler = FindEventHandler(TypesContainer.CurrentClass, invokedValue!, invoke);
+                var eventHandler = FindEventHandler(rootClrType, invokedValue!, invoke);
 
                 if (eventHandler == null)
                 {
                     throw new XamlLoadException(
                         $"Unable to find event handler '{invokedValue}' on " +
-                        $"'{TypesContainer.CurrentClass.GetFqn()}' compatible with event " +
+                        $"'{rootClrType.GetFqn()}' compatible with event " +
                         $"'{sourceEvent.Name}'.",
                         valueNode);
                 }
 
-                var delegateNode = new XamlLoadMethodDelegateNode(valueNode, thisNode, delegateType, eventHandler);
-                return new XamlPropertyAssignmentNode(valueNode,
-                    new XamlAstClrProperty(text, property.Name, TypesContainer.CurrentClass, eventHandler),
+                var delegateNode = new XamlLoadMethodDelegateNode(valueNode, context.RootObject, delegateType, eventHandler);
+                return new XamlPropertyAssignmentNode(valueNode, targetProperty,
                     [new XamlDirectCallPropertySetter(sourceEvent.Add)],
                     [delegateNode]);
             }
@@ -111,42 +106,20 @@ namespace Myra.Xaml.Transformers
                     propertyNode);
             }
 
-            // get the target property to aim at.
-            var targetProperty = property.DeclaringType
-                                .GetAllProperties()
-                                .FirstOrDefault(p => p.Name == property.Name);
-
-            if (targetProperty == null)
-            {
-                throw new XamlLoadException(
-                    $"Property '{property.Name}' does not exist in type '{property.DeclaringType.FullName}'",
-                    objectNode);
-            }
-
-            if (targetProperty.Setter == null)
-            {
-                throw new XamlLoadException(
-                   $"Property '{targetProperty.Name}' from '{targetProperty.DeclaringType.FullName}' is not writable.",
-                   objectNode);
-            }
-
-
-            var targetPropertyClr = new XamlAstClrProperty(property, targetProperty, context.Configuration);
-
             // get the source property in the code-behind (or a field as fallback)
-            var sourceProperty = TypesContainer.CurrentClass
+            var sourceProperty = rootClrType
                 .GetAllProperties()
                 .FirstOrDefault(e => e.Name == propertyNode.Text && e.Getter != null);
 
             if (sourceProperty == null)
             {
-                var sourceField = TypesContainer.CurrentClass.GetAllFields()
+                var sourceField = rootClrType.GetAllFields()
                     .FirstOrDefault(e => e.Name == propertyNode.Text);
 
                 if (sourceField == null)
                 {
                     throw new XamlLoadException(
-                        $"No property or field named '{propertyNode.Text}' was not found in code-behind class '{TypesContainer.CurrentClass.FullName}'",
+                        $"No property or field named '{propertyNode.Text}' was not found in code-behind class '{rootClrType.FullName}'",
                         propertyNode);
                 }
 
@@ -157,18 +130,18 @@ namespace Myra.Xaml.Transformers
 
                 TransformerHelpers.EnsureAssignability(propertyNode, targetProperty, sourceField.Name, sourceField.FieldType);
                 var sourceFieldReference = new XamlAstFieldReference(propertyNode, sourceField, propertyNode);
-                return new XamlAstXamlPropertyValueNode(propertyNode, targetPropertyClr, sourceFieldReference, false);
+                return new XamlAstXamlPropertyValueNode(propertyNode, targetProperty, sourceFieldReference, false);
             }
 
             TransformerHelpers.EnsureAssignability(propertyNode, targetProperty, sourceProperty.Name, sourceProperty.PropertyType);
              
-            var sourceClrProperty = new XamlAstClrProperty(property, sourceProperty, context.Configuration);
-            var sourceValue = new XamlStaticOrTargetedReturnMethodCallNode(property, sourceClrProperty.Getter!, [thisNode]);
+            var sourceClrProperty = new XamlAstClrProperty(targetProperty, sourceProperty, context.Configuration);
+            var sourceValue = new XamlStaticOrTargetedReturnMethodCallNode(targetProperty, sourceClrProperty.Getter!, [context.RootObject]);
 
             var initialAssignment = new XamlPropertyAssignmentNode(
-                property,
-                sourceClrProperty,
-                targetPropertyClr.Setters,
+                valueNode,
+                targetProperty,
+                targetProperty.Setters,
                 [sourceValue]);
 
             return initialAssignment;

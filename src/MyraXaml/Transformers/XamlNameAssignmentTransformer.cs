@@ -15,7 +15,7 @@ namespace Myra.Xaml.Transformers
         public IXamlAstNode Transform(
             AstTransformationContext context,
             IXamlAstNode node)
-        { 
+        {  
             if (node is not XamlAstObjectNode objectNode)
                 return node;
 
@@ -40,24 +40,21 @@ namespace Myra.Xaml.Transformers
             }
 
             var name = text.Text;
+            var rootClrType = context.RootObject.Type.GetClrType();
 
             // Remove x:Name from the normal XAML property/directive
             // processing.
             objectNode.Children.Remove(directive);
-             
-            if (TypesContainer.CurrentClass == null)
-                throw new InvalidOperationException("This should never happen!");
-
 
             // get the target property to aim at.
-            var targetProperty = TypesContainer.CurrentClass
+            var targetProperty = rootClrType
                                 .GetAllProperties()
                                 .FirstOrDefault(p => p.Name == name);
 
             if (targetProperty == null)
             {
                 throw new XamlLoadException(
-                    $"Property '{name}' does not exist in type '{TypesContainer.CurrentClass.FullName}'",
+                    $"Property '{name}' does not exist in type '{rootClrType.FullName}'",
                     objectNode);
             }
 
@@ -67,12 +64,9 @@ namespace Myra.Xaml.Transformers
                     $"Property '{targetProperty.Name}' from '{targetProperty.DeclaringType.FullName}' is not writable.",
                     objectNode);
             }
-
-             TransformerHelpers.EnsureAssignability(directive, targetProperty, directive.Name, objectNode.Type.GetClrType());
             var targetClrProperty = new XamlAstClrProperty(directive, targetProperty, context.Configuration);
-            var thisNode = new XamlAstContextLocalNode(directive, TypesContainer.CurrentClass);
-            return new XamlPropertyAssignmentNode(directive, targetClrProperty, targetClrProperty.Setters, [objectNode]);
- 
+            TransformerHelpers.EnsureAssignability(directive, targetClrProperty, directive.Name, objectNode.Type.GetClrType());
+            return new XamlValueWithManipulationNode(directive, context.RootObject, new XamlAstXamlPropertyValueNode(directive, targetClrProperty, objectNode, false));
         }
     }
 }
