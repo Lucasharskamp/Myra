@@ -1,6 +1,5 @@
 ﻿using Mono.Cecil;
 using Mono.Cecil.Cil;
-using Myra.Xaml.Helpers;
 using Myra.Xaml.Transformers;
 using Myra.Xaml.Types;
 using System;
@@ -114,7 +113,7 @@ namespace Myra.Xaml.Compiler
         }
 
 
-        private static void EnsureBuildMethodCalled(TypeDefinition type)
+        private void EnsureBuildMethodCalled(TypeDefinition type)
         {
             var module = type.Module;
 
@@ -155,7 +154,8 @@ namespace Myra.Xaml.Compiler
                 il.Append(il.Create(OpCodes.Ldarg_0));
                 il.Append(il.Create(OpCodes.Call, module.ImportReference(baseConstructor)));
 
-                // this.InitializeComponent();
+                // this.InitializeComponent(IServiceProvider, this);
+                il.Append(il.Create(OpCodes.Ldnull));  
                 il.Append(il.Create(OpCodes.Ldarg_0));
                 il.Append(il.Create(OpCodes.Call, module.ImportReference(buildMethod)));
 
@@ -175,9 +175,8 @@ namespace Myra.Xaml.Compiler
                 throw new InvalidOperationException(
                     $"Constructor '{constructor.FullName}' has no ret instruction.");
 
-            processor.InsertBefore(
-                ret,
-                processor.Create(OpCodes.Ldarg_0));
+            processor.InsertBefore(ret, processor.Create(OpCodes.Ldnull));
+            processor.InsertBefore(ret, processor.Create(OpCodes.Ldarg_0));
 
             processor.InsertBefore(
                 ret,

@@ -19,24 +19,24 @@ namespace Myra.Xaml.Transformers
             if (node is not XamlAstObjectNode objectNode)
                 return node;
 
-            var nameDirectives = objectNode.Children
+            var allDirectives = objectNode.Children
                 .OfType<XamlAstXmlDirective>()
                 .Where(d => d.Namespace == XamlNamespaces.Xaml2006 && d.Name == "Name")
                 .ToArray();
 
-            if (nameDirectives.Length == 0)
+            if (allDirectives.Length == 0)
                 return node;
 
-            if (nameDirectives.Length > 1)
+            if (allDirectives.Length > 1)
                 throw new XamlLoadException("x:Name can only exists once on a type!", objectNode);
 
-            var directive = nameDirectives[0];
+            var nameDirective = allDirectives[0];
                
-            if (directive.Values.Count != 1 ||
-                directive.Values[0] is not XamlAstTextNode text)
+            if (nameDirective.Values.Count != 1 ||
+                nameDirective.Values[0] is not XamlAstTextNode text)
             {
                 throw new XamlLoadException(
-                    "x:Name must have a single string value.", directive);
+                    "x:Name must have a single string value.", nameDirective);
             }
 
             var name = text.Text;
@@ -44,7 +44,7 @@ namespace Myra.Xaml.Transformers
 
             // Remove x:Name from the normal XAML property/directive
             // processing.
-            objectNode.Children.Remove(directive);
+            objectNode.Children.Remove(nameDirective); 
 
             // get the target property to aim at.
             var targetProperty = rootClrType
@@ -63,10 +63,18 @@ namespace Myra.Xaml.Transformers
                 throw new XamlLoadException(
                     $"Property '{targetProperty.Name}' from '{targetProperty.DeclaringType.FullName}' is not writable.",
                     objectNode);
-            }
-            var targetClrProperty = new XamlAstClrProperty(directive, targetProperty, context.Configuration);
-            TransformerHelpers.EnsureAssignability(directive, targetClrProperty, directive.Name, objectNode.Type.GetClrType());
-            return new XamlValueWithManipulationNode(directive, context.RootObject, new XamlAstXamlPropertyValueNode(directive, targetClrProperty, objectNode, false));
+            } 
+
+            var assignment = new XamlAssignAndReturnValueNode(
+                nameDirective,
+                targetProperty.Setter, 
+                objectNode,
+                context.RootObject);
+
+            return new XamlValueWithManipulationNode(
+                nameDirective,
+                objectNode,
+                assignment);
         }
     }
 }

@@ -18,7 +18,7 @@ namespace Myra.Samples.DebugConsole
 			_graphics = new GraphicsDeviceManager(this)
 			{
 				PreferredBackBufferWidth = 1200,
-				PreferredBackBufferHeight = 800
+				PreferredBackBufferHeight = 720
 			};
 			Window.AllowUserResizing = true;
 			IsMouseVisible = true;
