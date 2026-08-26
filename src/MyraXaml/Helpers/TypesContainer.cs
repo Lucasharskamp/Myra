@@ -15,11 +15,6 @@ namespace Myra.Xaml.Helpers
         public static IXamlType INotifyPropertyChanged { get; set; } = default!;
 
         /// <summary>
-        /// <see cref="INotifyPropertyChanged.PropertyChanged"/>'s += operator method.
-        /// </summary>
-        public static IXamlMethod PropertyChangedEventAdd { get; set; } = default!;
-
-        /// <summary>
         /// <see cref="System.ComponentModel.PropertyChangedEventArgs"/> class
         /// </summary>
         public static IXamlType PropertyChangedEventArgs { get; set; } = default!;

@@ -6,8 +6,6 @@ namespace Myra.Samples.DebugConsole
 {
 	public partial class GamePanel : Panel
 	{
-		public bool ButtonsEnabled { get; set; } = true;
-
 		private Button DebugModalButton { get; set; } = default!;
 
 		private GamePanelViewModel ViewModel { get; set; } = new();
@@ -22,11 +20,11 @@ namespace Myra.Samples.DebugConsole
 				IsModal = isModal
 			};
 
-			ButtonsEnabled = false;
+			ViewModel.ButtonsEnabled = false;
 			 
             debugPanel.Removed += (s, a) =>
 			{
-				ButtonsEnabled = true;
+                ViewModel.ButtonsEnabled = true;
             };
 
 			Desktop.Widgets.Add(debugPanel);

@@ -45,8 +45,6 @@ namespace Myra.Xaml.Compiler
 
 
             TypesContainer.INotifyPropertyChanged = TypeSystem.FindType(typeof(INotifyPropertyChanged).FullName)!;
-            TypesContainer.PropertyChangedEventAdd = TypesContainer.INotifyPropertyChanged!.GetAllEvents()
-                    .First(e => e.Name == nameof(INotifyPropertyChanged.PropertyChanged)).Add!;
             TypesContainer.PropertyChangedEventArgs = TypeSystem.FindType(typeof(PropertyChangedEventArgs).FullName)!;
             TypesContainer.PropertyChangedEventHandler = TypeSystem.FindType(typeof(PropertyChangedEventHandler).FullName)!;
             TypesContainer.Widget = TypeSystem.FindType("Myra.Graphics2D.UI.Widget")!;
