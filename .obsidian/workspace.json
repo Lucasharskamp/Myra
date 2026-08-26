@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Myra 2.0 plan.md",
+                "file": "README.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Myra 2.0 plan"
+              "title": "README"
             }
           }
         ]
@@ -187,17 +187,20 @@
   },
   "active": "6524035a0328020c",
   "lastOpenFiles": [
-    "tests/Myra.Tests/bin/Debug/net10.0/Myra",
-    "tests/Myra.Tests/bin/Debug/net10.0/Log/log_260803204239512.diag",
-    "tests/Myra.Tests/bin/Debug/net10.0/Log/log_260803204238012.diag",
-    "tests/Myra.Tests/bin/Debug/net10.0/runtimes/win-x64/native/SDL2.dll",
-    "tests/Myra.Tests/bin/Debug/net10.0/runtimes/win-x64/native/openal.dll",
-    "tests/Myra.Tests/bin/Debug/net10.0/runtimes/win-x64/native",
-    "tests/Myra.Tests/bin/Debug/net10.0/runtimes/win-x64",
-    "tests/Myra.Tests/bin/Debug/net10.0/runtimes/linux-x64/native/libSDL2-2.0.so.0",
-    "tests/Myra.Tests/bin/Debug/net10.0/runtimes/linux-x64/native/libopenal.so",
-    "tests/Myra.Tests/bin/Debug/net10.0/runtimes/linux-x64/native",
-    "tests/Myra.Tests/bin/Debug/net10.0/runtimes/linux-x64",
+    "samples/Myra.Samples.DebugConsole/bin/MonoGame/Debug/net8.0/Myra.Samples.DebugConsole.exe",
+    "samples/Myra.Samples.DebugConsole/bin/MonoGame/Debug/net8.0/runtimes/android-arm/native/libopenal.so",
+    "samples/Myra.Samples.DebugConsole/bin/MonoGame/Debug/net8.0/XNAssets.FontStashSharp.MonoGame.dll",
+    "samples/Myra.Samples.DebugConsole/bin/MonoGame/Debug/net8.0/StbTrueTypeSharp.dll",
+    "samples/Myra.Samples.DebugConsole/bin/MonoGame/Debug/net8.0/Myra.Samples.DebugConsole.pdb",
+    "samples/Myra.Samples.DebugConsole/obj/Debug/net8.0/Myra.Sam.2FECBDF2.Up2Date",
+    "samples/Myra.Samples.DebugConsole/obj/Debug/net8.0/ref/Myra.Samples.DebugConsole.dll",
+    "samples/Myra.Samples.DebugConsole/bin/MonoGame/Debug/net8.0/Myra.Samples.DebugConsole.dll",
+    "samples/Myra.Samples.DebugConsole/bin/MonoGame/Debug/net8.0/Myra.Samples.DebugConsole.runtimeconfig.json",
+    "samples/Myra.Samples.DebugConsole/obj/Debug/net8.0/Myra.Samples.DebugConsole.genruntimeconfig.cache",
+    "samples/Myra.Samples.DebugConsole/bin/MonoGame/Debug/net8.0/Myra.Samples.DebugConsole.deps.json",
+    "().md",
+    "README.md",
+    "Myra 2.0 plan.md",
     "src/Myra.Tests/bin/MonoGame/Debug/net8.0-windows/Assets/Stylesheets/Commodore64/ui_stylesheet_atlas.png",
     "src/Myra.Tests/bin/MonoGame/Debug/net8.0-windows/Assets/Stylesheets/LibGDX/ui_stylesheet_atlas.png",
     "src/Myra.Tests/bin/MonoGame/Debug/net8.0-windows/Assets/Stylesheets/Default/default_ui_skin_2x.png",

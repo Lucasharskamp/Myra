@@ -1,6 +1,12 @@
-﻿using Myra.Xaml.Helpers;
+﻿using Mono.Cecil;
+using Mono.Cecil.Cil;
+using Myra.Xaml.Compiler;
+using Myra.Xaml.Helpers;
 using Myra.Xaml.Types;
 using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using XamlX;
 using XamlX.Ast;
@@ -12,27 +18,35 @@ namespace Myra.Xaml.Transformers
     /// <summary>
     /// This transformer does two things: <br/>
     /// <br/>
-    /// Converts event attributes such as <c>&lt;Button Click="OnClick" /&gt;</c>
+    /// 1. Converts event attributes such as <c>&lt;Button Click="OnClick" /&gt;</c>
     /// into an XamlX delegate value targeting the event's add method. <br/>
-    /// The resulting AST is emitted by the normal XamlILCompiler.<br/>
+    /// The resulting AST is emitted by the normal XamlILCompiler and targets the code-behind method "OnClick".<br/>
     /// <br/>
-    /// The properties set via Binding are tied to their code-behind properties.
+    /// 2. The properties set via x:Bind are tied to their ViewModel properties.
     /// </summary>
     public sealed class CodeBehindReferenceTransformer : IXamlAstTransformer
     {
+        private readonly MyraBindingCompilationContext _bindings;
+
+        public CodeBehindReferenceTransformer(MyraBindingCompilationContext bindings)
+        {
+            _bindings = bindings;
+        }
+
         public IXamlAstNode Transform(AstTransformationContext context,  IXamlAstNode node)
         {
             if (node is not XamlAstXamlPropertyValueNode valueNode)
                 return node;
 
-            if (valueNode.Property is not XamlAstClrProperty targetProperty)
+            if (valueNode.Property is not XamlAstClrProperty source)
                 return node;
 
             if (valueNode.Values.Count != 1)
                 return node;
-
+             
             var value = valueNode.Values[0];
-            var rootClrType = context.RootObject.Type.GetClrType();
+            var rootClrType = context.CodeBehindClrType();
+
 
             // check for event
             if (value is XamlAstTextNode text)
@@ -41,13 +55,13 @@ namespace Myra.Xaml.Transformers
 
                 if (string.IsNullOrEmpty(invokedValue))
                 {
-                    throw new XamlLoadException($"Property '{targetProperty.Name}' requires a value.", targetProperty);
+                    throw new XamlLoadException($"Property '{source.Name}' requires a value.", source);
                 }
 
                 // Find an event with the same name as the "property".
-                var sourceEvent = targetProperty.DeclaringType
+                var sourceEvent = source.DeclaringType
                     .GetAllEvents()
-                    .FirstOrDefault(e => e.Name == targetProperty.Name);
+                    .FirstOrDefault(e => e.Name == source.Name);
 
                 if (sourceEvent == null || sourceEvent.Add == null)
                     return node;
@@ -79,23 +93,30 @@ namespace Myra.Xaml.Transformers
                 }
 
                 var delegateNode = new XamlLoadMethodDelegateNode(valueNode, context.RootObject, delegateType, eventHandler);
-                return new XamlPropertyAssignmentNode(valueNode, targetProperty,
+                return new XamlPropertyAssignmentNode(valueNode, source,
                     [new XamlDirectCallPropertySetter(sourceEvent.Add)],
                     [delegateNode]);
             }
 
-            // now we do {x:Binding} directives, which we can place on properties or fields.
-            // (Note: Fields only support onetime assignments!)
-            if (value is not XamlAstObjectNode objectNode)
+
+            // now we do {x:Bind} directives, which we can place on properties or fields. 
+            if (value is not XamlAstObjectNode bindNode)
+                return node;
+             
+            if (bindNode.Arguments.FirstOrDefault() is not XamlAstTextNode propertyTextNode)
                 return node;
 
-            if (objectNode.Arguments.FirstOrDefault() is not XamlAstTextNode propertyNode)
-                return node;
+            // get view model. It must be specified already in the root if one wants to use x:Bind
+            if (!context.TryGetItem<XamlViewModelContainer>(out var viewModel))
+            {
+                throw new XamlLoadException("A x:ViewModel must be assigned to the document for x:Bind bindings!", propertyTextNode);
+            }
 
-            var parameters = objectNode.Children.Cast<XamlAstXamlPropertyValueNode>()
+            var parameters = bindNode.Children.Cast<XamlAstXamlPropertyValueNode>()
                 .ToDictionary(
                     p => ((XamlAstClrProperty)p.Property).Name, 
                     p => ((XamlAstTextNode)p.Values.First()).Text);
+           
 
             // By default, binding goes one-way, unless specified otherwise
             // if the override is not correctly filled in, we throw.
@@ -103,55 +124,67 @@ namespace Myra.Xaml.Transformers
             if (parameters.TryGetValue("Mode", out var b) && !Enum.TryParse(b, out bindingMode))
             {
                 throw new XamlLoadException($"{b}' is not a valid value of type 'BindingMode'",
-                    propertyNode);
+                    propertyTextNode);
             }
 
             // get the source property in the code-behind (or a field as fallback)
-            var sourceProperty = rootClrType
+            var targetProperty = viewModel.Type
                 .GetAllProperties()
-                .FirstOrDefault(e => e.Name == propertyNode.Text && e.Getter != null);
+                .FirstOrDefault(e => e.Name == propertyTextNode.Text && e.Getter != null);
 
-            if (sourceProperty == null)
+            if (targetProperty == null)
             {
-                var sourceField = rootClrType.GetAllFields()
-                    .FirstOrDefault(e => e.Name == propertyNode.Text);
-
-                if (sourceField == null)
-                {
-                    throw new XamlLoadException(
-                        $"No property or field named '{propertyNode.Text}' was not found in code-behind class '{rootClrType.FullName}'",
-                        propertyNode);
-                }
-
-                if (bindingMode != BindingMode.OneWay)
-                {
-                    throw new XamlLoadException("Field assignments can only be done on one-way binding mode!", propertyNode);
-                }
-
-                TransformerHelpers.EnsureAssignability(propertyNode, targetProperty, sourceField.Name, sourceField.FieldType);
-                var sourceFieldReference = new XamlAstFieldReference(propertyNode, sourceField, propertyNode);
-                return new XamlAstXamlPropertyValueNode(propertyNode, targetProperty, sourceFieldReference, false);
+                throw new XamlLoadException(
+                        $"No property named '{propertyTextNode.Text}' was not found in code-behind class '{rootClrType.FullName}'",
+                        propertyTextNode); 
             }
 
-            TransformerHelpers.EnsureAssignability(propertyNode, targetProperty, sourceProperty.Name, sourceProperty.PropertyType);
+            TransformerHelpers.EnsureAssignability(propertyTextNode, source, targetProperty.Name, targetProperty.PropertyType);
              
-            var sourceClrProperty = new XamlAstClrProperty(targetProperty, sourceProperty, context.Configuration);
-            var sourceValue = new XamlStaticOrTargetedReturnMethodCallNode(targetProperty, sourceClrProperty.Getter!, [context.RootObject]);
+            var sourceClrProperty = new XamlAstClrProperty(source, targetProperty, context.Configuration);
+            var viewModelCall = viewModel.GetPropertyCall(source, context.RootObject);
+            var sourceCall = new XamlStaticOrTargetedReturnMethodCallNode(source, sourceClrProperty.Getter!, [viewModelCall]);
 
-            var initialAssignment = new XamlPropertyAssignmentNode(
-                valueNode,
-                targetProperty,
-                targetProperty.Setters,
-                [sourceValue]);
+            var initialAssignment = new XamlPropertyAssignmentNode(source, source, source.Setters, [sourceCall]);
 
-            return initialAssignment;
+            if (bindingMode == BindingMode.OneTime)
+            {
+                return initialAssignment;
+            }
+
+            var result = new List<IXamlAstManipulationNode>()
+            {
+                initialAssignment
+            }; 
+
+            // if one-way or two-way, add functionality to listen to property changes.
+            if (bindingMode == BindingMode.OneWay || bindingMode == BindingMode.TwoWay)
+            { 
+                var widgetProperty = source.DeclaringType.Properties.First(f => f.Name == source.Name);
+
+                var binding = _bindings.CreateOneWayBinding(
+                       widgetType: source.DeclaringType,
+                       widgetProperty: widgetProperty,
+                       viewModelProperty: targetProperty,
+                       viewModelSource: viewModel.Property, 
+                       sourcePropertyName: propertyTextNode.Text);
+
+                result.Add(new XamlAssignFieldValueNode(value, valueNode.Property.GetClrProperty().DeclaringType, binding.TargetField, context.RootObject));
+
+                result.Add(new MyraOneWayBindingNode(
+                        value,
+                        bindNode,
+                        viewModel.Property,
+                        sourceClrProperty.Name,
+                        binding.TargetField,
+                        binding.Handler));
+            }
+
+            return new XamlManipulationGroupNode(source, result);
         }
-         
 
-        private static IXamlMethod? FindEventHandler(
-            IXamlType rootType,
-            string name,
-            IXamlMethod delegateInvoke)
+
+        private static IXamlMethod? FindEventHandler(IXamlType rootType, string name,  IXamlMethod delegateInvoke)
         {
             foreach (var method in rootType.FindMethods(m => m.Name == name))
             { 
@@ -187,6 +220,56 @@ namespace Myra.Xaml.Transformers
             return handlerParameter.Equals(delegateParameter)
                 || handlerParameter.IsAssignableFrom(delegateParameter)
                 || delegateParameter.IsAssignableFrom(handlerParameter);
+        }
+
+        private static MethodDefinition CreateEventAccessor(
+                TypeDefinition type,
+                ModuleDefinition module,
+                string name,
+                TypeReference handlerType,
+                bool add)
+        {
+            var method = new MethodDefinition(
+                name,
+                MethodAttributes.Public |
+                MethodAttributes.SpecialName |
+                MethodAttributes.HideBySig |
+                MethodAttributes.Virtual,
+                module.TypeSystem.Void);
+
+            method.Parameters.Add(
+                new ParameterDefinition(
+                    "value",
+                    ParameterAttributes.None,
+                    handlerType));
+
+            var field = type.Fields.First(f => f.Name == "<PropertyChanged>k__BackingField");
+
+            var il = method.Body.GetILProcessor();
+
+            var combine = module.ImportReference(
+                add
+                    ? typeof(Delegate).GetMethod(
+                        nameof(Delegate.Combine),
+                        [typeof(Delegate), typeof(Delegate)])!
+                    : typeof(Delegate).GetMethod(
+                        nameof(Delegate.Remove),
+                        [typeof(Delegate), typeof(Delegate)])!);
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, field);
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Call, combine);
+
+            il.Emit(OpCodes.Castclass, handlerType);
+
+            il.Emit(OpCodes.Stfld, field);
+            il.Emit(OpCodes.Ret);
+
+            type.Methods.Add(method);
+
+            return method;
         }
     }
 }

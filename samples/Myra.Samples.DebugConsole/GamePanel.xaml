@@ -1,5 +1,7 @@
 <GamePanel xmlns="https://github.com/MyraUI/Myra"
-      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">  
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      x:Class="Myra.Samples.DebugConsole.GamePanel"
+      x:ViewModel="Myra.Samples.DebugConsole.GamePanelViewModel">  
   <Label Text="Game Screen" Top="100" HorizontalAlignment="Center" />
   <HorizontalStackPanel Top="50">
     <RadioButton>
@@ -30,10 +32,10 @@
     </Button>
   </HorizontalStackPanel>
   <HorizontalStackPanel Spacing="8" VerticalAlignment="Bottom">
-    <Button Enabled="{x:Binding ButtonsEnabled}" Click="ButtonDebugPanel_Click">
+    <Button Enabled="{x:Bind ButtonsEnabled}" Click="ButtonDebugPanel_Click">
       <Label Text="Show Debug Panel" />
     </Button>
-    <Button x:Name="DebugModalButton"  Enabled="{x:Binding ButtonsEnabled}" Click="ButtonModalDebugPanel_Click">
+    <Button x:Name="DebugModalButton"  Enabled="{x:Bind ButtonsEnabled}" Click="ButtonModalDebugPanel_Click">
       <Label Text="Show Debug Panel Modal" />
     </Button>
   </HorizontalStackPanel>

@@ -9,6 +9,8 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using XamlX;
+using XamlX.Ast;
 using XamlX.Parsers;
 using XamlX.TypeSystem;
 
@@ -66,12 +68,6 @@ namespace Myra.Xaml
 
                 assembly = compiler.TypeSystem.GetAssembly(compiler.TypeSystem.FindAssembly(Path.GetFileNameWithoutExtension(TargetPath)!)!);
 
-                TypesContainer.INotifyPropertyChanged = compiler.TypeSystem.FindType(typeof(INotifyPropertyChanged).FullName)!; 
-                TypesContainer.PropertyChangedEventAdd = TypesContainer.INotifyPropertyChanged!.GetAllEvents()
-                        .First(e => e.Name == nameof(INotifyPropertyChanged.PropertyChanged)).Add!;
-                TypesContainer.PropertyChangedEventArgs = compiler.TypeSystem.FindType(typeof(PropertyChangedEventArgs).FullName)!;
-                TypesContainer.PropertyChangedEventHandler = compiler.TypeSystem.FindType(typeof(PropertyChangedEventHandler).FullName)!;
-
                 foreach (var item in XamlFiles)
                 {
                     CompileXamlFile(compiler, assembly, item);
@@ -104,6 +100,9 @@ namespace Myra.Xaml
         {
             var xamlPath = item.GetMetadata("FullPath");
 
+            var text = File.ReadAllText(xamlPath);
+            var document = XDocumentXamlParser.Parse(text); 
+
             if (string.IsNullOrWhiteSpace(xamlPath))
                 xamlPath = item.ItemSpec;
 
@@ -115,37 +114,39 @@ namespace Myra.Xaml
             if (!File.Exists(xamlPath))
             {
                 Log.LogError("Myra XAML: XAML file '{0}' does not exist.", xamlPath);
-
                 return;
-            }
+            } 
 
-            var className = GetClassName(item, xamlPath);
-
+            var className = GetClassName((document.Root as XamlAstObjectNode)!, item, xamlPath);
             if (string.IsNullOrWhiteSpace(className))
             {
-                Log.LogError(
-                    "Myra XAML: could not determine the code-behind type for '{0}'. ",
-                    xamlPath);
-
+                Log.LogError("Myra XAML: could not determine the code-behind type for '{0}'. ", xamlPath);
                 return;
             }
 
             var currentClassDefinition = FindTypeRecursive(assembly.MainModule.Types, className!);
             if (currentClassDefinition == null)
-            {
-                throw new InvalidOperationException("This should never happen");
-            }
-            var currentClass = TypeSystem!.FindType(currentClassDefinition.FullName);
-
-            if (currentClass == null)
-            {
-                Log.LogError(
-                    "Myra XAML: code-behind type '{0}' was not found in '{1}'. " +
-                    "The C# project must be compiled before Myra XAML compilation.",
+            {  
+                // Note: the code-behind type must also be compiled before this MSBuild is invoked!
+                Log.LogError("Myra XAML: code-behind type '{0}' was not found for XAML file '{1}'. ",
                     className,
                     TargetPath);
 
-                return;
+                return; 
+            }
+
+            var currentClass = TypeSystem!.FindType(currentClassDefinition.FullName);
+            if (currentClass == null)
+            { 
+                throw new InvalidOperationException("This should never happen");
+            }
+
+            // ensure code-behind class derives from Widget.
+            if (!TypesContainer.Widget.IsAssignableFrom(currentClass))
+            {
+                Log.LogError("Myra XAML: code-behind type '{0}' must derive from 'Myra.Graphics2D.UI.Widget'. ",
+                  className,
+                  TargetPath);
             }
 
             var assemblyMappings = compiler.Configuration.XmlnsMappings.Namespaces[MyraXamlCompiler.MyraMappings];
@@ -154,22 +155,12 @@ namespace Myra.Xaml
                 assemblyMappings.Add((currentClass.Assembly!, currentClass.Namespace!));
             } 
 
-            Log.LogMessage(
-                MessageImportance.Low,
-                "Myra XAML: code-behind type is '{0}'.",
-                currentClass.FullName);
-
-            var text = File.ReadAllText(xamlPath); 
-            var document = XDocumentXamlParser.Parse(text);
-
-            compiler.Transform(document);
-
+            Log.LogMessage(MessageImportance.Low, "Myra XAML: code-behind type is '{0}'.", currentClass.FullName);
+             
             compiler.CompileInto(document, currentClassDefinition, xamlPath, text);
         }  
 
-        private static TypeDefinition? FindTypeRecursive(
-            Collection<TypeDefinition> types,
-            string fullName)
+        private static TypeDefinition? FindTypeRecursive(Collection<TypeDefinition> types, string fullName)
         {
             foreach (var type in types)
             {
@@ -185,8 +176,34 @@ namespace Myra.Xaml
             return null;
         }
 
-        private string? GetClassName(ITaskItem item, string xamlPath)
+        private string? GetClassName(XamlAstObjectNode node, ITaskItem item, string xamlPath)
         {
+            // get "x:Class" directive from the element, in case there is an override
+            var documentDirectives = node.Children
+                .OfType<XamlAstXmlDirective>()
+                .Where(d => d.Namespace == XamlNamespaces.Xaml2006 && d.Name == "Class")
+                .ToArray();
+
+            if (documentDirectives.Length > 1)
+            {
+                throw new XamlLoadException("x:Class can only be defined once on a document!", node);
+            }
+
+            if (documentDirectives.Length == 1)
+            {
+                var classDirective = documentDirectives[0];
+                node.Children.Remove(classDirective);
+                // There should only be 1 value in there, namely the full specification of the class
+                // (and nothing else)
+                if (classDirective.Values.Count != 1 ||
+                    classDirective.Values[0] is not XamlAstTextNode text)
+                {
+                    throw new XamlLoadException(
+                        "x:Class must have a single string value.", classDirective);
+                }
+                return text.Text;
+            }
+
             var explicitClass = item.GetMetadata("XamlClass");
 
             if (!string.IsNullOrWhiteSpace(explicitClass))

@@ -8,12 +8,7 @@ using XamlX.TypeSystem;
 namespace Myra.Xaml.Helpers
 {
     internal static class TypesContainer
-    {
-        /// <summary>
-        /// <see cref="System.EventHandler"/> delegate.
-        /// </summary>
-        public static IXamlType EventHandler { get; set; } = default!;
-
+    {  
         /// <summary>
         /// <see cref="System.ComponentModel.INotifyPropertyChanged"/> interface
         /// </summary>
@@ -32,6 +27,11 @@ namespace Myra.Xaml.Helpers
         /// <summary>
         /// <see cref="System.ComponentModel.PropertyChangedEventHandler"/> method.
         /// </summary>
-        public static IXamlType PropertyChangedEventHandler { get; set; } = default!; 
+        public static IXamlType PropertyChangedEventHandler { get; set; } = default!;
+
+        /// <summary>
+        /// "Myra.Graphics2D.UI.Widget" class.
+        /// </summary>
+        public static IXamlType Widget { get; set; } = default!;
     }
 }

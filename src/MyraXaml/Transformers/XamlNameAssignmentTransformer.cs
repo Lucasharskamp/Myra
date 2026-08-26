@@ -1,7 +1,5 @@
 ﻿using Myra.Xaml.Helpers;
 using Myra.Xaml.Types;
-using System;
-using System.Diagnostics;
 using System.Linq;
 using XamlX;
 using XamlX.Ast;
@@ -10,70 +8,51 @@ using XamlX.TypeSystem;
 
 namespace Myra.Xaml.Transformers
 {
+    /// <summary>
+    /// This transformer resolves x:Name directives, binding the element to the code-behind property/field 
+    /// the x:Name property is targeting.
+    /// </summary>
     public sealed class XamlNameDirectiveTransformer : IXamlAstTransformer
     {
-        public IXamlAstNode Transform(
-            AstTransformationContext context,
-            IXamlAstNode node)
+        public IXamlAstNode Transform(AstTransformationContext context, IXamlAstNode node)
         {  
-            if (node is not XamlAstObjectNode objectNode)
+            if (node is not XamlAstObjectNode valueNode)
                 return node;
 
-            var allDirectives = objectNode.Children
-                .OfType<XamlAstXmlDirective>()
-                .Where(d => d.Namespace == XamlNamespaces.Xaml2006 && d.Name == "Name")
-                .ToArray();
-
-            if (allDirectives.Length == 0)
+            // get "x:Name" directive from the element.  
+            if (!valueNode.ExtractXDirective("Name", out var directive, out var text))
                 return node;
 
-            if (allDirectives.Length > 1)
-                throw new XamlLoadException("x:Name can only exists once on a type!", objectNode);
-
-            var nameDirective = allDirectives[0];
-               
-            if (nameDirective.Values.Count != 1 ||
-                nameDirective.Values[0] is not XamlAstTextNode text)
-            {
-                throw new XamlLoadException(
-                    "x:Name must have a single string value.", nameDirective);
-            }
-
-            var name = text.Text;
-            var rootClrType = context.RootObject.Type.GetClrType();
-
-            // Remove x:Name from the normal XAML property/directive
-            // processing.
-            objectNode.Children.Remove(nameDirective); 
-
+            var rootClrType = context.CodeBehindClrType();
+             
             // get the target property to aim at.
             var targetProperty = rootClrType
                                 .GetAllProperties()
-                                .FirstOrDefault(p => p.Name == name);
+                                .FirstOrDefault(p => p.Name == text);
 
             if (targetProperty == null)
             {
                 throw new XamlLoadException(
-                    $"Property '{name}' does not exist in type '{rootClrType.FullName}'",
-                    objectNode);
+                    $"Property '{text}' does not exist in type '{rootClrType.FullName}'",
+                    valueNode);
             }
 
             if (targetProperty.Setter == null)
             {
                 throw new XamlLoadException(
                     $"Property '{targetProperty.Name}' from '{targetProperty.DeclaringType.FullName}' is not writable.",
-                    objectNode);
+                    valueNode);
             } 
 
-            var assignment = new XamlAssignAndReturnValueNode(
-                nameDirective,
+            var assignment = new XamlAssignPropertyValueNode(
+                directive,
                 targetProperty.Setter, 
-                objectNode,
+                valueNode,
                 context.RootObject);
 
             return new XamlValueWithManipulationNode(
-                nameDirective,
-                objectNode,
+                directive,
+                valueNode,
                 assignment);
         }
     }

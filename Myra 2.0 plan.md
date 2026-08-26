@@ -144,12 +144,11 @@ Markup extensions let you set a property to something that can't be expressed as
 | Extension                                                                                                                  | Purpose                                                                                        |
 | -------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | [{x:Bind}](https://learn.microsoft.com/en-us/windows/apps/develop/platform/xaml/x-bind-markup-extension)                   | Compile-time data binding (best performance)                                                   |
-| [{Binding}](https://learn.microsoft.com/en-us/windows/apps/develop/platform/xaml/binding-markup-extension)                 | Runtime data binding                                                                           |
-| [{StaticResource}](https://learn.microsoft.com/en-us/windows/apps/develop/platform/xaml/staticresource-markup-extension)   | Reference a `ResourceDictionary` entry by key                                                  |
-| [{ThemeResource}](https://learn.microsoft.com/en-us/windows/apps/develop/platform/xaml/themeresource-markup-extension)     | Only for `StyleSheet`'s: it's like `{StaticResource}`, but updates when the stylesheet changes |
-| [{TemplateBinding}](https://learn.microsoft.com/en-us/windows/apps/develop/platform/xaml/templatebinding-markup-extension) | Bind to a property of a control template's parent                                              |
-| [{RelativeSource}](https://learn.microsoft.com/en-us/windows/apps/develop/platform/xaml/relativesource-markup-extension)   | Bind relative to the templated parent                                                          |
-| [{CustomResource}](https://learn.microsoft.com/en-us/windows/apps/develop/platform/xaml/customresource-markup-extension)   | Advanced custom resource lookup                                                                |
+| [{x:StaticResource}](https://learn.microsoft.com/en-us/windows/apps/develop/platform/xaml/staticresource-markup-extension)   | Reference a `ResourceDictionary` entry by key                                                  |
+| [{x:ThemeResource}](https://learn.microsoft.com/en-us/windows/apps/develop/platform/xaml/themeresource-markup-extension)     | Only for `StyleSheet`'s: it's like `{StaticResource}`, but updates when the stylesheet changes |
+| [{x:TemplateBinding}](https://learn.microsoft.com/en-us/windows/apps/develop/platform/xaml/templatebinding-markup-extension) | Bind to a property of a control template's parent                                              |
+| [{x:RelativeSource}](https://learn.microsoft.com/en-us/windows/apps/develop/platform/xaml/relativesource-markup-extension)   | Bind relative to the templated parent                                                          |
+| [{x:CustomResource}](https://learn.microsoft.com/en-us/windows/apps/develop/platform/xaml/customresource-markup-extension)   | Advanced custom resource lookup                                                                |
 | [{x:Null}](https://learn.microsoft.com/en-us/windows/apps/develop/platform/xaml/x-null-markup-extension)                   | Explicitly set a nullable value to `null`                                                      |
 
 ## Allow lookup in code-behind

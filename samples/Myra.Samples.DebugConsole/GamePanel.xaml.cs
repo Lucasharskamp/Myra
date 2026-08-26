@@ -10,6 +10,8 @@ namespace Myra.Samples.DebugConsole
 
 		private Button DebugModalButton { get; set; } = default!;
 
+		private GamePanelViewModel ViewModel { get; set; } = new();
+
 
         private void ShowDebugPanel(bool isModal)
 		{

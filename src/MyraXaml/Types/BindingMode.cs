@@ -9,6 +9,11 @@ namespace Myra.Xaml.Types
     /// </summary>
     public enum BindingMode
     {
+
+        /// <summary>
+        /// Value from the source is set on the target at start, then no longer updated.
+        /// </summary>
+        OneTime,
         /// <summary>
         /// Value from the source is set on the target.
         /// </summary>
@@ -20,10 +25,6 @@ namespace Myra.Xaml.Types
         /// <summary>
         /// Value from the target is set on the source
         /// </summary>
-        OneWayFromTarget,
-        /// <summary>
-        /// Value from the source is set on the target at start, then no longer updated.
-        /// </summary>
-        OneTime
+        OneWayFromTarget
     }
 }

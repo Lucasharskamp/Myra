@@ -1,12 +1,14 @@
 ﻿using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Myra.Xaml.Helpers;
 using Myra.Xaml.Transformers;
 using Myra.Xaml.Types;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq; 
-using System.Text;
 using XamlX;
 using XamlX.Ast; 
 using XamlX.Emit;
@@ -19,6 +21,8 @@ namespace Myra.Xaml.Compiler
       
     public sealed class MyraXamlCompiler : IDisposable
     {
+        public MyraBindingCompilationContext BindingContext { get; }  
+
         public CecilTypeSystem TypeSystem { get; }
 
         public TransformerConfiguration Configuration { get; }
@@ -29,20 +33,24 @@ namespace Myra.Xaml.Compiler
 
         public MyraXamlCompiler(CecilTypeSystem typeSystem)
         {
+            BindingContext = new(typeSystem);
             TypeSystem = typeSystem;
             Configuration = CreateConfiguration(TypeSystem);
             EmitMappings = new XamlLanguageEmitMappings<IXamlILEmitter, XamlILNodeEmitResult>();
 
             _compiler = new XamlILCompiler(Configuration, EmitMappings, true);
             _compiler.Transformers.Insert(8, new XamlNameDirectiveTransformer());
-            _compiler.Transformers.Insert(8, new CodeBehindReferenceTransformer());
-        }
+            _compiler.Transformers.Insert(8, new CodeBehindReferenceTransformer(BindingContext));
+            _compiler.Transformers.Insert(8, new XamlViewModelAssignmentTransformer());
 
 
-        public void Transform(XamlDocument document)
-        {
-            _compiler.Transform(document); 
-        }
+            TypesContainer.INotifyPropertyChanged = TypeSystem.FindType(typeof(INotifyPropertyChanged).FullName)!;
+            TypesContainer.PropertyChangedEventAdd = TypesContainer.INotifyPropertyChanged!.GetAllEvents()
+                    .First(e => e.Name == nameof(INotifyPropertyChanged.PropertyChanged)).Add!;
+            TypesContainer.PropertyChangedEventArgs = TypeSystem.FindType(typeof(PropertyChangedEventArgs).FullName)!;
+            TypesContainer.PropertyChangedEventHandler = TypeSystem.FindType(typeof(PropertyChangedEventHandler).FullName)!;
+            TypesContainer.Widget = TypeSystem.FindType("Myra.Graphics2D.UI.Widget")!;
+        } 
 
         private const string buildMethodName = "InitializeComponent";
 
@@ -51,8 +59,14 @@ namespace Myra.Xaml.Compiler
             TypeDefinition currentClassDefinition,
             string fileName,
             string fileContents)
-        { 
+        {
             var typeBuilder = TypeSystem.CreateTypeBuilder(currentClassDefinition, false);
+            BindingContext.Setup(typeBuilder);
+
+            // transform the document into an AST tree for compilation
+            _compiler.Transform(document);
+
+            // compile the AST into IL. The IL will be written to the DLL once all files have been compiled.
             var populate = _compiler.DefinePopulateMethod(typeBuilder, document, buildMethodName, XamlVisibility.Private);
 
             _compiler.Compile(
@@ -64,7 +78,7 @@ namespace Myra.Xaml.Compiler
                 null,
                 null,
                 Path.GetDirectoryName(fileName),
-                new MyraFileSource(fileName, Encoding.UTF8.GetBytes(fileContents)));
+                new XamlFileSource(fileName, fileContents));
 
             typeBuilder.CreateType();
             EnsureBuildMethodCalled(currentClassDefinition);
@@ -86,6 +100,7 @@ namespace Myra.Xaml.Compiler
             var myraAssembly = typeSystem.FindAssembly("Myra")
                                 ?? throw new InvalidOperationException("Could not find Myra assembly.");
 
+            // get default components, brushes and styles
             mappings.Namespaces.Add(
                 MyraMappings,
                 new List<(IXamlAssembly asm, string ns)>
@@ -95,6 +110,7 @@ namespace Myra.Xaml.Compiler
                     (myraAssembly, "Myra.Graphics2D.UI.Styles")
                 });
 
+            // get x:(action) types
             mappings.Namespaces.Add(
                   XamlNamespaces.Xaml2006,
                   new List<(IXamlAssembly, string ns)>
@@ -113,15 +129,25 @@ namespace Myra.Xaml.Compiler
         }
 
 
+        /// <summary>
+        /// Ensure that the constructor of the code-behind type has "InitializeComponent()" called
+        /// at the tail end of the constructor. <br/>
+        /// If no constructor yet exists, one willm be created.
+        /// </summary> 
         private void EnsureBuildMethodCalled(TypeDefinition type)
         {
             var module = type.Module;
 
-            var constructor = type.Methods.FirstOrDefault(m =>
+            var constructors = type.Methods.Where(m =>
                 m.IsConstructor &&
-                !m.IsStatic &&
-                m.Parameters.Count == 0);
+                !m.IsStatic).ToArray();
 
+            if (constructors.Length > 1)
+            {
+                throw new InvalidOperationException($"Code-behind type '{type.FullName}' can only at most have 1 constructor!");
+            }
+
+            var constructor = constructors.FirstOrDefault();
             var buildMethod = type.Methods.First(m => m.Name == buildMethodName);
 
             if (constructor == null)
@@ -150,16 +176,16 @@ namespace Myra.Xaml.Compiler
                 if (baseConstructor == null)
                     throw new InvalidOperationException(
                         $"Unable to find parameterless base constructor for '{type.FullName}'.");
-
-                il.Append(il.Create(OpCodes.Ldarg_0));
-                il.Append(il.Create(OpCodes.Call, module.ImportReference(baseConstructor)));
+                 
+                il.Emit(OpCodes.Ldarg_0);
+                il.Emit(OpCodes.Call, module.ImportReference(baseConstructor));
 
                 // this.InitializeComponent(IServiceProvider, this);
-                il.Append(il.Create(OpCodes.Ldnull));  
-                il.Append(il.Create(OpCodes.Ldarg_0));
-                il.Append(il.Create(OpCodes.Call, module.ImportReference(buildMethod)));
+                il.Emit(OpCodes.Ldnull);  
+                il.Emit(OpCodes.Ldarg_0);
+                il.Emit(OpCodes.Call, module.ImportReference(buildMethod));
 
-                il.Append(il.Create(OpCodes.Ret));
+                il.Emit(OpCodes.Ret);
 
                 return;
             }
@@ -184,10 +210,11 @@ namespace Myra.Xaml.Compiler
                     OpCodes.Call,
                     module.ImportReference(buildMethod)));
         }
+         
 
         public void Dispose()
         {
             TypeSystem.Dispose();
-        }
+        } 
     }
 }
