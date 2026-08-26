@@ -76,11 +76,20 @@ namespace Myra.Graphics2D.UI
 		/// Initializes a new instance of the <see cref="ToggleButton"/> class with the specified style.
 		/// </summary>
 		/// <param name="styleName">The name of the style to apply. Defaults to the default stylesheet style.</param>
-		public ToggleButton(string styleName = Stylesheet.DefaultStyleName) : this(Stylesheet.Current, styleName)
+		public ToggleButton(string styleName) : this(Stylesheet.Current, styleName)
 		{
 		}
 
-		internal override IDictionary GetStylesDictionary(Stylesheet stylesheet) => stylesheet.ButtonStyles;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ToggleButton"/> class.
+        /// </summary>
+        public ToggleButton() : this(Stylesheet.Current, Stylesheet.DefaultStyleName)
+        {
+        }
+
+
+        internal override IDictionary GetStylesDictionary(Stylesheet stylesheet) => stylesheet.ButtonStyles;
 
 		/// <summary>
 		/// Called when a touch point is released on the toggle button.

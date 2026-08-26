@@ -4,46 +4,46 @@ using Myra.Graphics2D.UI;
 
 namespace Myra.Samples.NonModalWindows.UI
 {
-	public partial class MainPanel
+	public partial class MainPanel : Panel
 	{
-		private readonly Window1 _window1 = new Window1();
+        private ToggleButton Button1 { get; set; } = default!;
+        private ToggleButton Button2 { get; set; } = default!;
+        private ToggleButton Button3 { get; set; } = default!;
+		public Label LabelOverGui { get; set; } = default!;
+
+
+        private readonly Window1 _window1 = new Window1();
 		private readonly Window2 _window2 = new Window2();
 		private readonly Window3 _window3 = new Window3();
 
 		public MainPanel()
-		{
-			BuildUI();
-
-			_button1.PressedChanged += _button1_PressedChanged;
-			_button2.PressedChanged += _button2_PressedChanged;
-			_button3.PressedChanged += _button3_PressedChanged;
-
+		{  
 			_window1.Closed += (s, a) =>
 			{
-				_button1.IsPressed = false;
+                Button1.IsPressed = false;
 			};
 
 			_window2.Closed += (s, a) =>
 			{
-				_button2.IsPressed = false;
+                Button2.IsPressed = false;
 			};
 
 			_window3.Closed += (s, a) =>
 			{
-				_button3.IsPressed = false;
+                Button3.IsPressed = false;
 			};
 		}
 
 		public void ShowWindows()
 		{
-			_button1.IsPressed = true;
-			_button2.IsPressed = true;
-			_button3.IsPressed = true;
+            Button1.IsPressed = true;
+            Button2.IsPressed = true;
+            Button3.IsPressed = true;
 		}
 
 		private void _button1_PressedChanged(object sender, MyraEventArgs e)
 		{
-			if (_button1.IsPressed)
+			if (Button1.IsPressed)
 			{
 				_window1.Show(Desktop, new Point(100, 100));
 			}
@@ -55,7 +55,7 @@ namespace Myra.Samples.NonModalWindows.UI
 
 		private void _button2_PressedChanged(object sender, MyraEventArgs e)
 		{
-			if (_button2.IsPressed)
+			if (Button2.IsPressed)
 			{
 				_window2.Show(Desktop, new Point(400, 100));
 			}
@@ -67,7 +67,7 @@ namespace Myra.Samples.NonModalWindows.UI
 
 		private void _button3_PressedChanged(object sender, MyraEventArgs e)
 		{
-			if (_button3.IsPressed)
+			if (Button3.IsPressed)
 			{
 				_window3.Show(Desktop, new Point(200, 400));
 			}

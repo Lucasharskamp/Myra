@@ -277,5 +277,12 @@ namespace Myra.Samples.Notepad
 
 			_desktop.Render();
 		}
+
+        protected override void Dispose(bool disposing)
+        {
+			_desktop.Dispose();
+			graphics.Dispose();
+            base.Dispose(disposing);
+        }
 	}
 }

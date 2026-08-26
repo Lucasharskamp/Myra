@@ -3,11 +3,10 @@ using Myra.Graphics2D.UI;
 
 namespace Myra.Samples.NonModalWindows.UI
 {
-	public partial class Window3
+	public partial class Window3 : Window
 	{
 		public Window3()
-		{
-			BuildUI();
+		{ 
 		}
 	}
 }

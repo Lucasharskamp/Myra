@@ -16,16 +16,7 @@
   <ItemGroup>
     <MyraXaml Include="**\*.xaml" />
   </ItemGroup>
-
-  <ItemGroup>
-    <None Update="DebugPanel.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </None>
-    <None Update="GamePanel.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </None>
-  </ItemGroup>
-
+ 
   <UsingTask TaskFactory="MyraXamlTaskFactory" TaskName="MyraXamlCompileTask" AssemblyFile="..\..\src\MyraXaml\bin\Debug\netstandard2.0\Myra.Xaml.dll" />
 
   <Target Name="MyraXamlCompile" AfterTargets="Build" Condition="'$(DesignTimeBuild)' != 'true'">

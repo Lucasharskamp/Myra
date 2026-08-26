@@ -12,28 +12,25 @@ using XamlX.TypeSystem;
 
 namespace Myra.Xaml.Types
 {
-    public sealed class MyraOneWayBindingNode :
+    public sealed class XamlOneWayBindingNode :
         XamlValueWithSideEffectNodeBase,
         IXamlAstManipulationNode,
         IXamlAstEmitableNode<IXamlILEmitter, XamlILNodeEmitResult>
-    {
-        public IXamlAstValueNode Source { get; }
+    { 
         public IXamlProperty ViewModelCall { get; }
         public string SourcePropertyName { get; }
 
         public IXamlField TargetField { get; }
         public IXamlMethod Handler { get; }
 
-        public MyraOneWayBindingNode( 
-            IXamlAstValueNode value,
-            IXamlAstValueNode source,
+        public XamlOneWayBindingNode( 
+            IXamlAstValueNode value, 
             IXamlProperty viewModel,
             string sourcePropertyName,
             IXamlField targetField,
             IXamlMethod handler)
-            : base(source, value)
-        {
-            Source = source;
+            : base(value, value)
+        { 
             ViewModelCall = viewModel;
             SourcePropertyName = sourcePropertyName;
             TargetField = targetField;

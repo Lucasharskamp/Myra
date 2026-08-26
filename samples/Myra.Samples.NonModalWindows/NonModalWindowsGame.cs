@@ -58,8 +58,15 @@ namespace Myra.Samples.NonModalWindows
 
 			GraphicsDevice.Clear(Color.Black);
 
-			_mainPanel._labelOverGui.Text = "Is mouse over GUI: " + _desktop.IsMouseOverGUI;
+			_mainPanel.LabelOverGui.Text = "Is mouse over GUI: " + _desktop.IsMouseOverGUI;
 			_desktop.Render();
 		}
+
+        protected override void Dispose(bool disposing)
+        {
+			_graphics.Dispose();
+			_desktop.Dispose();
+            base.Dispose(disposing);
+        }
 	}
 }

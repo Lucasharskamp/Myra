@@ -6,7 +6,9 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Reflection.Emit;
+using System.Security.Principal;
 using System.Text;
+using XamlX;
 using XamlX.Ast;
 using XamlX.IL;
 using XamlX.TypeSystem;
@@ -16,6 +18,20 @@ namespace Myra.Xaml.Compiler
     public sealed class MyraBindingCompilationContext
     {
         private CecilTypeSystem TypeSystem { get; }
+
+        /// <summary>
+        /// Nodes which have x:Uid assigned to them (for use for localization and other tools)
+        /// todo: use them for localization
+        /// </summary>
+        private Dictionary<string, XamlAstObjectNode> IdentifiedNodes { get; } = [];
+
+        /// <summary>
+        /// Nodes which have x:FieldModifier assigned to them (For use when declaring a node as a field, if need be)
+        /// Todo: use these created fields.
+        /// </summary>
+        private Dictionary<string, XamlVisibility> FieldModifiers { get; } = [];
+
+
         public MyraBindingCompilationContext(CecilTypeSystem typeSystem)
         {
             TypeSystem = typeSystem;
@@ -30,26 +46,28 @@ namespace Myra.Xaml.Compiler
 
         public void Setup(IXamlTypeBuilder<IXamlILEmitter> typeBuilder)
         {
+            IdentifiedNodes.Clear();
             _handlerIndex = 0;
             _typeBuilder = typeBuilder;
         }
 
-        public IXamlMethodBuilder<IXamlILEmitter> DefineHandler(
-               IXamlType eventHandlerType,
-               IXamlType eventArgsType)
+        public void RegisterNodeIdentity(string identity, XamlAstObjectNode node)
         {
-            var name = $"__MyraBinding_{_handlerIndex++}";
+            if (IdentifiedNodes.TryGetValue(identity, out _))
+            {
+                throw new XamlLoadException($"A node with identity {identity} already exists!", node);
+            }
 
-            return TypeBuilder.DefineMethod(
-                TypeSystem.WellKnownTypes.Void,
-                [TypeSystem.WellKnownTypes.Object, eventArgsType],
-                name,
-                XamlVisibility.Private,
-                false,
-                false);
+            IdentifiedNodes.Add(identity, node);
         }
 
-        public MyraOneWayBinding CreateOneWayBinding( 
+        public void RegisterNodeFieldModifier(string line, XamlVisibility xamlVisibility)
+        {
+            FieldModifiers.Add(line, xamlVisibility);
+        }
+
+        public MyraOneWayBinding CreateOneWayBinding(
+                XamlAstNode source,
                 IXamlType widgetType,
                 IXamlProperty widgetProperty,
                 IXamlProperty viewModelProperty,
@@ -69,30 +87,28 @@ namespace Myra.Xaml.Compiler
                     $"ViewModel property '{viewModelSource.Name}' has no getter.");
 
             /*
-             * Persistent reference to the XAML-created object.
-             *
-             * Example:
-             *
-             * private Button __MyraBindingTarget0;
+             * Persistent reference to the XAML-created Widget.
              */
             var targetField = TypeBuilder.DefineField(
                 widgetType,
-                $"__MyraBindingTarget{_handlerIndex++}",
-                XamlVisibility.Private,
+                $"__MyraBindingTarget{_handlerIndex}",
+                FieldModifiers.TryGetValue($"{source.Line}-{source.Position}", out var visibility) ? visibility : XamlVisibility.Private,
                 false);
 
             /*
-             * private void __MyraBinding_0(
+             * private void __MyraBinding_{index}(
              *     object sender,
              *     PropertyChangedEventArgs e)
              */
             var handler = TypeBuilder.DefineMethod(
                 TypeSystem.WellKnownTypes.Void,
                 [TypeSystem.WellKnownTypes.Object, TypesContainer.PropertyChangedEventArgs],
-                $"__MyraBinding_{_handlerIndex++}",
+                $"__MyraBinding_{_handlerIndex}",
                 XamlVisibility.Private,
                 false,
                 false);
+
+            _handlerIndex++;
 
             EmitOneWayBindingHandler(
                 handler,

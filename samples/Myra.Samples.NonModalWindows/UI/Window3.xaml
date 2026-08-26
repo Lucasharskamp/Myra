@@ -1,0 +1,18 @@
+<Window3 xmlns="https://github.com/MyraUI/Myra"
+     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="Window 3" Left="805" Top="288">
+    <Panel>
+        <ListView MaxHeight="150">
+            <Label Text="Item 0" />
+            <Label Text="Item 1" />
+            <Label Text="Item 2" />
+            <Label Text="Item 3" />
+            <Label Text="Item 4" />
+            <Label Text="Item 5" />
+            <Label Text="Item 6" />
+            <Label Text="Item 7" />
+            <Label Text="Item 8" />
+            <Label Text="Item 9" />
+        </ListView>
+    </Panel>
+</Window3>

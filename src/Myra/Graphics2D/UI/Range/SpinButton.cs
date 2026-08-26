@@ -334,11 +334,19 @@ namespace Myra.Graphics2D.UI
 		/// Initializes a new instance of the <see cref="SpinButton"/> class with the specified style.
 		/// </summary>
 		/// <param name="styleName">The name of the style to apply. Defaults to the default stylesheet style.</param>
-		public SpinButton(string styleName = Stylesheet.DefaultStyleName) : this(Stylesheet.Current, styleName)
+		public SpinButton(string styleName) : this(Stylesheet.Current, styleName)
 		{
 		}
 
-		internal override IDictionary GetStylesDictionary(Stylesheet stylesheet) => stylesheet.SpinButtonStyles;
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SpinButton"/> class.
+        /// </summary>
+        public SpinButton() : this(Stylesheet.Current, Stylesheet.DefaultStyleName)
+        {
+        }
+
+
+        internal override IDictionary GetStylesDictionary(Stylesheet stylesheet) => stylesheet.SpinButtonStyles;
 
 		private static float? StringToFloat(string s)
 		{

@@ -163,17 +163,17 @@ namespace Myra.Xaml.Transformers
                 var widgetProperty = source.DeclaringType.Properties.First(f => f.Name == source.Name);
 
                 var binding = _bindings.CreateOneWayBinding(
+                       source: valueNode,
                        widgetType: source.DeclaringType,
                        widgetProperty: widgetProperty,
                        viewModelProperty: targetProperty,
                        viewModelSource: viewModel.Property, 
                        sourcePropertyName: propertyTextNode.Text);
 
-                result.Add(new XamlAssignFieldValueNode(value, valueNode.Property.GetClrProperty().DeclaringType, binding.TargetField, context.RootObject));
+                result.Add(new XamlAssignFieldValueNode(value, valueNode.Property.GetClrProperty().DeclaringType, binding.TargetField));
 
-                result.Add(new MyraOneWayBindingNode(
-                        value,
-                        bindNode,
+                result.Add(new XamlOneWayBindingNode(
+                        propertyTextNode, 
                         viewModel.Property,
                         sourceClrProperty.Name,
                         binding.TargetField,

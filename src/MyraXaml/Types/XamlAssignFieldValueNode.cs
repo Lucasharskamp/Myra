@@ -1,5 +1,4 @@
-﻿using Mono.Cecil;
-using System.Reflection.Emit;
+﻿using System.Reflection.Emit;
 using XamlX.Ast;
 using XamlX.Emit;
 using XamlX.IL;
@@ -13,18 +12,15 @@ namespace Myra.Xaml.Types
         public IXamlAstTypeReference Type { get; }
         public IXamlType SourceType { get; }
         public IXamlField TargetField { get; }
-        public IXamlAstValueNode TargetObject { get; }
 
         public XamlAssignFieldValueNode(
             IXamlLineInfo lineInfo, 
             IXamlType sourceType,
-            IXamlField targetField,
-            IXamlAstValueNode targetObject)
+            IXamlField targetField)
             : base(lineInfo)
         {
             SourceType = sourceType;
             TargetField = targetField;
-            TargetObject = targetObject;
             Type = new XamlAstClrTypeReference(lineInfo, targetField.FieldType, false);
         }
 

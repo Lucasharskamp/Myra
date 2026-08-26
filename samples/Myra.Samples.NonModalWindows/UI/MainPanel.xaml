@@ -1,0 +1,15 @@
+﻿<MainPanel xmlns="https://github.com/MyraUI/Myra"
+     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <HorizontalStackPanel Spacing="8">
+        <ToggleButton x:Name="Button1" PressedChanged="_button1_PressedChanged">
+            <Label Text="Window 1" />
+        </ToggleButton>
+        <ToggleButton x:Name="Button2" PressedChanged="_button2_PressedChanged">
+            <Label Text="Window 2" />
+        </ToggleButton>
+        <ToggleButton x:Name="Button3" PressedChanged="_button3_PressedChanged">
+            <Label Text="Window 3" />
+        </ToggleButton>
+    </HorizontalStackPanel>
+    <Label Text="Is mouse over GUI: true" VerticalAlignment="Bottom" x:Name="LabelOverGui" />
+</MainPanel>

@@ -398,11 +398,18 @@ namespace Myra.Graphics2D.UI
 		/// Initializes a new instance of the <see cref="ListView"/> class.
 		/// </summary>
 		/// <param name="styleName">The name of the style to apply to the list view.</param>
-		public ListView(string styleName = Stylesheet.DefaultStyleName) : this(Stylesheet.Current, styleName)
+		public ListView(string styleName) : this(Stylesheet.Current, styleName)
 		{
 		}
 
-		private void ButtonOnClick(object sender, MyraEventArgs eventArgs)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ListView"/> class.
+        /// </summary>
+        public ListView() : this(Stylesheet.Current, Stylesheet.DefaultStyleName)
+        {
+        }
+
+        private void ButtonOnClick(object sender, MyraEventArgs eventArgs)
 		{
 			var button = (ListViewButton)sender;
 			if (!button.IsPressed)

@@ -1,0 +1,22 @@
+<Notepad xmlns="https://github.com/MyraUI/Myra"
+     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <HorizontalMenu VerticalAlignment="Stretch" x:Name="_mainMenu" x:Uid="f44bb6b1-b08d-48ce-b647-75d027af9532" x:FieldModifier="">
+        <MenuItem Text="&amp;File" x:Name="menuItemFile">
+            <MenuItem Text="&amp;New" ShortcutText="Ctrl+N" x:Name="menuItemNew" />
+            <MenuItem Text="&amp;Open..." ShortcutText="Ctrl+O" x:Name="menuItemOpen" />
+            <MenuItem Text="&amp;Save" ShortcutText="Ctrl+S" x:Name="menuItemSave" />
+            <MenuItem Text="Save &amp;As..." x:Name="menuItemSaveAs" />
+            <MenuSeparator />
+            <MenuItem Text="Debug Options" x:Name="menuItemDebugOptions" />
+            <MenuSeparator />
+            <MenuItem Text="&amp;Quit" ShortcutText="Ctrl+Q" x:Name="menuItemQuit" />
+        </MenuItem>
+        <MenuItem Text="&amp;Help" x:Name="menuItemHelp">
+            <MenuItem Text="About" x:Name="menuItemAbout" />
+        </MenuItem>
+    </HorizontalMenu>
+    <HorizontalSeparator />
+    <ScrollViewer StackPanel.ProportionType="Fill">
+        <TextBox Multiline="True" Wrap="True" VerticalAlignment="Stretch" x:Name="textArea" />
+    </ScrollViewer>
+</Notepad>

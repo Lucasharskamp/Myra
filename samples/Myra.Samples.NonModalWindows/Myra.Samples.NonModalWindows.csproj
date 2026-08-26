@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>$(AppTargetFramework)</TargetFramework>
@@ -11,5 +11,15 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Myra\Myra.MonoGame.csproj" />
-  </ItemGroup>  
+  </ItemGroup>
+
+  <ItemGroup>
+    <MyraXaml Include="**\*.xaml" />
+  </ItemGroup> 
+
+  <UsingTask TaskFactory="MyraXamlTaskFactory" TaskName="MyraXamlCompileTask" AssemblyFile="..\..\src\MyraXaml\bin\Debug\netstandard2.0\Myra.Xaml.dll" />
+
+  <Target Name="MyraXamlCompile" AfterTargets="Build" Condition="'$(DesignTimeBuild)' != 'true'">
+    <MyraXamlCompileTask TargetPath="$(TargetPath)" XamlFiles="@(MyraXaml)" RootNamespace="$(RootNamespace)" ProjectDirectory="$(MSBuildProjectDirectory)" ReferenceAssemblies="@(ReferencePath)" Debug="$(DebugSymbols)" />
+  </Target>
 </Project>

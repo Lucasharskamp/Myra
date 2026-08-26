@@ -33,22 +33,29 @@ namespace Myra.Xaml.Compiler
 
         public MyraXamlCompiler(CecilTypeSystem typeSystem)
         {
+            Debugger.Launch();
             BindingContext = new(typeSystem);
             TypeSystem = typeSystem;
             Configuration = CreateConfiguration(TypeSystem);
             EmitMappings = new XamlLanguageEmitMappings<IXamlILEmitter, XamlILNodeEmitResult>();
 
             _compiler = new XamlILCompiler(Configuration, EmitMappings, true);
-            _compiler.Transformers.Insert(8, new XamlNameDirectiveTransformer());
-            _compiler.Transformers.Insert(8, new CodeBehindReferenceTransformer(BindingContext));
-            _compiler.Transformers.Insert(8, new XamlViewModelAssignmentTransformer());
-
+            _compiler.Transformers.Insert(7, new CodeBehindReferenceTransformer(BindingContext));
+            _compiler.Transformers.Insert(7, new XamlViewModelAssignmentTransformer());
+            _compiler.Transformers.Insert(7, new XamlXDirectivesTransformer(BindingContext));
 
             TypesContainer.INotifyPropertyChanged = TypeSystem.FindType(typeof(INotifyPropertyChanged).FullName)!;
+            TypesContainer.Byte = TypeSystem.FindType(typeof(byte).FullName)!;
+            TypesContainer.Int16 = TypeSystem.FindType(typeof(short).FullName)!;
+            TypesContainer.UInt16 = TypeSystem.FindType(typeof(ushort).FullName)!;
+            TypesContainer.UInt32 = TypeSystem.FindType(typeof(uint).FullName)!;
+            TypesContainer.Int64 = TypeSystem.FindType(typeof(long).FullName)!;
+            TypesContainer.UInt64 = TypeSystem.FindType(typeof(ulong).FullName)!;
             TypesContainer.PropertyChangedEventArgs = TypeSystem.FindType(typeof(PropertyChangedEventArgs).FullName)!;
             TypesContainer.PropertyChangedEventHandler = TypeSystem.FindType(typeof(PropertyChangedEventHandler).FullName)!;
+            TypesContainer.Proportion = TypeSystem.FindType("Myra.Graphics2D.UI.Proportion")!;
             TypesContainer.Widget = TypeSystem.FindType("Myra.Graphics2D.UI.Widget")!;
-        } 
+        }
 
         private const string buildMethodName = "InitializeComponent";
 
@@ -121,9 +128,34 @@ namespace Myra.Xaml.Compiler
                 myraAssembly,
                 typeMappings,
                 xmlnsMappings: mappings,
-                customValueConverter: null,
+                customValueConverter: MyraValueConverters,
                 identifierGenerator: null,
                 diagnosticsHandler: null);
+        }
+
+        private static bool MyraValueConverters(AstTransformationContext context, IXamlAstValueNode node, IReadOnlyList<IXamlCustomAttribute>? customAttributes, IXamlType type, out IXamlAstValueNode result)
+        {
+            result = null!;
+
+            // handle proportions
+            if (type == TypesContainer.Proportion)
+            {
+                if (node is not XamlAstTextNode textNode)
+                    return false;
+
+                if (string.IsNullOrWhiteSpace(textNode.Text))
+                    return false;
+
+                // check if value is one of the static readonly properties.
+                var field = type.GetAllFields().FirstOrDefault(t => t.Name == textNode.Text);
+                if (field != null && field.IsStatic)
+                {
+                    result = new XamlStaticFieldNode(node, field);
+                    return true;
+                }
+            }
+
+             return false;
         }
 
 

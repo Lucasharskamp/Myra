@@ -1,6 +1,5 @@
 ﻿using Myra.Events;
 using Myra.Utility;
-using System;
 using System.ComponentModel;
 
 namespace Myra.Graphics2D.UI

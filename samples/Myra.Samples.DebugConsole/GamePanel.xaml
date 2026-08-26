@@ -32,7 +32,7 @@
     </Button>
   </HorizontalStackPanel>
   <HorizontalStackPanel Spacing="8" VerticalAlignment="Bottom">
-    <Button Enabled="{x:Bind ButtonsEnabled}" Click="ButtonDebugPanel_Click">
+    <Button Enabled="{x:Bind ButtonsEnabled}" Click="ButtonDebugPanel_Click" x:FieldModifier="Public" >
       <Label Text="Show Debug Panel" />
     </Button>
     <Button x:Name="DebugModalButton"  Enabled="{x:Bind ButtonsEnabled}" Click="ButtonModalDebugPanel_Click">
