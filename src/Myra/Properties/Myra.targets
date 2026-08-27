@@ -1,0 +1,17 @@
+﻿<Project> 
+  <UsingTask
+      TaskName="Myra.Xaml.MyraXamlCompileTask"
+      AssemblyFile="$(MSBuildThisFileDirectory)Myra.Xaml\Myra.Xaml.dll" />
+
+  <Target
+      Name="MyraXamlCompile"
+      AfterTargets="CoreCompile"
+      Condition="'$(DesignTimeBuild)' != 'true' and '@(MyraXaml)' != ''">
+
+    <MyraXamlCompileTask
+        TargetPath="$(TargetPath)"
+        XamlFiles="@(MyraXaml)"
+        ReferenceAssemblies="@(ReferencePath)"
+        Debug="$(DebugSymbols)" /> 
+  </Target> 
+</Project>
