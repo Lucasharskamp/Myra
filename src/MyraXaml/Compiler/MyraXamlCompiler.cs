@@ -44,7 +44,6 @@ namespace Myra.Xaml.Compiler
             _compiler = new XamlILCompiler(Configuration, EmitMappings, true);
             _compiler.Transformers.Insert(7, new CodeBehindReferenceTransformer(BindingContext));
             _compiler.Transformers.Insert(7, new XamlViewModelAssignmentTransformer());
-            _compiler.Transformers.Insert(7, new XamlDirectPropertiesTransformer());
             _compiler.Transformers.Insert(7, new XamlXDirectivesTransformer(BindingContext));
 
             TypesContainer.INotifyPropertyChanged = TypeSystem.FindType(typeof(INotifyPropertyChanged).FullName)!;
@@ -158,8 +157,7 @@ namespace Myra.Xaml.Compiler
 
                 return false;
             }
-             
-            Debugger.Launch();
+              
             if (type == TypesContainer.Thickness)
             {
                 if (!GetText(node, out var text))
