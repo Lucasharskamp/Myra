@@ -51,7 +51,7 @@ namespace Myra.Graphics2D.UI
 		/// </summary>
 		/// <param name="stylesheet">The stylesheet to use for applying the style.</param>
 		/// <param name="styleName">The name of the style to apply. Defaults to the default stylesheet style.</param>
-		public VerticalSeparator(Stylesheet stylesheet, string styleName = Stylesheet.DefaultStyleName) : base(stylesheet, styleName)
+		public VerticalSeparator(Stylesheet stylesheet, string styleName) : base(stylesheet, styleName)
 		{
 			HorizontalAlignment = HorizontalAlignment.Center;
 			VerticalAlignment = VerticalAlignment.Stretch;

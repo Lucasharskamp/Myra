@@ -1,4 +1,4 @@
-﻿namespace Myra.Samples.AllWidgets
+﻿namespace Myra.Samples.Viewports
 {
 	class Program
 	{

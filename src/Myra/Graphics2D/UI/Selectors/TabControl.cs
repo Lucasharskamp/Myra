@@ -117,7 +117,7 @@ namespace Myra.Graphics2D.UI
 		/// </summary>
 		/// <param name="stylesheet">The stylesheet to use for applying the style.</param>
 		/// <param name="styleName">The name of the style to apply to the tab control.</param>
-		public TabControl(Stylesheet stylesheet, string styleName = Stylesheet.DefaultStyleName) : base(new Grid())
+		public TabControl(Stylesheet stylesheet, string styleName) : base(new Grid())
 		{
 			HorizontalAlignment = HorizontalAlignment.Left;
 			VerticalAlignment = VerticalAlignment.Top;
@@ -146,11 +146,18 @@ namespace Myra.Graphics2D.UI
 		/// Initializes a new instance of the <see cref="TabControl"/> class.
 		/// </summary>
 		/// <param name="styleName">The name of the style to apply to the tab control.</param>
-		public TabControl(string styleName = Stylesheet.DefaultStyleName) : this(Stylesheet.Current, styleName)
+		public TabControl(string styleName) : this(Stylesheet.Current, styleName)
 		{
 		}
 
-		private void ItemOnChanged(object sender, MyraEventArgs eventArgs)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TabControl"/> class.
+        /// </summary>
+        public TabControl() : this(Stylesheet.Current, Stylesheet.DefaultStyleName)
+        {
+        }
+
+        private void ItemOnChanged(object sender, MyraEventArgs eventArgs)
 		{
 			var item = (TabItem)sender;
 

@@ -57,7 +57,7 @@ namespace Myra.Graphics2D.UI
 		/// </summary>
 		/// <param name="stylesheet">The stylesheet to use for applying the style.</param>
 		/// <param name="styleName">The name of the style to apply. Defaults to the default stylesheet style.</param>
-		public VerticalProgressBar(Stylesheet stylesheet, string styleName = Stylesheet.DefaultStyleName) : base(stylesheet, styleName)
+		public VerticalProgressBar(Stylesheet stylesheet, string styleName) : base(stylesheet, styleName)
 		{
 			HorizontalAlignment = HorizontalAlignment.Left;
 			VerticalAlignment = VerticalAlignment.Stretch;
@@ -67,10 +67,18 @@ namespace Myra.Graphics2D.UI
 		/// Initializes a new instance of the <see cref="VerticalProgressBar"/> class with the specified style.
 		/// </summary>
 		/// <param name="styleName">The name of the style to apply. Defaults to the default stylesheet style.</param>
-		public VerticalProgressBar(string styleName = Stylesheet.DefaultStyleName) : this(Stylesheet.Current, styleName)
+		public VerticalProgressBar(string styleName) : this(Stylesheet.Current, styleName)
 		{
 		}
 
-		internal override IDictionary GetStylesDictionary(Stylesheet stylesheet) => stylesheet.VerticalProgressBarStyles;
+        /// <summary>
+        /// Initializes a new instance of the <see cref="VerticalProgressBar"/> class.
+        /// </summary>
+        public VerticalProgressBar() : this(Stylesheet.Current, Stylesheet.DefaultStyleName)
+        {
+        }
+
+
+        internal override IDictionary GetStylesDictionary(Stylesheet stylesheet) => stylesheet.VerticalProgressBarStyles;
 	}
 }

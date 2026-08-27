@@ -693,7 +693,7 @@ namespace Myra.Graphics2D.UI.Data
 		/// </summary>
 		/// <param name="stylesheet">The stylesheet to use for applying styles.</param>
 		/// <param name="styleName">The name of the style to apply from the stylesheet.</param>
-		public DataGrid(Stylesheet stylesheet, string styleName = Stylesheet.DefaultStyleName)
+		public DataGrid(Stylesheet stylesheet, string styleName)
 		{
 			ClipToBounds = true;
 			HorizontalAlignment = HorizontalAlignment.Stretch;

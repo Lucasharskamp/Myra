@@ -65,7 +65,7 @@ namespace Myra.Graphics2D.UI
 		/// </summary>
 		/// <param name="stylesheet">The stylesheet to use for applying the style.</param>
 		/// <param name="styleName">The name of the style to apply. Defaults to the default stylesheet style.</param>
-		public ToggleButton(Stylesheet stylesheet, string styleName = Stylesheet.DefaultStyleName)
+		public ToggleButton(Stylesheet stylesheet, string styleName)
 		{
 			_layout = new SingleItemLayout<Widget>(this);
 			ChildrenLayout = _layout;

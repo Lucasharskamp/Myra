@@ -50,6 +50,16 @@ namespace Myra.Xaml.Helpers
         public static IXamlType PropertyChangedEventHandler { get; set; } = default!;
 
         /// <summary>
+        /// "Microsoft.Xna.Framework.Color" class
+        /// </summary>
+        public static IXamlType Color { get; set; } = default!;
+
+        /// <summary>
+        /// "Myra.Graphics2D.Thickness" class
+        /// </summary>
+        public static IXamlType Thickness { get; set; } = default!;
+
+        /// <summary>
         /// "Myra.Graphics2D.UI.Proportion" class
         /// </summary>
         public static IXamlType Proportion { get; set; } = default!;

@@ -43,7 +43,7 @@ namespace Myra.Graphics2D.UI.ColorPicker
 		/// </summary>
 		/// <param name="stylesheet">The stylesheet to use for applying the style.</param>
 		/// <param name="styleName">The name of the style to apply. Defaults to the default stylesheet style.</param>
-		public ColorPickerDialog(Stylesheet stylesheet, string styleName = Stylesheet.DefaultStyleName) : base(stylesheet, null)
+		public ColorPickerDialog(Stylesheet stylesheet, string styleName) : base(stylesheet, null)
 		{
 			ColorPickerPanel = new ColorPickerPanel();
 

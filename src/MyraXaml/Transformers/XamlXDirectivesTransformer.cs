@@ -56,16 +56,20 @@ namespace Myra.Xaml.Transformers
 
             if (targetProperty == null)
             {
-                throw new XamlLoadException(
-                    $"Property '{text}' does not exist in type '{rootClrType.FullName}'",
-                    valueNode);
+                context.ReportDiagnostic(new XamlDiagnostic("MYRA001",
+                    XamlDiagnosticSeverity.Fatal,
+                    $"property '{text}' not found in type '{rootClrType.FullName}'",
+                    directive));
+                return node;
             }
 
             if (targetProperty.Setter == null)
             {
-                throw new XamlLoadException(
-                    $"Property '{targetProperty.Name}' from '{targetProperty.DeclaringType.FullName}' is not writable.",
-                    valueNode);
+                context.ReportDiagnostic(new XamlDiagnostic("MYRA002",
+                   XamlDiagnosticSeverity.Fatal,
+                   $"property '{text}' in type '{rootClrType.FullName}' does not have a setter!",
+                   directive));
+                return node;
             } 
 
             var assignment = new XamlAssignPropertyValueNode(

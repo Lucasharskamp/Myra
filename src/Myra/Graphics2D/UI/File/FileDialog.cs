@@ -1,10 +1,11 @@
-﻿using MonoGame.Utilities;
+﻿using Microsoft.Xna.Framework.Graphics;
+using MonoGame.Utilities;
 using Myra.Events;
 using Myra.Graphics2D.UI.Styles;
 using Myra.Utility;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Collections;
 
 namespace Myra.Graphics2D.UI.File
 {
@@ -187,7 +188,7 @@ namespace Myra.Graphics2D.UI.File
 		/// <param name="mode">The file dialog mode (open file, save file, or choose folder).</param>
 		/// <param name="stylesheet">The stylesheet to use for applying the style.</param>
 		/// <param name="styleName">The name of the style to apply. Defaults to the default stylesheet style.</param>
-		public FileDialog(FileDialogMode mode, Stylesheet stylesheet, string styleName = Stylesheet.DefaultStyleName) : base(stylesheet, null)
+		public FileDialog(FileDialogMode mode, Stylesheet stylesheet, string styleName) : base(stylesheet, null)
 		{
 			_mode = mode;
 
@@ -253,14 +254,28 @@ namespace Myra.Graphics2D.UI.File
 		/// </summary>
 		/// <param name="mode">The file dialog mode (open file, save file, or choose folder).</param>
 		/// <param name="styleName">The name of the style to apply. Defaults to the default stylesheet style.</param>
-		public FileDialog(FileDialogMode mode, string styleName = Stylesheet.DefaultStyleName) : this(mode, Stylesheet.Current, styleName)
+		public FileDialog(FileDialogMode mode, string styleName) : this(mode, Stylesheet.Current, styleName)
 		{
 		}
 
-		/// <summary>
-		/// Handles the placement of the dialog window and updates the folder view.
-		/// </summary>
-		protected override void OnPlacedChanged()
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FileDialog"/> class with the specified mode.
+        /// </summary> 
+        public FileDialog(FileDialogMode mode) : this(mode, Stylesheet.Current, Stylesheet.DefaultStyleName)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FileDialog"/> class.
+        /// </summary> 
+        public FileDialog() : this(FileDialogMode.OpenFile, Stylesheet.Current, Stylesheet.DefaultStyleName)
+        {
+        }
+
+        /// <summary>
+        /// Handles the placement of the dialog window and updates the folder view.
+        /// </summary>
+        protected override void OnPlacedChanged()
 		{
 			base.OnPlacedChanged();
 

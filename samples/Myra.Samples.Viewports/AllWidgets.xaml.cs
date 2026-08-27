@@ -3,14 +3,68 @@ using Myra.Graphics2D.UI.ColorPicker;
 using Myra.Graphics2D.UI.File;
 using Myra.Graphics2D.UI.Styles;
 
-namespace Myra.Samples.AllWidgets
+namespace Myra.Samples.Viewports
 {
-	public partial class AllWidgets
+	public partial class AllWidgets : Panel
 	{
-		public AllWidgets()
-		{
-			BuildUI();
+		public HorizontalMenu _mainMenu { get; set; }
+		public MenuItem _menuFile { get; set; }
 
+		public MenuItem _menuItemOpenFile { get; set; }
+		public MenuItem _menuItemSaveFile { get; set; }
+
+		public MenuItem _menuItemChooseFolder { get; set; }
+
+		public MenuItem _menuItemChooseColor { get; set; }
+
+		public MenuItem _menuItemQuit { get; set; }
+
+		public MenuItem _menuItemCopy { get; set; }
+		public MenuItem _menuEdit { get; set; }
+        public MenuItem _menuItemPaste { get; set; }
+
+		public MenuItem _menuItemUndo { get; set; }
+
+		public MenuItem _menuItemRedo { get; set; }
+
+		public MenuItem _menuHelp { get; set; }
+
+		public MenuItem _menuItemAbout { get; set; }
+
+		public Grid _gridRight { get; set; }
+
+		public Button _buttonSaveFile { get; set; }
+		public Image _imageSaveFile { get; set; }
+
+		public TextBox _textSaveFile { get; set; }
+
+		public Button _buttonOpenFile { get; set; }
+
+		public Image _imageOpenFile { get; set; }
+
+		public TextBox _textOpenFile { get; set; }
+
+		public Button _buttonChooseFolder { get; set; }
+
+		public Image _imageChooseFolder { get; set; }
+
+		public TextBox _textChooseFolder { get; set; }
+
+		public Label _textButtonLabel { get; set; }
+
+		public Button _buttonChooseColor { get; set; }
+
+		public Button _imageButton { get; set; }
+
+		public HorizontalProgressBar _horizontalProgressBar { get; set; }
+
+        public VerticalProgressBar _verticalProgressBar { get; set; }
+
+        public Label _labelOverGui { get; set; }
+
+
+        public void Init()
+		{ 
 			_menuItemOpenFile.Image = Stylesheet.Current.Atlas["icon-folder"];
 			_menuItemSaveFile.Image = Stylesheet.Current.Atlas["icon-folder-new"];
 

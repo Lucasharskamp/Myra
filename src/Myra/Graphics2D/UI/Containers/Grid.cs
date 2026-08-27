@@ -370,7 +370,7 @@ namespace Myra.Graphics2D.UI
 		/// </summary>
 		/// <param name="stylesheet">The stylesheet to use for applying the style.</param>
 		/// <param name="styleName">The name of the style to apply.</param>
-		public Grid(Stylesheet stylesheet, string styleName = Stylesheet.DefaultStyleName)
+		public Grid(Stylesheet stylesheet, string styleName)
 		{
 			ChildrenLayout = _layout;
 			_layout.ColumnsProportions.CollectionChanged += OnProportionsChanged;

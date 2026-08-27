@@ -3,7 +3,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using System;
 
-namespace Myra.Samples.AllWidgets
+namespace Myra.Samples.Viewports
 {
 	public enum ViewportMode
 	{
@@ -94,6 +94,7 @@ namespace Myra.Samples.AllWidgets
 			MyraEnvironment.EnableModalDarkening = true;
 
 			_allWidgets = new AllWidgets();
+			_allWidgets.Init();
 
 			_desktop1 = new Desktop();
 			_desktop1.KeyDown += (s, a) =>
@@ -196,5 +197,13 @@ namespace Myra.Samples.AllWidgets
 			_desktop1.Render();
 			_desktop2.Render();
 		}
+
+        protected override void Dispose(bool disposing)
+        {
+			_graphics.Dispose();
+			_desktop1.Dispose();
+			_desktop2.Dispose();
+            base.Dispose(disposing);
+        }
 	}
 }

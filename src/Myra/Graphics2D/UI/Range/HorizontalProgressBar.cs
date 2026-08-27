@@ -57,7 +57,7 @@ namespace Myra.Graphics2D.UI
 		/// </summary>
 		/// <param name="stylesheet">The stylesheet to use for applying the style.</param>
 		/// <param name="styleName">The name of the style to apply. Defaults to the default stylesheet style.</param>
-		public HorizontalProgressBar(Stylesheet stylesheet, string styleName = Stylesheet.DefaultStyleName) : base(stylesheet, styleName)
+		public HorizontalProgressBar(Stylesheet stylesheet, string styleName) : base(stylesheet, styleName)
 		{
 			HorizontalAlignment = HorizontalAlignment.Stretch;
 			VerticalAlignment = VerticalAlignment.Top;
@@ -67,10 +67,18 @@ namespace Myra.Graphics2D.UI
 		/// Initializes a new instance of the <see cref="HorizontalProgressBar"/> class with the specified style.
 		/// </summary>
 		/// <param name="styleName">The name of the style to apply. Defaults to the default stylesheet style.</param>
-		public HorizontalProgressBar(string styleName = Stylesheet.DefaultStyleName) : this(Stylesheet.Current, styleName)
+		public HorizontalProgressBar(string styleName) : this(Stylesheet.Current, styleName)
 		{
 		}
 
-		internal override IDictionary GetStylesDictionary(Stylesheet stylesheet) => stylesheet.HorizontalProgressBarStyles;
+        /// <summary>
+        /// Initializes a new instance of the <see cref="HorizontalProgressBar"/> class.
+        /// </summary>
+        public HorizontalProgressBar() : this(Stylesheet.Current, Stylesheet.DefaultStyleName)
+        {
+        }
+
+
+        internal override IDictionary GetStylesDictionary(Stylesheet stylesheet) => stylesheet.HorizontalProgressBarStyles;
 	}
 }

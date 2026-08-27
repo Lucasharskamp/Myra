@@ -353,7 +353,7 @@ namespace Myra.Graphics2D.UI
 		/// </summary>
 		/// <param name="stylesheet">The stylesheet to use for applying the style.</param>
 		/// <param name="styleName">The name of the style to apply to the scroll viewer.</param>
-		public ScrollViewer(Stylesheet stylesheet, string styleName = Stylesheet.DefaultStyleName)
+		public ScrollViewer(Stylesheet stylesheet, string styleName)
 		{
 			_layout = new SingleItemLayout<Widget>(this);
 			ChildrenLayout = _layout;

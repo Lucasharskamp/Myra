@@ -67,10 +67,17 @@ namespace Myra.Graphics2D.UI
 		/// Initializes a new instance of the <see cref="VerticalSlider"/> class with the specified style.
 		/// </summary>
 		/// <param name="styleName">The name of the style to apply. Defaults to the default stylesheet style.</param>
-		public VerticalSlider(string styleName = Stylesheet.DefaultStyleName) : this(Stylesheet.Current, styleName)
+		public VerticalSlider(string styleName) : this(Stylesheet.Current, styleName)
 		{
 		}
 
-		internal override IDictionary GetStylesDictionary(Stylesheet stylesheet) => stylesheet.VerticalSliderStyles;
+        /// <summary>
+        /// Initializes a new instance of the <see cref="VerticalSlider"/> class.
+        /// </summary>
+        public VerticalSlider() : this(Stylesheet.Current, Stylesheet.DefaultStyleName)
+        {
+        }
+
+        internal override IDictionary GetStylesDictionary(Stylesheet stylesheet) => stylesheet.VerticalSliderStyles;
 	}
 }

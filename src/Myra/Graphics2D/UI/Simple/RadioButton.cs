@@ -53,7 +53,7 @@ namespace Myra.Graphics2D.UI
 		/// </summary>
 		/// <param name="stylesheet">The stylesheet to use for applying the style.</param>
 		/// <param name="styleName">The name of the style to apply. Defaults to the default stylesheet style.</param>
-		public RadioButton(Stylesheet stylesheet, string styleName = Stylesheet.DefaultStyleName)
+		public RadioButton(Stylesheet stylesheet, string styleName)
 		{
 			SetStyle(stylesheet, styleName);
 		}

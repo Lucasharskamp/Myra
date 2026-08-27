@@ -4,7 +4,8 @@ using Mono.Cecil.Cil;
 using Mono.Collections.Generic;
 using Myra.Xaml.Compiler;
 using Myra.Xaml.Helpers;
-using System; 
+using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using XamlX;
@@ -37,7 +38,7 @@ namespace Myra.Xaml
         public CecilTypeSystem? TypeSystem { get; set; }
 
         public override bool Execute()
-        {
+        { 
             AssemblyDefinition? assembly = null;
             try
             {

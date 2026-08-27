@@ -42,7 +42,7 @@ namespace Myra.Graphics2D.UI
 		/// </summary>
 		/// <param name="stylesheet">The stylesheet to use for applying the style.</param>
 		/// <param name="styleName">The name of the style to apply. Defaults to the default stylesheet style.</param>
-		public CheckButton(Stylesheet stylesheet, string styleName = Stylesheet.DefaultStyleName)
+		public CheckButton(Stylesheet stylesheet, string styleName)
 		{
 			SetStyle(stylesheet, styleName);
 		}
@@ -51,10 +51,18 @@ namespace Myra.Graphics2D.UI
 		/// Initializes a new instance of the <see cref="CheckButton"/> class with the specified style.
 		/// </summary>
 		/// <param name="styleName">The name of the style to apply. Defaults to the default stylesheet style.</param>
-		public CheckButton(string styleName = Stylesheet.DefaultStyleName) : this(Stylesheet.Current, styleName)
+		public CheckButton(string styleName) : this(Stylesheet.Current, styleName)
 		{
 		}
 
-		internal override IDictionary GetStylesDictionary(Stylesheet stylesheet) => stylesheet.CheckBoxStyles;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CheckButton"/> class.
+        /// </summary>
+        public CheckButton() : this(Stylesheet.Current, Stylesheet.DefaultStyleName)
+        {
+        }
+
+        internal override IDictionary GetStylesDictionary(Stylesheet stylesheet) => stylesheet.CheckBoxStyles;
 	}
 }

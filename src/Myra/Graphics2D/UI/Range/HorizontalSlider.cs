@@ -41,7 +41,7 @@ namespace Myra.Graphics2D.UI
 		/// </summary>
 		/// <param name="stylesheet">The stylesheet to use for applying the style.</param>
 		/// <param name="styleName">The name of the style to apply. Defaults to the default stylesheet style.</param>
-		public HorizontalSlider(Stylesheet stylesheet, string styleName = Stylesheet.DefaultStyleName) : base(stylesheet, styleName)
+		public HorizontalSlider(Stylesheet stylesheet, string styleName) : base(stylesheet, styleName)
 		{
 			HorizontalAlignment = HorizontalAlignment.Stretch;
 			VerticalAlignment = VerticalAlignment.Top;
@@ -51,10 +51,17 @@ namespace Myra.Graphics2D.UI
 		/// Initializes a new instance of the <see cref="HorizontalSlider"/> class with the specified style.
 		/// </summary>
 		/// <param name="styleName">The name of the style to apply. Defaults to the default stylesheet style.</param>
-		public HorizontalSlider(string styleName = Stylesheet.DefaultStyleName) : this(Stylesheet.Current, styleName)
+		public HorizontalSlider(string styleName) : this(Stylesheet.Current, styleName)
 		{
 		}
 
-		internal override IDictionary GetStylesDictionary(Stylesheet stylesheet) => stylesheet.HorizontalSliderStyles;
+        /// <summary>
+        /// Initializes a new instance of the <see cref="HorizontalSlider"/> class.
+        /// </summary>
+        public HorizontalSlider() : this(Stylesheet.Current, Stylesheet.DefaultStyleName)
+        {
+        }
+
+        internal override IDictionary GetStylesDictionary(Stylesheet stylesheet) => stylesheet.HorizontalSliderStyles;
 	}
 }

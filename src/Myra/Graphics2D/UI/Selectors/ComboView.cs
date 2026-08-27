@@ -148,7 +148,7 @@ namespace Myra.Graphics2D.UI
 		/// </summary>
 		/// <param name="stylesheet">The stylesheet to use for applying the style.</param>
 		/// <param name="styleName">The name of the style to apply to the combo view.</param>
-		public ComboView(Stylesheet stylesheet, string styleName = Stylesheet.DefaultStyleName)
+		public ComboView(Stylesheet stylesheet, string styleName)
 		{
 			_button = new ToggleButton(null)
 			{
@@ -168,7 +168,7 @@ namespace Myra.Graphics2D.UI
 
 			_button.PressedChanged += InternalChild_PressedChanged;
 
-			_listView = new ListView(stylesheet);
+			_listView = new ListView(stylesheet, styleName);
 			_listView._parentCombo = this;
 
 			HorizontalAlignment = HorizontalAlignment.Left;
@@ -183,11 +183,19 @@ namespace Myra.Graphics2D.UI
 		/// Initializes a new instance of the <see cref="ComboView"/> class.
 		/// </summary>
 		/// <param name="styleName">The name of the style to apply to the combo view.</param>
-		public ComboView(string styleName = Stylesheet.DefaultStyleName) : this(Stylesheet.Current, styleName)
+		public ComboView(string styleName) : this(Stylesheet.Current, styleName)
 		{
 		}
 
-		private void DesktopOnContextMenuClosed(object sender, GenericEventArgs<Widget> genericEventArgs)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ComboView"/> class.
+        /// </summary> 
+        public ComboView() : this(Stylesheet.Current, Stylesheet.DefaultStyleName)
+        {
+        }
+
+
+        private void DesktopOnContextMenuClosed(object sender, GenericEventArgs<Widget> genericEventArgs)
 		{
 			// Unpress the button only if mouse is outside
 			// As if it is inside, then it'll get unpressed naturally
