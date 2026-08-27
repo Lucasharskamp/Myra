@@ -40,6 +40,11 @@ namespace Myra.Xaml.Helpers
         public static IXamlType UInt64 { get; set; } = default!;
 
         /// <summary>
+        /// <see cref="System.Single"/>
+        /// </summary>
+        public static IXamlType Single { get; set; } = default!;
+
+        /// <summary>
         /// <see cref="System.ComponentModel.PropertyChangedEventArgs"/> class
         /// </summary>
         public static IXamlType PropertyChangedEventArgs { get; set; } = default!;

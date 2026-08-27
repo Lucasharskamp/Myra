@@ -53,6 +53,7 @@ namespace Myra.Xaml.Compiler
             TypesContainer.UInt32 = TypeSystem.FindType(typeof(uint).FullName)!;
             TypesContainer.Int64 = TypeSystem.FindType(typeof(long).FullName)!;
             TypesContainer.UInt64 = TypeSystem.FindType(typeof(ulong).FullName)!;
+            TypesContainer.Single = TypeSystem.FindType(typeof(float).FullName)!;
             TypesContainer.PropertyChangedEventArgs = TypeSystem.FindType(typeof(PropertyChangedEventArgs).FullName)!;
             TypesContainer.PropertyChangedEventHandler = TypeSystem.FindType(typeof(PropertyChangedEventHandler).FullName)!;
             TypesContainer.Color = TypeSystem.FindType("Microsoft.Xna.Framework.Color")!;
@@ -232,6 +233,29 @@ namespace Myra.Xaml.Compiler
                          TypesContainer.Color.FindConstructor([TypesContainer.UInt32])!,
                          [(new XamlConstantNode(node, TypesContainer.UInt32, color))]);
                     return true;
+                }
+
+                if (text.Contains(','))
+                {
+                    var values = text.Split(',');
+                    if (values.Length != 3 && values.Length != 4)
+                        return false;
+
+                    var arguments = new List<float>();
+                    foreach (var value in values)
+                    {
+                        if (!Single.TryParse(value.Trim(), out float r))
+                        {
+                            return false;
+                        }
+                        arguments.Add(r);
+                    }
+
+                    var constructor = TypesContainer.Color.FindConstructor(arguments.Select(a => TypesContainer.Single).ToList())!;
+                    result = new XamlAstNewClrObjectNode(node,
+                        new XamlAstClrTypeReference(node, TypesContainer.Color, false),
+                        constructor,
+                        [.. arguments.Select(a => (IXamlAstValueNode)new XamlConstantNode(node, TypesContainer.Single, a))]);
                 }
             }
 
