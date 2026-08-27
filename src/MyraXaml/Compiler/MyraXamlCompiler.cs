@@ -241,21 +241,44 @@ namespace Myra.Xaml.Compiler
                     if (values.Length != 3 && values.Length != 4)
                         return false;
 
-                    var arguments = new List<float>();
+                    if (!values.Any(v => v.Contains('.')))
+                    {                        
+                        // use integers 
+                        var intArguments = new List<int>();
+                        foreach (var value in values)
+                        {
+                            if (!Int32.TryParse(value.Trim(), out int r))
+                            {
+                                return false;
+                            }
+                            intArguments.Add(r);
+                        }
+
+                        var intConstructor = TypesContainer.Color.FindConstructor(intArguments.Select(a => context.Configuration.WellKnownTypes.Int32).ToList())!;
+                        result = new XamlAstNewClrObjectNode(node,
+                            new XamlAstClrTypeReference(node, TypesContainer.Color, false),
+                            intConstructor,
+                            [.. intArguments.Select(a => (IXamlAstValueNode)new XamlConstantNode(node, context.Configuration.WellKnownTypes.Int32, a))]);
+                        return true;
+                    }
+
+                    // use floats 
+                    var floatArguments = new List<float>();
                     foreach (var value in values)
                     {
                         if (!Single.TryParse(value.Trim(), out float r))
                         {
                             return false;
                         }
-                        arguments.Add(r);
+                        floatArguments.Add(r);
                     }
 
-                    var constructor = TypesContainer.Color.FindConstructor(arguments.Select(a => TypesContainer.Single).ToList())!;
+                    var constructor = TypesContainer.Color.FindConstructor(floatArguments.Select(a => TypesContainer.Single).ToList())!;
                     result = new XamlAstNewClrObjectNode(node,
                         new XamlAstClrTypeReference(node, TypesContainer.Color, false),
                         constructor,
-                        [.. arguments.Select(a => (IXamlAstValueNode)new XamlConstantNode(node, TypesContainer.Single, a))]);
+                        [.. floatArguments.Select(a => (IXamlAstValueNode)new XamlConstantNode(node, TypesContainer.Single, a))]);
+                    return true;
                 }
             }
 
