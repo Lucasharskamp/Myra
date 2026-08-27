@@ -17,14 +17,16 @@
   <!-- Resources for NuGet package -->
   <ItemGroup Condition="'$(Configuration)'=='Release'">
     <None Include="..\MyraXaml\bin\$(Configuration)\netstandard2.0\*" Pack="true" PackagePath="build\Myra.Xaml\" />
+    <None Include="..\MyraAnalyzer\bin\$(Configuration)\netstandard2.0\*" Pack="true" PackagePath="build\Myra.Analyzer\" />
     <None Include="Properties/Myra.props" Pack="true" PackagePath="build\" />
     <None Include="Properties/Myra.targets" Pack="true" PackagePath="build\" />
     <None Include="..\..\README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
   
-  <!-- ensure MyraXaml is built before we pack it in -->
+  <!-- ensure MyraXaml and MyraAnalyzer are built before we pack them in -->
   <Target Name="BuildMyraXamlForPack" BeforeTargets="Pack" Condition="'$(Configuration)' == 'Release'">
     <MSBuild Projects="..\MyraXaml\MyraXaml.csproj" Targets="Build" Properties="Configuration=Release" />
+    <MSBuild Projects="..\MyraAnalyzer\MyraAnalyzer.csproj" Targets="Build" Properties="Configuration=Release" />
   </Target>
   
   <ItemGroup>

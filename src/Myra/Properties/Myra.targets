@@ -1,4 +1,10 @@
-﻿<Project> 
+﻿<Project>
+
+  <ItemGroup>
+    <AdditionalFiles Include="@(MyraXaml)" />
+    <Analyzer Include="$(MSBuildThisFileDirectory)Myra.Analyzer\Myra.Analyzer.dll"  />
+  </ItemGroup>
+  
   <UsingTask
       TaskName="Myra.Xaml.MyraXamlCompileTask"
       AssemblyFile="$(MSBuildThisFileDirectory)Myra.Xaml\Myra.Xaml.dll" />
