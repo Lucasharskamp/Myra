@@ -57,6 +57,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{0F0B76A5
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CompilerTasks", "..\tests\CompilerTasks\CompilerTasks.csproj", "{3E4BB393-8805-D3CE-ABE5-905054333A6D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyraAnalyzer", "..\src\MyraAnalyzer\MyraAnalyzer.csproj", "{4F22A62B-FA2D-4BDC-8ADE-3D15E45178A6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -159,6 +161,10 @@ Global
 		{3E4BB393-8805-D3CE-ABE5-905054333A6D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3E4BB393-8805-D3CE-ABE5-905054333A6D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3E4BB393-8805-D3CE-ABE5-905054333A6D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4F22A62B-FA2D-4BDC-8ADE-3D15E45178A6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4F22A62B-FA2D-4BDC-8ADE-3D15E45178A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4F22A62B-FA2D-4BDC-8ADE-3D15E45178A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4F22A62B-FA2D-4BDC-8ADE-3D15E45178A6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -183,6 +189,7 @@ Global
 		{5B20CFF6-44F0-F0D7-A299-7DF86B8F6AE1} = {EAB0AA24-7185-4897-A866-AE87AF3F2E0B}
 		{3B2A546D-F33A-4718-AF5A-9615D03673B2} = {753F5160-C3F9-42D3-B8EA-4D7B5354234D}
 		{3E4BB393-8805-D3CE-ABE5-905054333A6D} = {0F0B76A5-147B-4775-98D3-1CF626E00C6D}
+		{4F22A62B-FA2D-4BDC-8ADE-3D15E45178A6} = {753F5160-C3F9-42D3-B8EA-4D7B5354234D}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {35ACDF4E-2CE2-46B1-A19F-35DC131069A1}

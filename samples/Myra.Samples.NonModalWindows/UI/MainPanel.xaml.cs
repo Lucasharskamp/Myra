@@ -2,14 +2,14 @@
 using Microsoft.Xna.Framework;
 using Myra.Graphics2D.UI;
 
-namespace Myra.Samples.NonModalWindows.UI
+namespace Myra.Samples.NonModalWindows.UI 
 {
 	public partial class MainPanel : Panel
 	{
-        private ToggleButton Button1 { get; set; } = default!;
-        private ToggleButton Button2 { get; set; } = default!;
-        private ToggleButton Button3 { get; set; } = default!;
-		public Label LabelOverGui { get; set; } = default!;
+        private ToggleButton Button1 { get; set; }
+        private ToggleButton Button2 { get; set; } 
+        private ToggleButton Button3 { get; set; } 
+		public Label LabelOverGui { get; set; } 
 
 
         private readonly Window1 _window1 = new Window1();
@@ -40,7 +40,7 @@ namespace Myra.Samples.NonModalWindows.UI
             Button2.IsPressed = true;
             Button3.IsPressed = true;
 		}
-
+		 
 		private void _button1_PressedChanged(object sender, MyraEventArgs e)
 		{
 			if (Button1.IsPressed)
@@ -49,7 +49,7 @@ namespace Myra.Samples.NonModalWindows.UI
 			}
 			else
 			{
-				_window1.Close();
+				_window1.Close(); 
 			}
 		}
 
@@ -58,7 +58,7 @@ namespace Myra.Samples.NonModalWindows.UI
 			if (Button2.IsPressed)
 			{
 				_window2.Show(Desktop, new Point(400, 100));
-			}
+			} 
 			else
 			{
 				_window2.Close();
@@ -66,7 +66,7 @@ namespace Myra.Samples.NonModalWindows.UI
 		}
 
 		private void _button3_PressedChanged(object sender, MyraEventArgs e)
-		{
+		{ 
 			if (Button3.IsPressed)
 			{
 				_window3.Show(Desktop, new Point(200, 400));

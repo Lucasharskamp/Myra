@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup> 
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <AssemblyName>Myra.Analyzer</AssemblyName>
+    <BuildOutputTargetFolder>tools</BuildOutputTargetFolder>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <DebugType>embedded</DebugType>
+    <DefineConstants>$(DefineConstants);BUILDTASK;</DefineConstants>
+    <EnableNETAnalyzers>false</EnableNETAnalyzers>
+    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <IncludeSymbols>false</IncludeSymbols>
+    <LangVersion>14.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Myra.Analyzer</RootNamespace>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+    <TargetFramework>netstandard2.0</TargetFramework> 
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" />
+  </ItemGroup> 
+  <ItemGroup>
+    <AdditionalFiles Include="AnalyzerReleases.Shipped.md" /> 
+  </ItemGroup>
+
+</Project>

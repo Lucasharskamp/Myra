@@ -5,8 +5,7 @@ using Myra.Xaml.Transformers;
 using Myra.Xaml.Types;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Diagnostics;
+using System.ComponentModel; 
 using System.IO;
 using System.Linq; 
 using XamlX;
@@ -32,8 +31,7 @@ namespace Myra.Xaml.Compiler
         private readonly XamlILCompiler _compiler;
 
         public MyraXamlCompiler(CecilTypeSystem typeSystem)
-        {
-            Debugger.Launch();
+        { 
             BindingContext = new(typeSystem);
             TypeSystem = typeSystem;
             Configuration = CreateConfiguration(TypeSystem);
