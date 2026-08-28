@@ -37,7 +37,7 @@ namespace Myra.Xaml.Transformers
 
             // get "x:StyleSheet" directive from the element.
             // it must be a static field/property containing the stylesheet.
-            if (valueNode.ExtractXDirectiveAsStatic("Stylesheet", out var styleSheetDirective, out var stylesheetNode))
+            if (valueNode.FindXDirectiveAsStatic("Stylesheet", out var styleSheetDirective, out var stylesheetNode))
             {
                 if (!isRoot)
                 {

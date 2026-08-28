@@ -203,10 +203,10 @@ namespace Myra.Xaml.Compiler
             {
                 if (!GetText(node, out var text))
                     return false;
-                var styleSheetContainer = context.GetItem<XamlStylesheetContainer>();
+                var styleSheetContainer = TransformerHelpers.GetStylesheet(context, node);
 
                 var fonts = TypesContainer.StyleSheet.Properties.First(p => p.Name == "Fonts"); 
-                var callFonts = new XamlStaticOrTargetedReturnMethodCallNode(node, fonts.Getter!, [styleSheetContainer.Node]);
+                var callFonts = new XamlStaticOrTargetedReturnMethodCallNode(node, fonts.Getter!, [styleSheetContainer]);
                 var arrayOperator = TypesContainer.StylesheetFontsCollection.GetMethod(m =>
                                                                 m.Name == "get_Item" &&
                                                                 m.Parameters.Count == 1 &&
@@ -285,10 +285,10 @@ namespace Myra.Xaml.Compiler
             if (!GetText(node, out var text))
                 return false;
 
-            var styleSheetContainer = context.GetItem<XamlStylesheetContainer>();
+            var styleSheetContainer = TransformerHelpers.GetStylesheet(context, node);
 
             var atlas = TypesContainer.StyleSheet.Properties.First(p => p.Name == "Atlas"); 
-            var callAtlas = new XamlStaticOrTargetedReturnMethodCallNode(node, atlas.Getter!, [styleSheetContainer.Node]);
+            var callAtlas = new XamlStaticOrTargetedReturnMethodCallNode(node, atlas.Getter!, [styleSheetContainer]);
             var ensureRegionMethod = TypesContainer.TextureRegionAtlas.GetMethod(m => m.Name == "EnsureRegion");
             result = new XamlStaticOrTargetedReturnMethodCallNode(node,
                 new XamlWrappedMethod(ensureRegionMethod),

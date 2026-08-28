@@ -22,7 +22,7 @@ namespace Myra.Xaml.Helpers
         }
 
 
-        public static IXamlAstValueNode GetStylesheet(AstTransformationContext context, XamlAstObjectNode node)
+        public static IXamlAstValueNode GetStylesheet(AstTransformationContext context, IXamlAstValueNode node)
         {
 
             if (!context.TryGetItem<XamlStylesheetContainer>(out var stylesheetContainer))
@@ -120,14 +120,14 @@ namespace Myra.Xaml.Helpers
         }
 
         /// <summary>
-        /// Extracts a x: directive with a x:Static value from a node.
+        /// Finds a x: directive with a x:Static value from a node.
         /// </summary>
         /// <param name="valueNode">Node to extract from</param>
         /// <param name="xDirectiveName">Directive to find</param>
         /// <param name="foundValue">Found value (if present, otherwise null)</param>
         /// <returns>If the directive was present</returns>
         /// <exception cref="XamlLoadException">THrown if multiple nodes are found or if a node has multiple values.</exception>
-        public static bool ExtractXDirectiveAsStatic(this XamlAstObjectNode valueNode, string xDirectiveName,
+        public static bool FindXDirectiveAsStatic(this XamlAstObjectNode valueNode, string xDirectiveName,
             [NotNullWhen(true)] out XamlAstXmlDirective? directive,
             [NotNullWhen(true)] out XamlStaticExtensionNode? foundValue)
         {
