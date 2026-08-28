@@ -1,18 +1,16 @@
-﻿using XamlX.TypeSystem;
+﻿using XamlX.Ast;
 
 namespace Myra.Xaml.Types
 {
     /// <summary>
-    /// Contains a x:StyleSheet handler.
+    /// Container for the Stylesheet currently in use.
     /// </summary>
-    public sealed class XamlStyleSheetContainer
+    public sealed class XamlStylesheetContainer
     {
-        public IXamlType Container { get; }
-        public IXamlProperty Property { get; }
-        public XamlStyleSheetContainer(IXamlType container, IXamlProperty property)
+        public IXamlAstValueNode Node { get;  }
+        public XamlStylesheetContainer(IXamlAstValueNode node)
         {
-            Container = container;
-            Property = property;
+            Node = node;
         }
     }
 }

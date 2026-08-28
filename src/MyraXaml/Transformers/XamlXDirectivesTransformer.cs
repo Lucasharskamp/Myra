@@ -24,13 +24,13 @@ namespace Myra.Xaml.Transformers
                 return node;
 
             // get "x:Uid" directive from the element.  
-            if (valueNode.ExtractXDirective("Uid", out var uidDirective, out var uid))
+            if (valueNode.ExtractXDirectiveAsText("Uid", out var uidDirective, out var uid))
             {
                 _bindings.RegisterNodeIdentity(uid, valueNode);
             }
 
             // get "x:FieldModifier" directive from the element.  
-            if (valueNode.ExtractXDirective("FieldModifier", out var fieldDirective, out var fieldModifier))
+            if (valueNode.ExtractXDirectiveAsText("FieldModifier", out var fieldDirective, out var fieldModifier))
             {
                 if(!Enum.TryParse<XamlVisibility>(fieldModifier, out var xamlVisibility))
                 {
@@ -40,7 +40,7 @@ namespace Myra.Xaml.Transformers
             }
 
             // get "x:Name" directive from the element.  
-            if (!valueNode.ExtractXDirective("Name", out var directive, out var text))
+            if (!valueNode.ExtractXDirectiveAsText("Name", out var directive, out var text))
                 return node;
 
             var rootClrType = context.CodeBehindClrType();
@@ -71,8 +71,7 @@ namespace Myra.Xaml.Transformers
             var assignment = new XamlAssignPropertyValueNode(
                 directive,
                 targetProperty.Setter, 
-                valueNode,
-                context.RootObject);
+                null);
 
             return new XamlValueWithManipulationNode(
                 directive,

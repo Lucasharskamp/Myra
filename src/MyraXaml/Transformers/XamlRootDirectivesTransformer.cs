@@ -8,52 +8,57 @@ using XamlX.TypeSystem;
 
 namespace Myra.Xaml.Transformers
 {
-    internal sealed class XamlRootDirectivesTransformer : IXamlAstTransformer
+    internal sealed class XamlRootDirectivesTransformer() : IXamlAstTransformer
     {
         public IXamlAstNode Transform(AstTransformationContext context, IXamlAstNode node)
         { 
             if (node is not XamlAstObjectNode valueNode)
                 return node;
 
-            // get "x:StyleSheet" directive from the element.
-            // it must be a static field/property containing the stylesheet.
-            if (valueNode.ExtractXDirective("Stylesheet", out var styleSheetDirective, out var styleSheetReference))
+            var isRoot = valueNode.Type.GetClrType() == context.RootObject.Type.GetClrType();
+             
+            // get "x:Style" directive from the element
+            // this shows which style of the stylesheet to employ
+            if (valueNode.FindXDirectiveAsAny("Style", out var styleDirective, out var styleNode))
             {
-                // separate field/property from the type.
-                var lastDot = styleSheetReference.LastIndexOf('.');
-                if (lastDot <= 0)
-                {
-                    throw new XamlLoadException("x:StyleSheet must refer to a static property or field!", styleSheetDirective);
-                }
-
-                var styleSheetType = styleSheetReference.Substring(0, lastDot);
-                var styleSheetName = styleSheetReference.Substring(lastDot+1);
-
-                var styleSheetContainer = context.Configuration.TypeSystem.FindType(styleSheetType);
-                if (styleSheetContainer == null)
+                if (!isRoot)
                 {
                     throw new XamlLoadException(
-                         $"The specified Container type '{styleSheetContainer}' for x:StyleSheet could not be found. Please specifiy the full namespace and type name.",
-                         styleSheetDirective);
+                       $"x:Style can only be specified on the root node!",
+                       styleDirective);
                 }
-                 
-                var property = styleSheetContainer.GetAllProperties().FirstOrDefault(f => f.Name == styleSheetName && f.Getter != null && f.Getter.IsStatic)
-                    ?? throw new XamlLoadException($"The specified property '{styleSheetName}' in type '{styleSheetContainer}' does not exist or is not static.",
-                        styleSheetDirective); 
-
-                if (property.PropertyType != TypesContainer.StyleSheet)
+                if (styleNode is XamlAstTextNode textNode)
                 {
-                    throw new XamlLoadException($"The specified property '{styleSheetName}' in type '{styleSheetContainer}' is not of type 'Myra.Graphics2D.UI.Styles.StyleSheet'.",
-                        styleSheetDirective);
+                    styleNode = new XamlConstantNode(node, context.Configuration.WellKnownTypes.String, textNode.Text);
                 }
-
-                context.SetItem(new XamlStyleSheetContainer(styleSheetContainer, property));
+                context.SetItem(new XamlStyleContainer(styleNode));
+                valueNode.Children.Remove(styleDirective);
             }
 
+            // get "x:StyleSheet" directive from the element.
+            // it must be a static field/property containing the stylesheet.
+            if (valueNode.ExtractXDirectiveAsStatic("Stylesheet", out var styleSheetDirective, out var stylesheetNode))
+            {
+                if (!isRoot)
+                {
+                    throw new XamlLoadException(
+                       $"x:Stylesheet can only be specified on the root node!",
+                       styleSheetDirective);
+                }
+                context.SetItem(new XamlStylesheetContainer(stylesheetNode));
+                valueNode.Children.Remove(styleSheetDirective);
+            }
 
             // get "x:ViewModel" directive from the element.  
-            if (!valueNode.ExtractXDirective("ViewModel", out var viewModelDirective, out var viewModelReference))
+            if (!valueNode.ExtractXDirectiveAsText("ViewModel", out var viewModelDirective, out var viewModelReference))
                 return node;
+              
+            if (!isRoot)
+            {
+                throw new XamlLoadException(
+                   $"x:ViewModel can only be specified on the root node!",
+                   viewModelDirective);
+            }
 
             var viewModelType = context.Configuration.TypeSystem.FindType(viewModelReference);
             if (viewModelType == null)

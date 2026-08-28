@@ -38,7 +38,8 @@ namespace Myra.Xaml
         public CecilTypeSystem? TypeSystem { get; set; }
 
         public override bool Execute()
-        { 
+        {
+            System.Diagnostics.Debugger.Launch(); 
             AssemblyDefinition? assembly = null;
             try
             {

@@ -13,6 +13,8 @@ namespace Myra.Samples.CustomUIStylesheet
 		private AllWidgets _allWidgets;
 		private Desktop _desktop;
 
+		public static Stylesheet CustomStylesheet { get; private set; }
+
 		public CustomUIStylesheetGame()
 		{
 			_graphics = new GraphicsDeviceManager(this)
@@ -34,10 +36,11 @@ namespace Myra.Samples.CustomUIStylesheet
 			// Create asset manager
 			var assetManager = AssetManager.CreateResourceAssetManager(typeof(CustomUIStylesheetGame).Assembly, "Resources");
 
-			// Load stylesheet
-			Stylesheet.Current = assetManager.LoadStylesheet("ui_stylesheet.xmms");
+            // Load stylesheet
+            CustomStylesheet = assetManager.LoadStylesheet("ui_stylesheet.xmms");
 
 			_allWidgets = new AllWidgets();
+			_allWidgets.Init();
 
 			_desktop = new Desktop
 			{
@@ -70,5 +73,12 @@ namespace Myra.Samples.CustomUIStylesheet
 
 			_desktop.Render();
 		}
+
+        protected override void Dispose(bool disposing)
+        {
+			_graphics.Dispose();
+			_desktop.Dispose();
+            base.Dispose(disposing);
+        }
 	}
 }

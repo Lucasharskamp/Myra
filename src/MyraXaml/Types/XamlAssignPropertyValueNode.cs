@@ -15,21 +15,18 @@ namespace Myra.Xaml.Types
     {
         public IXamlMethod AssignMethod { get; }
 
-        public IXamlAstTypeReference Type { get; }
-        public IXamlAstValueNode SourceObject { get; }
-        public IXamlAstValueNode TargetObject { get; }
+        public IXamlAstTypeReference Type { get; } 
+        public IXamlAstValueNode? TargetObject { get; }
 
         public XamlAssignPropertyValueNode(
             IXamlLineInfo lineInfo,
-            IXamlMethod assignmentMethod,
-            IXamlAstValueNode sourceObject,
-            IXamlAstValueNode targetObject)
+            IXamlMethod assignmentMethod, 
+            IXamlAstValueNode? targetObject)
             : base(lineInfo)
         {
-            AssignMethod = assignmentMethod;
-            SourceObject = sourceObject;
+            AssignMethod = assignmentMethod; 
             TargetObject = targetObject;
-            Type = new XamlAstClrTypeReference(lineInfo, assignmentMethod.ReturnType, false);
+            Type = new XamlAstClrTypeReference(lineInfo, assignmentMethod.Parameters[0], false);
         } 
 
         public XamlILNodeEmitResult Emit(XamlEmitContext<IXamlILEmitter, XamlILNodeEmitResult> context, IXamlILEmitter codeGen)
@@ -38,12 +35,18 @@ namespace Myra.Xaml.Types
             // (The source object is the widget currently being initialized in the build method. "Temp" is assigned this source object)
             // we do this by setting the source and target objects onto the CIL stack. These CIL stack items are then consumed,
             // and the original CIL stack can continue without being interfered with.
-            var temp = codeGen.DefineLocal(SourceObject.Type.GetClrType());
+            var temp = codeGen.DefineLocal(AssignMethod.Parameters[0]);
             codeGen.Emit(OpCodes.Stloc, temp);
             // Get target object to assign to (the class instance whose property x:Name refers to).
-            // Normally this is the code-behind object, but we're leaving the door open
-            // for the future in case we want to assign to different objects as well.
-            context.Emit(TargetObject, codeGen, TargetObject.Type.GetClrType());
+            // If not set, we presume it's the code-behind object (second parameter in InitializeComponent() )
+            if (TargetObject != null)
+            {
+                context.Emit(TargetObject, codeGen, TargetObject.Type.GetClrType());
+            }
+            else
+            {
+                codeGen.Emit(OpCodes.Ldarg_1);
+            }
             codeGen.Emit(OpCodes.Ldloc, temp);
 
             // TargetObject.Assignment(SourceObject)

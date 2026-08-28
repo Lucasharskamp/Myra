@@ -58,6 +58,11 @@ namespace Myra.Xaml.Helpers
         /// "Microsoft.Xna.Framework.Color" class
         /// </summary>
         public static IXamlType Color { get; set; } = default!;
+         
+        /// <summary>
+        /// "Myra.Graphics2D.UI.Container" class.
+        /// </summary>
+        public static IXamlType Container { get; set; } = default!;
 
         /// <summary>
         /// "Myra.Graphics2D.IBrush" class

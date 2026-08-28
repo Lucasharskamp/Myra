@@ -45,6 +45,7 @@ namespace Myra.Xaml.Compiler
             _compiler.Transformers.Insert(7, new CodeBehindReferenceTransformer(BindingContext));
             _compiler.Transformers.Insert(7, new XamlRootDirectivesTransformer());
             _compiler.Transformers.Insert(7, new XamlXDirectivesTransformer(BindingContext));
+            _compiler.Transformers.Insert(18, new ConstructableWidgetTransformer());
 
             TypesContainer.INotifyPropertyChanged = TypeSystem.FindType(typeof(INotifyPropertyChanged).FullName)!;
             TypesContainer.Byte = TypeSystem.FindType(typeof(byte).FullName)!;
@@ -57,6 +58,7 @@ namespace Myra.Xaml.Compiler
             TypesContainer.PropertyChangedEventArgs = TypeSystem.FindType(typeof(PropertyChangedEventArgs).FullName)!;
             TypesContainer.PropertyChangedEventHandler = TypeSystem.FindType(typeof(PropertyChangedEventHandler).FullName)!;
             TypesContainer.Color = TypeSystem.FindType("Microsoft.Xna.Framework.Color")!;
+            TypesContainer.Container = TypeSystem.FindType("Myra.Graphics2D.UI.Container")!;
             TypesContainer.IBrush = TypeSystem.FindType("Myra.Graphics2D.IBrush")!;
             TypesContainer.IImage = TypeSystem.FindType("Myra.Graphics2D.IImage")!;
             TypesContainer.Thickness = TypeSystem.FindType("Myra.Graphics2D.Thickness")!;
@@ -201,11 +203,10 @@ namespace Myra.Xaml.Compiler
             {
                 if (!GetText(node, out var text))
                     return false;
-                var styleSheetContainer = GetSpriteSheet(context);
+                var styleSheetContainer = context.GetItem<XamlStylesheetContainer>();
 
-                var fonts = TypesContainer.StyleSheet.Properties.First(p => p.Name == "Fonts");
-                var callStyleSheet = new XamlStaticOrTargetedReturnMethodCallNode(node, styleSheetContainer.Property.Getter!, null);
-                var callFonts = new XamlStaticOrTargetedReturnMethodCallNode(node, fonts.Getter!, [callStyleSheet]);
+                var fonts = TypesContainer.StyleSheet.Properties.First(p => p.Name == "Fonts"); 
+                var callFonts = new XamlStaticOrTargetedReturnMethodCallNode(node, fonts.Getter!, [styleSheetContainer.Node]);
                 var arrayOperator = TypesContainer.StylesheetFontsCollection.GetMethod(m =>
                                                                 m.Name == "get_Item" &&
                                                                 m.Parameters.Count == 1 &&
@@ -262,20 +263,7 @@ namespace Myra.Xaml.Compiler
 
             return false;
         }
-
-        private static XamlStyleSheetContainer GetSpriteSheet(AstTransformationContext context)
-        {
-            if (!context.TryGetItem<XamlStyleSheetContainer>(out var styleSheetContainer))
-            {
-                // unless x:StyleSheet is directly specified in the XAML file, we use "StyleSheet:Current"
-                styleSheetContainer = new XamlStyleSheetContainer(TypesContainer.StyleSheet,
-                                                                  TypesContainer.StyleSheet.Properties.First(p => p.Name == "Current"));
-                context.SetItem(styleSheetContainer);
-            }
-
-            return styleSheetContainer;
-        }
-
+          
         private static bool TryAssignSolidBrush(AstTransformationContext context, IXamlAstValueNode node, IXamlType type, [NotNullWhen(true)] out IXamlAstValueNode? result)
         {
             result = null;
@@ -297,11 +285,10 @@ namespace Myra.Xaml.Compiler
             if (!GetText(node, out var text))
                 return false;
 
-            var styleSheetContainer = GetSpriteSheet(context);
+            var styleSheetContainer = context.GetItem<XamlStylesheetContainer>();
 
-            var atlas = TypesContainer.StyleSheet.Properties.First(p => p.Name == "Atlas");
-            var callStyleSheet = new XamlStaticOrTargetedReturnMethodCallNode(node, styleSheetContainer.Property.Getter!, null);
-            var callAtlas = new XamlStaticOrTargetedReturnMethodCallNode(node, atlas.Getter!, [callStyleSheet]);
+            var atlas = TypesContainer.StyleSheet.Properties.First(p => p.Name == "Atlas"); 
+            var callAtlas = new XamlStaticOrTargetedReturnMethodCallNode(node, atlas.Getter!, [styleSheetContainer.Node]);
             var ensureRegionMethod = TypesContainer.TextureRegionAtlas.GetMethod(m => m.Name == "EnsureRegion");
             result = new XamlStaticOrTargetedReturnMethodCallNode(node,
                 new XamlWrappedMethod(ensureRegionMethod),
