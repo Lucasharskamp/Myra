@@ -17,5 +17,24 @@
     <None Update="Assets\**\*.*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-  </ItemGroup>  
+  </ItemGroup>
+
+  <ItemGroup>
+    <MyraXaml Include="**\*.xaml" />
+    <!-- Myra XAML analyzer -->
+    <AdditionalFiles Include="@(MyraXaml)" />
+    <Analyzer Include="..\..\src\MyraAnalyzer\bin\Debug\netstandard2.0\Myra.Analyzer.dll" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="MainForm.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </None>
+  </ItemGroup>
+
+  <UsingTask TaskFactory="MyraXamlTaskFactory" TaskName="MyraXamlCompileTask" AssemblyFile="..\..\src\MyraXaml\bin\Debug\netstandard2.0\Myra.Xaml.dll" />
+
+  <Target Name="MyraXamlCompile" AfterTargets="Build" Condition="'$(DesignTimeBuild)' != 'true'">
+    <MyraXamlCompileTask TargetPath="$(TargetPath)" XamlFiles="@(MyraXaml)" RootNamespace="$(RootNamespace)" ProjectDirectory="$(MSBuildProjectDirectory)" ReferenceAssemblies="@(ReferencePath)" Debug="$(DebugSymbols)" />
+  </Target>
 </Project>

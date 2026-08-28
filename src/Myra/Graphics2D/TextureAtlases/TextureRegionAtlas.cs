@@ -76,18 +76,18 @@ namespace Myra.Graphics2D.TextureAtlases
 			}
 		}
 
-		/// <summary>
-		/// Gets a texture region by its identifier, throwing an exception if not found.
-		/// </summary>
-		/// <param name="id">The identifier of the region.</param>
-		/// <returns>The texture region with the specified identifier.</returns>
-		/// <exception cref="ArgumentNullException">The region with the specified identifier is not found.</exception>
-		public TextureRegion EnsureRegion(string id)
+        /// <summary>
+        /// Gets a texture region by its identifier, throwing an exception if not found.
+        /// </summary>
+        /// <param name="id">The identifier of the region.</param>
+        /// <returns>The texture region with the specified identifier.</returns>
+        /// <exception cref="ArgumentException">The region with the specified identifier is not found.</exception>
+        public TextureRegion EnsureRegion(string id)
 		{
 			TextureRegion result;
 			if (!Regions.TryGetValue(id, out result))
 			{
-				throw new ArgumentNullException(string.Format("Could not resolve region '{0}'", id));
+				throw new ArgumentException(string.Format("Could not resolve region '{0}'", id));
 			}
 
 			return result;

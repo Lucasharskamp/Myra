@@ -1,0 +1,13 @@
+﻿<MainForm xmlns="https://github.com/MyraUI/Myra"
+     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+     xmlns:local="clr-namespace:Myra.Samples.AssetManagement;assembly=Myra.Samples.AssetManagement"
+     Background="#C78100FF">
+    <Label Text="My Game" Font="{x:Static local:AssetManagementGame.Arial64}" TextColor="LightBlue" HorizontalAlignment="Center" />
+    <VerticalMenu HorizontalAlignment="Center" VerticalAlignment="Center" LabelFont="{x:Static local:AssetManagementGame.ComicSans48}" LabelColor="Indigo" SelectionHoverBackground="Olive" SelectionBackground="Orange" LabelHorizontalAlignment="Center" HoverIndexCanBeNull="False" Background="Transparent" Border="Transparent" x:Name="_mainMenu">
+        <MenuItem Text="Start New Game" />
+        <MenuItem Text="Options" />
+        <MenuItem Text="Quit" x:Name="_menuItemQuit" />
+    </VerticalMenu>
+    <Image Renderable="{x:Static local:AssetManagementGame.Logo}" Left="10" Top="-10" VerticalAlignment="Bottom" />
+    <Label Text="Version 0.6" Font="{x:Static local:AssetManagementGame.Calibri32}" Left="-10" Top="-10" HorizontalAlignment="Right" VerticalAlignment="Bottom" />
+</MainForm>

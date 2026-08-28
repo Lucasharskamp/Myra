@@ -4,8 +4,7 @@ using Mono.Cecil.Cil;
 using Mono.Collections.Generic;
 using Myra.Xaml.Compiler;
 using Myra.Xaml.Helpers;
-using System;
-using System.Diagnostics;
+using System; 
 using System.IO;
 using System.Linq;
 using XamlX;
@@ -22,6 +21,7 @@ namespace Myra.Xaml
         [Required]
         public string TargetPath { get; set; } = default!;
 
+        [Required]
         public ITaskItem[] XamlFiles { get; set; } = [];
 
         [Required]

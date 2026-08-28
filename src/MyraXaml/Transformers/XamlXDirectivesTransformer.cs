@@ -14,13 +14,9 @@ namespace Myra.Xaml.Transformers
     /// This transformer resolves x:Name directives, binding the element to the code-behind property/field 
     /// the x:Name property is targeting.
     /// </summary>
-    public sealed class XamlXDirectivesTransformer : IXamlAstTransformer
+    public sealed class XamlXDirectivesTransformer(MyraBindingCompilationContext bindings) : IXamlAstTransformer
     {
-        private readonly MyraBindingCompilationContext _bindings;
-        public XamlXDirectivesTransformer(MyraBindingCompilationContext bindings)
-        {
-            _bindings = bindings;
-        }
+        private readonly MyraBindingCompilationContext _bindings = bindings;
 
         public IXamlAstNode Transform(AstTransformationContext context, IXamlAstNode node)
         {  
@@ -57,7 +53,7 @@ namespace Myra.Xaml.Transformers
             if (targetProperty == null)
             {
                 context.ReportDiagnostic(new XamlDiagnostic("MYRA001",
-                    XamlDiagnosticSeverity.Fatal,
+                    XamlDiagnosticSeverity.Error,
                     $"property '{text}' not found in type '{rootClrType.FullName}'",
                     directive));
                 return node;
@@ -66,7 +62,7 @@ namespace Myra.Xaml.Transformers
             if (targetProperty.Setter == null)
             {
                 context.ReportDiagnostic(new XamlDiagnostic("MYRA002",
-                   XamlDiagnosticSeverity.Fatal,
+                   XamlDiagnosticSeverity.Error,
                    $"property '{text}' in type '{rootClrType.FullName}' does not have a setter!",
                    directive));
                 return node;

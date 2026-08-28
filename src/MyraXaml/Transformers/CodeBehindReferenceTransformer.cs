@@ -22,14 +22,9 @@ namespace Myra.Xaml.Transformers
     /// <br/>
     /// 2. The properties set via x:Bind are tied to their ViewModel properties.
     /// </summary>
-    public sealed class CodeBehindReferenceTransformer : IXamlAstTransformer
+    public sealed class CodeBehindReferenceTransformer(MyraBindingCompilationContext bindings) : IXamlAstTransformer
     {
-        private readonly MyraBindingCompilationContext _bindings;
-
-        public CodeBehindReferenceTransformer(MyraBindingCompilationContext bindings)
-        {
-            _bindings = bindings;
-        }
+        private readonly MyraBindingCompilationContext _bindings = bindings;
 
         public IXamlAstNode Transform(AstTransformationContext context,  IXamlAstNode node)
         {
@@ -184,7 +179,13 @@ namespace Myra.Xaml.Transformers
 
         private static IXamlMethod? FindEventHandler(IXamlType rootType, string name,  IXamlMethod delegateInvoke)
         {
-            foreach (var method in rootType.FindMethods(m => m.Name == name))
+            var methods = rootType.FindMethods(m => m.Name == name).OrderByDescending(m => m.Parameters.Count).ToArray();
+            if (methods.Length == 0)
+                return null;
+            
+            // first, we try to find a method that has the parameters of the delegate.
+            // If not, we use a method without parameters as fallback.
+            foreach (var method in methods)
             { 
                 if (method.Parameters.Count !=
                     delegateInvoke.Parameters.Count)
@@ -207,6 +208,11 @@ namespace Myra.Xaml.Transformers
                 if (compatible)
                     return method;
             }
+
+            // invoke fallback (if it has no parameters)
+            var lastMethod = methods.Last();
+            if (lastMethod.Parameters.Count == 0)
+                return lastMethod;
 
             return null;
         }

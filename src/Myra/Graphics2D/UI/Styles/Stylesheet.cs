@@ -553,9 +553,8 @@ namespace Myra.Graphics2D.UI.Styles
 		}
 
 		private static T GetDefaultStyle<T>(Dictionary<string, T> styles) where T : WidgetStyle
-		{
-			T result = null;
-			if (!styles.TryGetValue(DefaultStyleName, out result))
+		{ 
+			if (!styles.TryGetValue(DefaultStyleName, out var result))
 			{
 				throw new Exception("Stylesheet doesnt define default style for " + typeof(T).Name + ".");
 			}

@@ -182,13 +182,11 @@ namespace Myra.Analyzer
 
             var root = tree.GetRoot();
 
-            var node = root.FindNode(
-                location.SourceSpan,
-                getInnermostNodeForTie: true);
+            var node = root.FindNode(location.SourceSpan, true, true);
 
             var model = context.GetSemanticModel(tree);
 
-            var symbol = model.GetDeclaredSymbol(node);
+            var symbol = model.GetDeclaredSymbol(node, context.CancellationToken);
 
             return symbol as IMethodSymbol;
         }

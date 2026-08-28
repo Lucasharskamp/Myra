@@ -1,29 +1,30 @@
 ﻿<AllWidgets xmlns="https://github.com/MyraUI/Myra"
-     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+     x:Stylesheet="Myra.Graphics2D.UI.Styles.Stylesheet.Current">
     <VerticalStackPanel Spacing="8">
         <HorizontalMenu VerticalAlignment="Stretch" x:Name="_mainMenu">
-            <MenuItem Text="&amp;File" x:Name="_menuFile">
-                <MenuItem Text="&amp;Open" ShortcutText="Ctrl+O" x:Name="_menuItemOpenFile" />
-                <MenuItem Text="&amp;Save" ShortcutText="Ctrl+S" x:Name="_menuItemSaveFile" />
-                <MenuItem Text="Choose Fol&amp;der" ShortcutText="Ctrl+D" x:Name="_menuItemChooseFolder" />
-                <MenuItem Text="Choose Co&amp;lor" ShortcutText="Ctrl+L" x:Name="_menuItemChooseColor" />
+            <MenuItem Text="&amp;File">
+                <MenuItem Text="&amp;Open" ShortcutText="Ctrl+O" Selected="OpenFile" Image="icon-folder" />
+                <MenuItem Text="&amp;Save" ShortcutText="Ctrl+S" Selected="SaveFile" Image="icon-folder-new" />
+                <MenuItem Text="Choose Fol&amp;der" ShortcutText="Ctrl+D" Selected="ChooseFolder"   />
+                <MenuItem Text="Choose Co&amp;lor" ShortcutText="Ctrl+L" Selected="ChooseColor" />
                 <MenuSeparator />
-                <MenuItem Text="&amp;Quit" ShortcutText="Ctrl+Q" x:Name="_menuItemQuit" />
+                <MenuItem Text="&amp;Quit" ShortcutText="Ctrl+Q" Selected="Quit" />
             </MenuItem>
-            <MenuItem Text="&amp;Edit" x:Name="_menuEdit">
-                <MenuItem Text="&amp;Copy" ShortcutText="Ctrl+Insert, Ctrl+C" x:Name="_menuItemCopy" />
-                <MenuItem Text="&amp;Paste" ShortcutText="Shift+Insert, Ctrl+V" x:Name="_menuItemPaste" />
+            <MenuItem Text="&amp;Edit">
+                <MenuItem Text="&amp;Copy" ShortcutText="Ctrl+Insert, Ctrl+C"  />
+                <MenuItem Text="&amp;Paste" ShortcutText="Shift+Insert, Ctrl+V" />
                 <MenuSeparator />
-                <MenuItem Text="&amp;Undo" ShortcutText="Ctrl+Z" x:Name="_menuItemUndo" />
-                <MenuItem Text="&amp;Redo" ShortcutText="Ctrl+Y" x:Name="_menuItemRedo" />
+                <MenuItem Text="&amp;Undo" ShortcutText="Ctrl+Z" />
+                <MenuItem Text="&amp;Redo" ShortcutText="Ctrl+Y" />
             </MenuItem>
-            <MenuItem Text="&amp;Help" x:Name="_menuHelp">
-                <MenuItem Text="&amp;About" x:Name="_menuItemAbout" />
+            <MenuItem Text="&amp;Help">
+                <MenuItem Text="&amp;About" Selected="ShowMessageBox" />
             </MenuItem>
         </HorizontalMenu>
         <HorizontalSplitPane StackPanel.ProportionType="Fill">
             <ScrollViewer ShowHorizontalScrollBar="False">
-                <Grid ColumnSpacing="8" RowSpacing="8" x:Name="_gridRight">
+                <Grid ColumnSpacing="8" RowSpacing="8">
                     <Grid.DefaultRowProportion>Auto</Grid.DefaultRowProportion>
                     <Grid.ColumnsProportions>
                         <Proportion>Auto</Proportion>
@@ -31,36 +32,36 @@
                         <Proportion>Fill</Proportion>
                     </Grid.ColumnsProportions>
                     <Label Text="Button:" />
-                    <Button Padding="8, 0" Tooltip="E=mc/v[-8]2/n/vdMass–energy equivalence." x:Name="_buttonSaveFile" Grid.Column="1">
+                    <Button Padding="8, 0" Tooltip="E=mc/v[-8]2/n/vdMass–energy equivalence." Click="SaveFile"  Grid.Column="1">
                         <HorizontalStackPanel>
-                            <Image x:Name="_imageSaveFile" />
+                            <Image Renderable="icon-star" />
                             <Label Text="Save File" />
                         </HorizontalStackPanel>
                     </Button>
                     <TextBox x:Name="_textSaveFile" Grid.Column="2" />
                     <Label Text="Another Button:" Grid.Row="1" />
-                    <Button Padding="8, 0" Tooltip="Tooltip 2" x:Name="_buttonOpenFile" Grid.Column="1" Grid.Row="1">
+                    <Button Padding="8, 0" Tooltip="Tooltip 2" Click="OpenFile" Grid.Column="1" Grid.Row="1">
                         <HorizontalStackPanel>
-                            <Image x:Name="_imageOpenFile" />
+                            <Image Renderable="icon-star"  />
                             <Label Text="Open File" />
                         </HorizontalStackPanel>
                     </Button>
                     <TextBox x:Name="_textOpenFile" Grid.Column="2" Grid.Row="1" />
                     <Label Text="Blue Button:" Grid.Row="2" />
-                    <Button StyleName="blue" Padding="8, 0" x:Name="_buttonChooseFolder" Grid.Column="1" Grid.Row="2">
+                    <Button StyleName="blue" Padding="8, 0" Click="ChooseFolder" Grid.Column="1" Grid.Row="2">
                         <HorizontalStackPanel>
-                            <Image x:Name="_imageChooseFolder" />
+                            <Image Renderable="icon-star" />
                             <Label Text="Choose Folder" />
                         </HorizontalStackPanel>
                     </Button>
                     <TextBox x:Name="_textChooseFolder" Grid.Column="2" Grid.Row="2" />
                     <Label Text="Text Button:" x:Name="_textButtonLabel" Grid.Row="3" />
-                    <Button Padding="8, 0" x:Name="_buttonChooseColor" Grid.Column="1" Grid.Row="3">
+                    <Button Padding="8, 0" Click="ChooseColor"  Grid.Column="1" Grid.Row="3">
                         <Label Text="Choose Color" />
                     </Button>
                     <Label Text="Image Button:" Grid.Row="4" />
-                    <Button Padding="8, 0" x:Name="_imageButton" Grid.Column="1" Grid.Row="4">
-                        <Image />
+                    <Button Padding="8, 0" Click="ShowDebugOptionsModal" Grid.Column="1" Grid.Row="4">
+                        <Image Renderable="icon-star-outline" />
                     </Button>
                     <CheckButton CheckContentSpacing="4" Grid.Row="5" Grid.ColumnSpan="2">
                         <Label Text="This is checkbox" />
@@ -90,6 +91,9 @@
                         <MenuItem Text="Quit" />
                     </VerticalMenu>
                     <Label Text="Tree" Grid.Row="12" />
+                    <TreeView x:Name="_treeView">
+                        
+                    </TreeView>
                 </Grid>
             </ScrollViewer>
             <VerticalSplitPane>
