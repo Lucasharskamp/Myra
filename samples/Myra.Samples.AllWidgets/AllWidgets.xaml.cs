@@ -5,35 +5,20 @@ using Myra.Graphics2D.UI.Styles;
 
 namespace Myra.Samples.AllWidgets
 {
-	public partial class AllWidgets
+	public partial class AllWidgets : Panel
 	{
-		public AllWidgets()
-		{
-			BuildUI();
+		public HorizontalMenu _mainMenu { get; set; }
+		public TextBox _textOpenFile { get; set; }
+		public TextBox _textSaveFile { get; set; }
+		public TextBox _textChooseFolder { get; set; } 
+        public Label _textButtonLabel { get; set; } 
+        public Grid _gridRight { get; set; }
+		public HorizontalProgressBar _horizontalProgressBar { get; set; }
+		public VerticalProgressBar _verticalProgressBar { get; set; }
+		public Label _labelOverGui { get; set; }
 
-			_menuItemOpenFile.Selected += (s, a) => OpenFile();
-			_menuItemSaveFile.Selected += (s, a) => SaveFile();
-			_menuItemChooseColor.Selected += (s, a) => ChooseColor();
-			_menuItemChooseFolder.Selected += (s, a) => ChooseFolder();
-			_menuItemQuit.Selected += (s, a) => Quit();
-
-			_buttonOpenFile.Click += (sender, args) => OpenFile();
-			_buttonSaveFile.Click += (sender, args) => SaveFile();
-			_buttonChooseFolder.Click += (sender, args) => ChooseFolder();
-			_buttonChooseColor.Click += (sender, args) => ChooseColor();
-
-			_imageButton.Click += (sender, args) =>
-			{
-				var debugWindow = new DebugOptionsWindow();
-				debugWindow.ShowModal(Desktop);
-			};
-
-			_menuItemAbout.Selected += (sender, args) =>
-			{
-				var messageBox = Dialog.CreateMessageBox("AllWidgets", "Myra AllWidgets Sample " + MyraEnvironment.Version);
-				messageBox.ShowModal(Desktop);
-			};
-
+        public void Init()
+		{             
 			var tree = new TreeView();
 			Grid.SetColumn(tree, 1);
 			Grid.SetRow(tree, 12);
@@ -146,7 +131,19 @@ namespace Myra.Samples.AllWidgets
 			_gridRight.Widgets.Add(tree);
 		}
 
-		public void OpenFile()
+        private void ShowMessageBox()
+        {
+            var messageBox = Dialog.CreateMessageBox("AllWidgets", "Myra AllWidgets Sample " + MyraEnvironment.Version);
+            messageBox.ShowModal(Desktop);
+        }
+
+        private void ShowDebugModal()
+        {
+            var debugWindow = new DebugOptionsWindow();
+            debugWindow.ShowModal(Desktop);
+        }
+
+        public void OpenFile()
 		{
 			var fileDialog = new FileDialog(FileDialogMode.OpenFile);
 			fileDialog.ShowModal(Desktop);

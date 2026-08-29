@@ -70,6 +70,7 @@ namespace Myra.Samples.AllWidgets
 //			Stylesheet.Current = DefaultAssets.DefaultStylesheet2X;
 
 			_allWidgets = new AllWidgets();
+			_allWidgets.Init();
 
 			_desktop = new Desktop();
 			_desktop.KeyDown += (s, a) =>
@@ -151,5 +152,12 @@ namespace Myra.Samples.AllWidgets
 			_allWidgets._labelOverGui.Text = "Is mouse over GUI: " + _desktop.IsMouseOverGUI;
 			_desktop.Render();
 		}
+
+        protected override void Dispose(bool disposing)
+        {
+			_graphics.Dispose();
+			_desktop.Dispose();
+            base.Dispose(disposing);
+        }
 	}
 }
