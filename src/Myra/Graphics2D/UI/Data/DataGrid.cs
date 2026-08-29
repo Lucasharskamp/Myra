@@ -53,7 +53,7 @@ namespace Myra.Graphics2D.UI.Data
 		private readonly SingleItemLayout<Grid> _layout;
 		private Rectangle _verticalScrollbarFrame, _verticalScrollbarThumb;
 		private int _startRow;
-		private DataGridColumnBase[] _columns;
+		private List<DataGridColumnBase> _columns = new List<DataGridColumnBase>();
 		private bool _hasIndexColumn = true;
 		private int? _startBoundsPos;
 		private int _thumbMaximumY;
@@ -121,18 +121,18 @@ namespace Myra.Graphics2D.UI.Data
 		/// Gets or sets the array of column definitions that define the grid's structure and data binding.
 		/// Setting this property triggers a full rebuild of columns and the grid layout.
 		/// </summary>
-		public DataGridColumnBase[] Columns
+		public List<DataGridColumnBase> Columns
 		{
 			get => _columns;
 
 			set
 			{
-				if (value == null || value.Length == 0)
+				if (value == null || value.Count == 0)
 				{
 					throw new ArgumentNullException(nameof(value));
 				}
 
-				for (var i = 0; i < value.Length; ++i)
+				for (var i = 0; i < value.Count; ++i)
 				{
 					var column = value[i];
 					if (column == null)
@@ -741,7 +741,7 @@ namespace Myra.Graphics2D.UI.Data
 				_grid.ColumnsProportions.Add(new Proportion(ProportionType.Pixels, IndexColumnWidth));
 			}
 
-			for (var i = 0; i < _columns.Length; ++i)
+			for (var i = 0; i < _columns.Count; ++i)
 			{
 				if (i != FillColumnIndex)
 				{
@@ -778,7 +778,7 @@ namespace Myra.Graphics2D.UI.Data
 				_grid.Widgets.Add(indexHeaderCell);
 			}
 
-			for (var i = 0; i < Columns.Length; ++i)
+			for (var i = 0; i < Columns.Count; ++i)
 			{
 				var column = Columns[i];
 				if (string.IsNullOrEmpty(column.Header))
@@ -879,7 +879,7 @@ namespace Myra.Graphics2D.UI.Data
 
 			var row = HasHeader ? 1 : 0;
 
-			for (var i = 0; i < Columns.Length; ++i)
+			for (var i = 0; i < Columns.Count; ++i)
 			{
 				var column = Columns[i];
 				if (!column.CanFilter || !column.HasFilter)
@@ -911,8 +911,8 @@ namespace Myra.Graphics2D.UI.Data
 			var item = _data[row];
 			var type = item.GetType();
 
-			var gridValues = new object[Columns.Length];
-			for (var col = 0; col < Columns.Length; ++col)
+			var gridValues = new object[Columns.Count];
+			for (var col = 0; col < Columns.Count; ++col)
 			{
 				var column = Columns[col];
 				if (string.IsNullOrEmpty(column.Property))
@@ -983,7 +983,7 @@ namespace Myra.Graphics2D.UI.Data
 					var s = _sourceData[i];
 
 					var add = true;
-					for (var j = 0; j < Columns.Length; ++j)
+					for (var j = 0; j < Columns.Count; ++j)
 					{
 						var col = Columns[j];
 						if (string.IsNullOrEmpty(col.Filter))
@@ -1110,7 +1110,7 @@ namespace Myra.Graphics2D.UI.Data
 					}
 
 					var rowData = _visualData[row];
-					for (var col = 0; col < Columns.Length; ++col)
+					for (var col = 0; col < Columns.Count; ++col)
 					{
 						var column = Columns[col];
 						var value = rowData.GridValues[col];

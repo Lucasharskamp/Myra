@@ -2,7 +2,7 @@
 using Microsoft.Xna.Framework;
 using Myra.Graphics2D.UI.Data;
 
-namespace Myra.Samples;
+namespace Myra.Samples.DataGrid;
 
 /// <summary>
 /// Sample game demonstrating the <see cref="DataGrid"/> widget with a large CSV data set.
@@ -34,6 +34,7 @@ public class DataGridGame : Game
 		MyraEnvironment.Game = this;
 
 		_mainForm = new MainForm();
+		_mainForm.Init();
 		_desktop = new Desktop
 		{
 			Root = _mainForm
@@ -49,4 +50,11 @@ public class DataGridGame : Game
 		GraphicsDevice.Clear(Color.Black);
 		_desktop.Render();
 	}
+
+    protected override void Dispose(bool disposing)
+    {
+		_graphics.Dispose();
+		_desktop.Dispose();
+		base.Dispose(disposing);
+    }
 }

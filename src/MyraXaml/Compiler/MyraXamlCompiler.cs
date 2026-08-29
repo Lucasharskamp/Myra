@@ -125,8 +125,10 @@ namespace Myra.Xaml.Compiler
                 MyraMappings,
                 new List<(IXamlAssembly asm, string ns)>
                 {
-                    (myraAssembly, "Myra.Graphics2D.UI"),
                     (myraAssembly, "Myra.Graphics2D.Brushes"),
+                    (myraAssembly, "Myra.Graphics2D.UI"), 
+                    (myraAssembly, "Myra.Graphics2D.UI.Data"),
+                    (myraAssembly, "Myra.Graphics2D.UI.Properties"),
                     (myraAssembly, "Myra.Graphics2D.UI.Styles")
                 });
 

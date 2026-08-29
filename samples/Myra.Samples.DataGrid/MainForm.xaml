@@ -1,0 +1,87 @@
+﻿<MainForm xmlns="https://github.com/MyraUI/Myra"
+     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"> 
+    <HorizontalStackPanel Spacing="4">
+        <CheckButton x:Name="_checkShowGridLines">
+            <Label Text="Show Grid Lines" />
+        </CheckButton>
+        <VerticalSeparator />
+        <CheckButton x:Name="_checkResizableColumns">
+            <Label Text="ResizableColumns" />
+        </CheckButton>
+        <VerticalSeparator />
+        <CheckButton x:Name="_checkHasHeader">
+            <Label Text="Has Header" />
+        </CheckButton>
+        <VerticalSeparator />
+        <CheckButton x:Name="_checkHasIndexColumn">
+            <Label Text="Has Index Column" />
+        </CheckButton>
+        <VerticalSeparator />
+        <CheckButton x:Name="_checkSortableHeaders">
+            <Label Text="Sortable Headers" />
+        </CheckButton>
+        <VerticalSeparator />
+        <CheckButton x:Name="_checkHasFilter">
+            <Label Text="Has Filter" />
+        </CheckButton>
+        <VerticalSeparator />
+        <HorizontalStackPanel Spacing="4">
+            <Label Text="Fill Column:" />
+            <ComboView x:Name="_comboFillColumn">
+                <Label />
+                <Label Text="First Name" />
+                <Label Text="Last Name" />
+                <Label Text="Company" />
+                <Label Text="City" />
+                <Label Text="Country" />
+                <Label Text="Email" />
+                <Label Text="Phone 1" />
+            </ComboView>
+        </HorizontalStackPanel>
+    </HorizontalStackPanel>
+    <HorizontalSeparator />
+    <HorizontalSplitPane x:Name="_splitPane" StackPanel.ProportionType="Fill">
+        <Panel>
+            <DataGrid x:Name="_dataGrid">
+                <DataGrid.Columns>
+                    <DataGridTextColumn>
+                        <DataGridTextColumn.Header>First Name</DataGridTextColumn.Header>
+                        <DataGridTextColumn.Property>FirstName</DataGridTextColumn.Property>
+                        <DataGridTextColumn.Width>100</DataGridTextColumn.Width>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn>
+                        <DataGridTextColumn.Header>Last Name</DataGridTextColumn.Header>
+                        <DataGridTextColumn.Property>LastName</DataGridTextColumn.Property>
+                        <DataGridTextColumn.Width>100</DataGridTextColumn.Width>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn>
+                        <DataGridTextColumn.Header>Company</DataGridTextColumn.Header>
+                        <DataGridTextColumn.Property>Company</DataGridTextColumn.Property>
+                        <DataGridTextColumn.Width>200</DataGridTextColumn.Width>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn>
+                        <DataGridTextColumn.Header>City</DataGridTextColumn.Header>
+                        <DataGridTextColumn.Property>City</DataGridTextColumn.Property>
+                        <DataGridTextColumn.Width>200</DataGridTextColumn.Width>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn>
+                        <DataGridTextColumn.Header>Country</DataGridTextColumn.Header>
+                        <DataGridTextColumn.Property>Country</DataGridTextColumn.Property>
+                        <DataGridTextColumn.Width>200</DataGridTextColumn.Width>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn>
+                        <DataGridTextColumn.Header>Email</DataGridTextColumn.Header>
+                        <DataGridTextColumn.Property>Email</DataGridTextColumn.Property>
+                        <DataGridTextColumn.Width>200</DataGridTextColumn.Width>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn>
+                        <DataGridTextColumn.Header>Phone 1</DataGridTextColumn.Header>
+                        <DataGridTextColumn.Property>Phone1</DataGridTextColumn.Property>
+                        <DataGridTextColumn.Width>200</DataGridTextColumn.Width>
+                    </DataGridTextColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Panel>
+        <PropertyGrid x:Name="_propertyGrid" />
+    </HorizontalSplitPane>
+</MainForm>

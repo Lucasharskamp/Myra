@@ -1,4 +1,4 @@
-﻿namespace Myra.Samples;
+﻿namespace Myra.Samples.DataGrid;
 
 internal class Record
 {

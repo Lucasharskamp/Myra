@@ -1,43 +1,35 @@
-using Myra.Graphics2D.UI.Data;
+using Myra.Graphics2D.UI;
+using Myra.Graphics2D.UI.Properties;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace Myra.Samples;
+namespace Myra.Samples.DataGrid;
 
-public partial class MainForm
+public partial class MainForm : VerticalStackPanel
 {
-	private readonly DataGrid _dataGrid;
-	private readonly List<Record> _records;
+	public CheckButton _checkShowGridLines { get; set; }
+	public CheckButton _checkResizableColumns { get; set; }
+	public CheckButton _checkHasHeader { get; set; }
+	public CheckButton _checkHasIndexColumn { get; set; }
+	public CheckButton _checkSortableHeaders { get; set; }
+	public CheckButton _checkHasFilter { get; set; }
+	public ComboView _comboFillColumn { get; set; }
+	public HorizontalSplitPane _splitPane { get; set; } 
+	public PropertyGrid _propertyGrid { get; set; }
 
-	public MainForm()
-	{
-		BuildUI();
+    public Myra.Graphics2D.UI.Data.DataGrid _dataGrid { get; set; }
+	private List<Record> _records { get; set; }
 
-		_dataGrid = new DataGrid();
-
-		var columns = new DataGridColumnBase[]
-		{
-			new DataGridTextColumn { Header = "First Name", Property = "FirstName", Width = 100 },
-			new DataGridTextColumn { Header = "Last Name", Property = "LastName", Width = 100 },
-			new DataGridTextColumn { Header = "Company", Property = "Company", Width = 200 },
-			new DataGridTextColumn { Header = "City", Property = "City", Width = 200 },
-			new DataGridTextColumn { Header = "Country", Property = "Country", Width = 200 },
-			new DataGridTextColumn { Header = "Email", Property = "Email", Width = 200 },
-			new DataGridTextColumn { Header = "Phone 1", Property = "Phone1", Width = 200 },
-		};
-
-		_dataGrid.Columns = columns.ToArray();
-
+	public void Init()
+	{  
 		var csvPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "customers-10000.csv");
 		_records = ParseCsv(csvPath);
 		_dataGrid.Data = _records;
 
 		_dataGrid.SelectedIndexChanged += (s, a) => _propertyGrid.Object = _dataGrid.SelectedItem;
-
-		_panelDataGrid.Widgets.Add(_dataGrid);
-
+		   
 		_splitPane.SetSplitterPosition(0, 0.8f);
 
 		_checkShowGridLines.IsChecked = _dataGrid.ShowGridLines;
@@ -66,10 +58,10 @@ public partial class MainForm
 			}
 		};
 
-		_propertyGrid.PropertyChanged += _propertyGrid_PropertyChanged;
+		_propertyGrid.PropertyChanged += PropertyGrid_PropertyChanged;
 	}
 
-	private void _propertyGrid_PropertyChanged(object sender, Events.GenericEventArgs<string> e)
+	private void PropertyGrid_PropertyChanged(object sender, Events.GenericEventArgs<string> e)
 	{
 		if (_propertyGrid.Object == null)
 		{
