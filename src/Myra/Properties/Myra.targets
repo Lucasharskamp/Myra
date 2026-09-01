@@ -16,7 +16,7 @@
 
     <MyraXamlCompileTask
         TargetPath="$(TargetPath)"
-        XamlFiles="@(MyraXaml)"
+        MyraFiles="@(MyraXaml)"
         ReferenceAssemblies="@(ReferencePath)"
         Debug="$(DebugSymbols)" /> 
   </Target> 

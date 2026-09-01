@@ -82,11 +82,16 @@ namespace Myra.Xaml.Helpers
         /// "Myra.Graphics2D.IBrush" class
         /// </summary>
         public static IXamlType IBrush { get; private set; } = default!;
-
+          
         /// <summary>
         /// "Myra.Graphics2D.IImage" class
         /// </summary>
         public static IXamlType IImage { get; private set; } = default!;
+
+        /// <summary>
+        /// "Myra.Utilities.IFileResolver" class
+        /// </summary>
+        public static IXamlType IFileResolver { get; private set; } = default!;
 
         /// <summary>
         /// <see cref="System.Lazy{T}"/>
@@ -175,6 +180,7 @@ namespace Myra.Xaml.Helpers
             Container = typeSystem.GetType("Myra.Graphics2D.UI.Container");
             Func = typeSystem.GetType("System.Func`1");
             IBrush = typeSystem.GetType("Myra.Graphics2D.IBrush");
+            IFileResolver = typeSystem.GetType("Myra.Utility.IFileResolver");
             IImage = typeSystem.GetType("Myra.Graphics2D.IImage");
             LazyOfT1 = typeSystem.GetType("System.Lazy`1");
             LazyOfT1 = typeSystem.GetType("System.Lazy`1");

@@ -1,11 +1,13 @@
-﻿using Myra.Xaml.Compiler;
+﻿using Mono.Cecil;
+using Mono.Collections.Generic;
+using Myra.Xaml.Compiler;
 using Myra.Xaml.Types;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
-using System.Text;
+using System.Reflection;
 using XamlX;
 using XamlX.Ast;
 using XamlX.Transform;
@@ -58,7 +60,7 @@ namespace Myra.Xaml.Helpers
                 }
 
                 return false;
-            }
+            } 
 
             if (type == TypesContainer.SolidBrush)
             {
@@ -68,94 +70,34 @@ namespace Myra.Xaml.Helpers
             // handle SpriteFontBase
             if (type == TypesContainer.SpriteFontBase)
             {
-                if (!GetText(node, out var text))
-                    return false;
-                var styleSheetContainer = TransformerHelpers.GetStylesheet(context, node);
-
-                var fonts = TypesContainer.StyleSheet.Properties.First(p => p.Name == "Fonts");
-                var callFonts = new XamlStaticOrTargetedReturnMethodCallNode(node, fonts.Getter!, [styleSheetContainer]);
-                var arrayOperator = TypesContainer.StylesheetFontsCollection.GetMethod(m =>
-                                                                m.Name == "get_Item" &&
-                                                                m.Parameters.Count == 1 &&
-                                                                m.Parameters[0] == context.Configuration.WellKnownTypes.String);
-                var styleSheetFontCall = new XamlStaticOrTargetedReturnMethodCallNode(node,
-                    new XamlWrappedMethod(arrayOperator),
-                    [callFonts, new XamlConstantNode(node, context.Configuration.WellKnownTypes.String, text)]);
-
-                var styleSheetFontGetSprite = TypesContainer.StylesheetFont.GetAllProperties().First(p => p.Name == "Font");
-                result = new XamlStaticOrTargetedReturnMethodCallNode(node, styleSheetFontGetSprite.Getter!, [styleSheetFontCall]);
-                return true;
+                return AssignFileResource(context, node, "GetFont", ref result);
             }
 
+            // handle Texture2D
             if (type == TypesContainer.Texture2D)
             {
-                // MyraEnvironment.GraphicsDevice
-                if (node is not XamlAstTextNode textNode)
-                {
-                    throw new InvalidOperationException();
-                }
+                return AssignFileResource(context, node, "GetTexture", ref result);
+            }
 
-                var loadMethod = TypesContainer.Texture2D.GetMethod(m => m.IsStatic && m.Name == "FromFile");
+            // handle SpriteFontBase
+            if (type == TypesContainer.TextureRegionAtlas)
+            {
+                if (!GetText(node, out var text))
+                    return false;
+
+                var loadMethod = TypesContainer.IFileResolver.GetMethod(m => m.IsStatic && m.Name == "GetAtlas");
                 result = new XamlStaticOrTargetedReturnMethodCallNode(node, loadMethod,
                     [
                         new XamlStaticOrTargetedReturnMethodCallNode(node,
-                            TypesContainer.MyraEnvironment.GetAllProperties().First(p => p.Name == "GraphicsDevice").Getter!,
-                            null),
-                        new XamlConstantNode(node, context.Configuration.WellKnownTypes.String, textNode.Text)
+                                    TypesContainer.MyraEnvironment.GetAllProperties().First(p => p.Name == "Resolver").Getter!,
+                                    null),
+                        new XamlStaticOrTargetedReturnMethodCallNode(node,
+                                    TypesContainer.MyraEnvironment.GetAllProperties().First(p => p.Name == "GraphicsDevice").Getter!,
+                                    null),
+                        new XamlConstantNode(node, context.Configuration.WellKnownTypes.String, text)
                     ]);
                 return true;
             }
-
-            if (type == TypesContainer.TextureRegion)
-            {
-                if (node is not XamlAstObjectNode objectNode)
-                {
-                    throw new InvalidOperationException();
-                }
-
-                int left = 0, width = 0, height = 0, top = 0;
-                foreach(var child in objectNode.Children)
-                {
-                    if (child is not XamlAstXamlPropertyValueNode childValueNode)
-                        continue;
-
-                    if (childValueNode.Property is not XamlAstClrProperty childSource)
-                        continue;
-
-                    if (childValueNode.Values[0] is not XamlAstTextNode childText)
-                        continue;
-
-                    var integerValue = Int32.Parse(childText.Text);
-
-                    switch (childSource.Name.ToLowerInvariant())
-                    {
-                        case "x":
-                        case "left": left = integerValue; break;
-                        case "right": width = integerValue; break;
-                        case "y":
-                        case "top": top = integerValue; break;
-                        case "bottom": height = integerValue; break;
-                        default: throw new XamlLoadException($"Unknown property '{childSource.Name}' in TextureRegion", node);
-                    }
-                }
-
-                var bounds = new XamlAstNewClrObjectNode(node,
-                    new XamlAstClrTypeReference(node, TypesContainer.Rectangle, false),
-                    TypesContainer.Rectangle.GetConstructor([context.Configuration.WellKnownTypes.Int32,
-                                                            context.Configuration.WellKnownTypes.Int32,
-                                                            context.Configuration.WellKnownTypes.Int32,
-                                                            context.Configuration.WellKnownTypes.Int32]),
-                    [new XamlConstantNode(node, context.Configuration.WellKnownTypes.Int32, left),
-                    new XamlConstantNode(node, context.Configuration.WellKnownTypes.Int32, top),
-                    new XamlConstantNode(node, context.Configuration.WellKnownTypes.Int32, width),
-                    new XamlConstantNode(node, context.Configuration.WellKnownTypes.Int32, height)]);
-                var texture = new XamlAstContextLocalNode(node, TypesContainer.Texture2D);
-                result = new XamlAstNewClrObjectNode(node, new XamlAstClrTypeReference(node, TypesContainer.TextureRegion, false),
-                                                  TypesContainer.TextureRegion.GetConstructor([TypesContainer.Texture2D, TypesContainer.Rectangle]),
-                                                  [texture, bounds]);
-                return true;
-            }
-
 
             // handle thickness  
             if (type == TypesContainer.Thickness)
@@ -198,6 +140,22 @@ namespace Myra.Xaml.Helpers
 
 
             return false;
+        }
+
+        private static bool AssignFileResource(AstTransformationContext context, IXamlAstValueNode node, string methodName, ref IXamlAstValueNode result)
+        {
+            if (!GetText(node, out var text))
+                return false;
+
+            var loadMethod = TypesContainer.IFileResolver.GetMethod(m => m.IsStatic && m.Name == methodName);
+            result = new XamlStaticOrTargetedReturnMethodCallNode(node, loadMethod,
+                [
+                    new XamlStaticOrTargetedReturnMethodCallNode(node,
+                                    TypesContainer.MyraEnvironment.GetAllProperties().First(p => p.Name == "Resolver").Getter!,
+                                    []),
+                        new XamlConstantNode(node, context.Configuration.WellKnownTypes.String, text)
+                ]);
+            return true;
         }
 
         private static bool TryAssignSolidBrush(AstTransformationContext context, IXamlAstValueNode node, IXamlType type, [NotNullWhen(true)] out IXamlAstValueNode? result)
@@ -350,6 +308,22 @@ namespace Myra.Xaml.Helpers
 
             text = textNode.Text;
             return true;
+        }
+
+        public static TypeDefinition? FindTypeRecursive(this Collection<TypeDefinition> types, string fullName)
+        {
+            foreach (var type in types)
+            {
+                if (type.FullName == fullName)
+                    return type;
+
+                var nested = FindTypeRecursive(type.NestedTypes, fullName);
+
+                if (nested != null)
+                    return nested;
+            }
+
+            return null;
         }
     }
 }

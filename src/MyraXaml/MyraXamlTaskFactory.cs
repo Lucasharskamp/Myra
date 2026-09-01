@@ -28,7 +28,7 @@ namespace Myra.Xaml
                     required: true),
 
                 new TaskPropertyInfo(
-                    nameof(MyraXamlCompileTask.XamlFiles),
+                    nameof(MyraXamlCompileTask.MyraFiles),
                     typeof(ITaskItem[]),
                     output: false,
                     required: true),

@@ -99,6 +99,11 @@ namespace Myra
 		public static EventHandlingStrategy EventHandlingModel { get; set; } = EventHandlingStrategy.EventCapturing;
 
 		/// <summary>
+		/// How assets referenced in .xaml, .xmms and .xmat files are loaded in and retrieved.
+		/// </summary>
+		public static IFileResolver Resolver { get; set; } = new DefaultFileResolver();
+
+		/// <summary>
 		/// Gets or sets the current mouse cursor type displayed.
 		/// </summary>
 		public static MouseCursorType MouseCursorType

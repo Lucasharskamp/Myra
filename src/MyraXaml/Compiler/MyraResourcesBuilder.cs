@@ -8,15 +8,28 @@ namespace Myra.Xaml.Compiler
 {
     public sealed class MyraResourcesBuilder
     {
-        private IXamlMethodBuilder<IXamlILEmitter> RegisterMethod { get; } 
+        private IXamlMethod AtlasAddMethod { get; }
+        private IXamlMethod StylesheetAddMethod { get; }
         private IXamlTypeBuilder<IXamlILEmitter> ResourcesTypeBuilder { get; }
         public IXamlMethod GetMethod { get; }
         private XamlTypeWellKnownTypes WellKnownTypes { get; }
+        private IXamlField AtlassesContainer { get; }
         private IXamlField StylesheetsContainer { get; }
+        public const string GetStylesheetMethodName = "GetStylesheet";
 
         public MyraResourcesBuilder(CecilTypeSystem typeSystem, TypeDefinition resourceType, XamlTypeWellKnownTypes wellKnownTypes)
-        { 
+        {
+            WellKnownTypes = wellKnownTypes;
             ResourcesTypeBuilder = typeSystem.CreateTypeBuilder(resourceType, true);
+
+
+            var atlasContainerType = wellKnownTypes.DictionaryOfT2.MakeGenericType(wellKnownTypes.String,
+                                                TypesContainer.TextureRegionAtlas);
+
+            AtlasAddMethod = atlasContainerType.GetMethod(m => m.Name == "Add");
+            var atlasGetMethod = atlasContainerType.GetMethod(m => m.Name == "get_Item");
+
+            AtlassesContainer = ResourcesTypeBuilder.DefineField(atlasContainerType, "_atlasses", XamlVisibility.Private, true);
 
             var funcStylesheetType = wellKnownTypes.GetFuncOfT(1).MakeGenericType(TypesContainer.StyleSheet); 
             var lazyStylesheetType = TypesContainer.LazyOfT1.MakeGenericType(TypesContainer.StyleSheet);
@@ -25,40 +38,21 @@ namespace Myra.Xaml.Compiler
                                             lazyStylesheetType
                                         );
 
-            var stylesheetsAddMethod = stylesheetsContainerType.GetMethod(m => m.Name == "Add");
+            StylesheetAddMethod = stylesheetsContainerType.GetMethod(m => m.Name == "Add");
             var stylesheetsGetMethod = stylesheetsContainerType.GetMethod(m => m.Name == "get_Item");
             StylesheetsContainer = ResourcesTypeBuilder.DefineField(stylesheetsContainerType, "_stylesheets", XamlVisibility.Private, true);
 
             var lazyGetValue = lazyStylesheetType.GetMethod(m => m.Name == "get_Value");
             var lazyConstructor = lazyStylesheetType.GetConstructor([funcStylesheetType]);
+              
              
-            /*
-             * private static void Register(string name, Func<Stylesheet> factory)
-             * {
-             *   _stylesheets.Add(name, new Lazy<Stylesheet>(factory));
-             * }
-             */
-            RegisterMethod = ResourcesTypeBuilder.DefineMethod(wellKnownTypes.Void,
-                                    [wellKnownTypes.String, funcStylesheetType],
-                                    "Register",
-                                    XamlVisibility.Assembly,
-                                    true,
-                                    false);
-            var registerMethodGen = RegisterMethod.Generator;
-            registerMethodGen.Ldsfld(StylesheetsContainer);
-            registerMethodGen.Ldarg(0);
-            registerMethodGen.Ldarg(1);
-            registerMethodGen.Newobj(lazyConstructor);
-            registerMethodGen.EmitCall(stylesheetsAddMethod);
-            registerMethodGen.Ret();
-
             /*
              *  internal static Stylesheet Get(string name)
              *   => _stylesheets[name].Value;
              */
             var getMethodBuilder = ResourcesTypeBuilder.DefineMethod(TypesContainer.StyleSheet,
                                                         [wellKnownTypes.String],
-                                                        "Get",
+                                                        GetStylesheetMethodName,
                                                         XamlVisibility.Assembly,
                                                         true,
                                                         false);
@@ -74,16 +68,20 @@ namespace Myra.Xaml.Compiler
             MyraBindingCompilationContext.GetStylesheet = GetMethod;
         }
 
-        public void BuildStaticConstructor(List<(string, IXamlMethod)> stylesheetTypes)
+        public void BuildStaticConstructor(List<(string, IXamlMethod)> atlasTypes, List<(string, IXamlMethod)> stylesheetTypes)
         {
             /*
             *   static __MyraXamlResources()
             *   { 
+            *      _atlasses = new();
+            *      // for every atlas
+            *      _atlasses.Add(typename, atlas);
+            *      
             *      _stylesheets = new();
             *      // for each stylesheet
-            *      Register(typename, stylesheet)
+            *      _stylesheets.Add(typename, stylesheet)
             *      
-            *      Stylesheet.Current = Get("default_ui_skin.xaml)
+            *      Stylesheet.Current = Get("default_ui_skin.xmms)
             *   }
             */
             var funcStylesheetType = WellKnownTypes.GetFuncOfT(1).MakeGenericType(TypesContainer.StyleSheet);
@@ -93,19 +91,32 @@ namespace Myra.Xaml.Compiler
 
             var initializeMethodGen = initializeMethod.Generator;
 
-            // _stylesheets = new();
+            // _atlasses = new();
+            initializeMethodGen.Newobj(AtlassesContainer.FieldType.GetConstructor([]));
+            initializeMethodGen.Stsfld(AtlassesContainer);
 
-            // Register(typename, stylesheet)
+            // _atlasses.Add(typename, atlasType())
+            foreach (var atlasType in atlasTypes)
+            {
+                initializeMethodGen.Ldstr(atlasType.Item1);
+                initializeMethodGen.Ldnull();
+                initializeMethodGen.EmitCall(atlasType.Item2);
+                initializeMethodGen.Newobj(funcConstructor);
+                initializeMethodGen.EmitCall(AtlasAddMethod);
+            }
+
+            // _stylesheets = new();
             initializeMethodGen.Newobj(StylesheetsContainer.FieldType.GetConstructor([]));
             initializeMethodGen.Stsfld(StylesheetsContainer);
-  
+
+            // _stylesheets.Add(typename, stylesheet)
             foreach (var stylesheetType in stylesheetTypes)
             {
                 initializeMethodGen.Ldstr(stylesheetType.Item1);
                 initializeMethodGen.Ldnull();
                 initializeMethodGen.Ldftn(stylesheetType.Item2);
                 initializeMethodGen.Newobj(funcConstructor);
-                initializeMethodGen.EmitCall(RegisterMethod);
+                initializeMethodGen.EmitCall(StylesheetAddMethod);
             }
 
             // Stylesheet.Current = Get("default_ui_skin");

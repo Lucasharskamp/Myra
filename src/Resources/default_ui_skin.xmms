@@ -1,7 +1,7 @@
 <Stylesheet TextureRegionAtlas="default_ui_skin.xmat">
   <Fonts UsedSpace="0, 0, 1024, 160">
-    <Font Id="default-font" File="Inter-Regular.ttf" Size="20" />
-    <Font Id="tooltip-font" File="Inter-Regular.ttf" Size="16" />
+    <StylesheetFont Id="default-font" File="Inter-Regular.ttf" Size="20" />
+    <StylesheetFont Id="tooltip-font" File="Inter-Regular.ttf" Size="16" />
   </Fonts>
   <LabelStyles>
     <LabelStyle TextColor="White" DisabledTextColor="Gray" Font="default-font" />

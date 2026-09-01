@@ -25,7 +25,7 @@
   <Target Name="MyraXamlCompile" AfterTargets="Build" Condition="'$(DesignTimeBuild)' != 'true'">
     <MyraXamlCompileTask 
       TargetPath="$(TargetPath)" 
-      XamlFiles="@(MyraXaml)"
+      MyraFiles="@(MyraXaml)"
       RootNamespace="$(RootNamespace)" 
       ProjectDirectory="$(MSBuildProjectDirectory)" 
       ReferenceAssemblies="@(ReferencePath)"

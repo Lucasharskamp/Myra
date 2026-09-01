@@ -50,7 +50,7 @@ namespace Myra.Xaml.Helpers
             if (!context.TryGetItem<XamlStyleContainer>(out var styleContainer))
             {
                 styleContainer = new XamlStyleContainer(new XamlConstantNode(node, context.Configuration.WellKnownTypes.String, ""));
-                context.SetItem<XamlStyleContainer>(styleContainer);
+                context.SetItem(styleContainer);
             }
 
             return styleContainer.Node;
