@@ -5,9 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using System.Reflection.Emit;
-using System.Security.Principal;
-using System.Text;
+using System.Reflection.Emit; 
 using XamlX;
 using XamlX.Ast;
 using XamlX.IL;
@@ -17,7 +15,17 @@ namespace Myra.Xaml.Compiler
 {
     public sealed class MyraBindingCompilationContext
     {
-        private CecilTypeSystem TypeSystem { get; }
+        private IXamlTypeSystem TypeSystem { get; }
+
+        /// <summary>
+        /// the Get(string) method to retrieve a stylesheet.
+        /// </summary>
+        public static IXamlMethod GetStylesheet { get; set; } = default!;
+
+        /// <summary>
+        /// The Get(string) method from a module reference.
+        /// </summary>
+        public static MethodReference GetStylesheetDefinition { get; set; } = default!;
 
         /// <summary>
         /// Nodes which have x:Uid assigned to them (for use for localization and other tools)
@@ -32,7 +40,7 @@ namespace Myra.Xaml.Compiler
         private Dictionary<string, XamlVisibility> FieldModifiers { get; } = [];
 
 
-        public MyraBindingCompilationContext(CecilTypeSystem typeSystem)
+        public MyraBindingCompilationContext(IXamlTypeSystem typeSystem)
         {
             TypeSystem = typeSystem;
         }

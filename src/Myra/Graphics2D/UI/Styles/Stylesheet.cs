@@ -15,8 +15,8 @@ namespace Myra.Graphics2D.UI.Styles
 	/// </summary>
 	public class Stylesheet
 	{
-		internal static readonly Dictionary<string, string> LegacyClassNames = new Dictionary<string, string>();
-		internal static readonly Dictionary<string, string> LegacyPropertyNames = new Dictionary<string, string>();
+		internal static readonly Dictionary<string, string> LegacyClassNames = [];
+		internal static readonly Dictionary<string, string> LegacyPropertyNames = [];
 
 		/// <summary>
 		/// The default style identifier used when no specific style name is provided.
@@ -53,9 +53,8 @@ namespace Myra.Graphics2D.UI.Styles
 		/// Gets the texture atlas containing all texture regions used in the stylesheet.
 		/// Skip load, since it is loaded manually
 		/// </summary>
-		[XmlName("TextureRegionAtlas")]
 		[SkipLoad]
-		public TextureRegionAtlas Atlas { get; internal set; }
+		public TextureRegionAtlas Atlas { get; set; }
 
 		/// <summary>
 		/// Gets a white texture region from the atlas, used for solid color rendering.
@@ -89,7 +88,7 @@ namespace Myra.Graphics2D.UI.Styles
 		/// Gets the collection of fonts used in the stylesheet.
 		/// </summary>
 		[SkipLoad]
-		public StylesheetFontsCollection Fonts { get; } = new StylesheetFontsCollection();
+		public StylesheetFontsCollection Fonts { get; set; } = new StylesheetFontsCollection();
 
 		/// <summary>
 		/// Gets or sets the style applied to the desktop background.
@@ -391,152 +390,152 @@ namespace Myra.Graphics2D.UI.Styles
 		/// <summary>
 		/// Gets the dictionary of named label styles, keyed by style identifier.
 		/// </summary>
-		public Dictionary<string, LabelStyle> LabelStyles { get; } = new Dictionary<string, LabelStyle>();
+		public Dictionary<string, LabelStyle> LabelStyles { get; } = [];
 
-		/// <summary>
-		/// Gets the dictionary of named tooltip label styles, keyed by style identifier.
-		/// </summary>
-		public Dictionary<string, LabelStyle> TooltipStyles { get; } = new Dictionary<string, LabelStyle>();
+        /// <summary>
+        /// Gets the dictionary of named tooltip label styles, keyed by style identifier.
+        /// </summary>
+        public Dictionary<string, LabelStyle> TooltipStyles { get; } = [];
 
-		/// <summary>
-		/// Gets the dictionary of named text box styles, keyed by style identifier.
-		/// </summary>
-		public Dictionary<string, TextBoxStyle> TextBoxStyles { get; } = new Dictionary<string, TextBoxStyle>();
+        /// <summary>
+        /// Gets the dictionary of named text box styles, keyed by style identifier.
+        /// </summary>
+        public Dictionary<string, TextBoxStyle> TextBoxStyles { get; } = [];
 
-		/// <summary>
-		/// Gets the dictionary of named button styles, keyed by style identifier.
-		/// </summary>
-		public Dictionary<string, ButtonStyle> ButtonStyles { get; } = new Dictionary<string, ButtonStyle>();
+        /// <summary>
+        /// Gets the dictionary of named button styles, keyed by style identifier.
+        /// </summary>
+        public Dictionary<string, ButtonStyle> ButtonStyles { get; } = [];
 
-		/// <summary>
-		/// Gets the dictionary of named checkbox styles, keyed by style identifier.
-		/// </summary>
-		public Dictionary<string, CheckButtonStyle> CheckBoxStyles { get; } = new Dictionary<string, CheckButtonStyle>();
+        /// <summary>
+        /// Gets the dictionary of named checkbox styles, keyed by style identifier.
+        /// </summary>
+        public Dictionary<string, CheckButtonStyle> CheckBoxStyles { get; } = [];
 
-		/// <summary>
-		/// Gets the dictionary of named radio button styles, keyed by style identifier.
-		/// </summary>
-		public Dictionary<string, CheckButtonStyle> RadioButtonStyles { get; } = new Dictionary<string, CheckButtonStyle>();
+        /// <summary>
+        /// Gets the dictionary of named radio button styles, keyed by style identifier.
+        /// </summary>
+        public Dictionary<string, CheckButtonStyle> RadioButtonStyles { get; } = [];
 
-		/// <summary>
-		/// Gets the dictionary of named spin button styles, keyed by style identifier.
-		/// </summary>
-		public Dictionary<string, SpinButtonStyle> SpinButtonStyles { get; } = new Dictionary<string, SpinButtonStyle>();
+        /// <summary>
+        /// Gets the dictionary of named spin button styles, keyed by style identifier.
+        /// </summary>
+        public Dictionary<string, SpinButtonStyle> SpinButtonStyles { get; } = [];
 
-		/// <summary>
-		/// Gets the dictionary of named horizontal slider styles, keyed by style identifier.
-		/// </summary>
-		public Dictionary<string, SliderStyle> HorizontalSliderStyles { get; } = new Dictionary<string, SliderStyle>();
+        /// <summary>
+        /// Gets the dictionary of named horizontal slider styles, keyed by style identifier.
+        /// </summary>
+        public Dictionary<string, SliderStyle> HorizontalSliderStyles { get; } = [];
 
-		/// <summary>
-		/// Gets the dictionary of named vertical slider styles, keyed by style identifier.
-		/// </summary>
-		public Dictionary<string, SliderStyle> VerticalSliderStyles { get; } = new Dictionary<string, SliderStyle>();
+        /// <summary>
+        /// Gets the dictionary of named vertical slider styles, keyed by style identifier.
+        /// </summary>
+        public Dictionary<string, SliderStyle> VerticalSliderStyles { get; } = [];
 
-		/// <summary>
-		/// Gets the dictionary of named horizontal progress bar styles, keyed by style identifier.
-		/// </summary>
-		public Dictionary<string, ProgressBarStyle> HorizontalProgressBarStyles { get; } = new Dictionary<string, ProgressBarStyle>();
+        /// <summary>
+        /// Gets the dictionary of named horizontal progress bar styles, keyed by style identifier.
+        /// </summary>
+        public Dictionary<string, ProgressBarStyle> HorizontalProgressBarStyles { get; } = [];
 
-		/// <summary>
-		/// Gets the dictionary of named vertical progress bar styles, keyed by style identifier.
-		/// </summary>
-		public Dictionary<string, ProgressBarStyle> VerticalProgressBarStyles { get; } = new Dictionary<string, ProgressBarStyle>();
+        /// <summary>
+        /// Gets the dictionary of named vertical progress bar styles, keyed by style identifier.
+        /// </summary>
+        public Dictionary<string, ProgressBarStyle> VerticalProgressBarStyles { get; } = [];
 
-		/// <summary>
-		/// Gets the dictionary of named horizontal separator styles, keyed by style identifier.
-		/// </summary>
-		public Dictionary<string, SeparatorStyle> HorizontalSeparatorStyles { get; } = new Dictionary<string, SeparatorStyle>();
+        /// <summary>
+        /// Gets the dictionary of named horizontal separator styles, keyed by style identifier.
+        /// </summary>
+        public Dictionary<string, SeparatorStyle> HorizontalSeparatorStyles { get; } = [];
 
-		/// <summary>
-		/// Gets the dictionary of named vertical separator styles, keyed by style identifier.
-		/// </summary>
-		public Dictionary<string, SeparatorStyle> VerticalSeparatorStyles { get; } = new Dictionary<string, SeparatorStyle>();
+        /// <summary>
+        /// Gets the dictionary of named vertical separator styles, keyed by style identifier.
+        /// </summary>
+        public Dictionary<string, SeparatorStyle> VerticalSeparatorStyles { get; } = [];
 
-		/// <summary>
-		/// Gets the dictionary of named combo box styles, keyed by style identifier.
-		/// </summary>
-		public Dictionary<string, ComboBoxStyle> ComboBoxStyles { get; } = new Dictionary<string, ComboBoxStyle>();
+        /// <summary>
+        /// Gets the dictionary of named combo box styles, keyed by style identifier.
+        /// </summary>
+        public Dictionary<string, ComboBoxStyle> ComboBoxStyles { get; } = [];
 
-		/// <summary>
-		/// Gets the dictionary of named list box styles, keyed by style identifier.
-		/// </summary>
-		public Dictionary<string, ListBoxStyle> ListBoxStyles { get; } = new Dictionary<string, ListBoxStyle>();
+        /// <summary>
+        /// Gets the dictionary of named list box styles, keyed by style identifier.
+        /// </summary>
+        public Dictionary<string, ListBoxStyle> ListBoxStyles { get; } = [];
 
-		/// <summary>
-		/// Gets the dictionary of named tab control styles, keyed by style identifier.
-		/// </summary>
-		public Dictionary<string, TabControlStyle> TabControlStyles { get; } = new Dictionary<string, TabControlStyle>();
+        /// <summary>
+        /// Gets the dictionary of named tab control styles, keyed by style identifier.
+        /// </summary>
+        public Dictionary<string, TabControlStyle> TabControlStyles { get; } = [];
 
-		/// <summary>
-		/// Gets the dictionary of named tree styles, keyed by style identifier.
-		/// </summary>
-		public Dictionary<string, TreeStyle> TreeStyles { get; } = new Dictionary<string, TreeStyle>();
+        /// <summary>
+        /// Gets the dictionary of named tree styles, keyed by style identifier.
+        /// </summary>
+        public Dictionary<string, TreeStyle> TreeStyles { get; } = [];
 
-		/// <summary>
-		/// Gets the dictionary of named horizontal split pane styles, keyed by style identifier.
-		/// </summary>
-		public Dictionary<string, SplitPaneStyle> HorizontalSplitPaneStyles { get; } = new Dictionary<string, SplitPaneStyle>();
+        /// <summary>
+        /// Gets the dictionary of named horizontal split pane styles, keyed by style identifier.
+        /// </summary>
+        public Dictionary<string, SplitPaneStyle> HorizontalSplitPaneStyles { get; } = [];
 
-		/// <summary>
-		/// Gets the dictionary of named vertical split pane styles, keyed by style identifier.
-		/// </summary>
-		public Dictionary<string, SplitPaneStyle> VerticalSplitPaneStyles { get; } = new Dictionary<string, SplitPaneStyle>();
+        /// <summary>
+        /// Gets the dictionary of named vertical split pane styles, keyed by style identifier.
+        /// </summary>
+        public Dictionary<string, SplitPaneStyle> VerticalSplitPaneStyles { get; } = [];
 
-		/// <summary>
-		/// Gets the dictionary of named scroll viewer styles, keyed by style identifier.
-		/// </summary>
-		public Dictionary<string, ScrollViewerStyle> ScrollViewerStyles { get; } = new Dictionary<string, ScrollViewerStyle>();
+        /// <summary>
+        /// Gets the dictionary of named scroll viewer styles, keyed by style identifier.
+        /// </summary>
+        public Dictionary<string, ScrollViewerStyle> ScrollViewerStyles { get; } = [];
 
-		/// <summary>
-		/// Gets the dictionary of named DataGrid styles, keyed by style identifier.
-		/// </summary>
-		public Dictionary<string, DataGridStyle> DataGridStyles { get; } = new Dictionary<string, DataGridStyle>();
+        /// <summary>
+        /// Gets the dictionary of named DataGrid styles, keyed by style identifier.
+        /// </summary>
+        public Dictionary<string, DataGridStyle> DataGridStyles { get; } = [];
 
-		/// <summary>
-		/// Gets the dictionary of named horizontal menu styles, keyed by style identifier.
-		/// </summary>
-		public Dictionary<string, MenuStyle> HorizontalMenuStyles { get; } = new Dictionary<string, MenuStyle>();
+        /// <summary>
+        /// Gets the dictionary of named horizontal menu styles, keyed by style identifier.
+        /// </summary>
+        public Dictionary<string, MenuStyle> HorizontalMenuStyles { get; } = [];
 
-		/// <summary>
-		/// Gets the dictionary of named vertical menu styles, keyed by style identifier.
-		/// </summary>
-		public Dictionary<string, MenuStyle> VerticalMenuStyles { get; } = new Dictionary<string, MenuStyle>();
+        /// <summary>
+        /// Gets the dictionary of named vertical menu styles, keyed by style identifier.
+        /// </summary>
+        public Dictionary<string, MenuStyle> VerticalMenuStyles { get; } = [];
 
-		/// <summary>
-		/// Gets the dictionary of named window styles, keyed by style identifier.
-		/// </summary>
-		public Dictionary<string, WindowStyle> WindowStyles { get; } = new Dictionary<string, WindowStyle>();
+        /// <summary>
+        /// Gets the dictionary of named window styles, keyed by style identifier.
+        /// </summary>
+        public Dictionary<string, WindowStyle> WindowStyles { get; } = [];
 
-		/// <summary>
-		/// Gets the dictionary of named file dialog styles, keyed by style identifier.
-		/// </summary>
-		public Dictionary<string, FileDialogStyle> FileDialogStyles { get; } = new Dictionary<string, FileDialogStyle>();
+        /// <summary>
+        /// Gets the dictionary of named file dialog styles, keyed by style identifier.
+        /// </summary>
+        public Dictionary<string, FileDialogStyle> FileDialogStyles { get; } = [];
 
-		/// <summary>
-		/// Gets the dictionary of named color picker dialog styles, keyed by style identifier.
-		/// </summary>
-		public Dictionary<string, ColorPickerDialogStyle> ColorPickerDialogStyles { get; } = new Dictionary<string, ColorPickerDialogStyle>();
+        /// <summary>
+        /// Gets the dictionary of named color picker dialog styles, keyed by style identifier.
+        /// </summary>
+        public Dictionary<string, ColorPickerDialogStyle> ColorPickerDialogStyles { get; } = [];
 
-		/// <summary>
-		/// Gets the dictionary of named grid styles, keyed by style identifier.
-		/// </summary>
-		public Dictionary<string, GridStyle> GridStyles { get; } = new Dictionary<string, GridStyle>();
+        /// <summary>
+        /// Gets the dictionary of named grid styles, keyed by style identifier.
+        /// </summary>
+        public Dictionary<string, GridStyle> GridStyles { get; } = [];
 
-		/// <summary>
-		/// Gets the dictionary of named panel styles, keyed by style identifier.
-		/// </summary>
-		public Dictionary<string, WidgetStyle> PanelStyles { get; } = new Dictionary<string, WidgetStyle>();
+        /// <summary>
+        /// Gets the dictionary of named panel styles, keyed by style identifier.
+        /// </summary>
+        public Dictionary<string, WidgetStyle> PanelStyles { get; } = [];
 
-		/// <summary>
-		/// Gets the dictionary of named horizontal stack panel styles, keyed by style identifier.
-		/// </summary>
-		public Dictionary<string, WidgetStyle> HorizontalStackPanelStyles { get; } = new Dictionary<string, WidgetStyle>();
+        /// <summary>
+        /// Gets the dictionary of named horizontal stack panel styles, keyed by style identifier.
+        /// </summary>
+        public Dictionary<string, WidgetStyle> HorizontalStackPanelStyles { get; } = [];
 
-		/// <summary>
-		/// Gets the dictionary of named vertical stack panel styles, keyed by style identifier.
-		/// </summary>
-		public Dictionary<string, WidgetStyle> VerticalStackPanelStyles { get; } = new Dictionary<string, WidgetStyle>();
+        /// <summary>
+        /// Gets the dictionary of named vertical stack panel styles, keyed by style identifier.
+        /// </summary>
+        public Dictionary<string, WidgetStyle> VerticalStackPanelStyles { get; } = [];
 
 		static Stylesheet()
 		{

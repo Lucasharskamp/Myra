@@ -94,9 +94,12 @@ namespace Myra.Graphics2D.UI
 		public const string DefaultRowProportionName = "DefaultRowProportion";
 
 		// Maps old deprecated class names to their modern replacements for backward compatibility
-		private static readonly Dictionary<string, string> LegacyClassNames = new Dictionary<string, string>();
+		private static readonly Dictionary<string, string> LegacyClassNames = [];
 
-		private readonly ExportOptions _exportOptions = new ExportOptions();  // Code export settings
+        /// <summary>
+        /// Code export settings
+        /// </summary>
+        private readonly ExportOptions _exportOptions = new (); 
 
 		/// <summary>
 		/// Gets the export options for this project.
@@ -202,31 +205,29 @@ namespace Myra.Graphics2D.UI
 				}
 			}
 
-			// Skip default proportion values for Grid
-			var asGrid = o as Grid;
-			if (asGrid != null)
-			{
-				var value = p.GetValue(o);
-				if ((p.Name == DefaultColumnProportionName || p.Name == DefaultRowProportionName) &&
-					value == Proportion.GridDefault)
-				{
-					return false;
-				}
-			}
+            // Skip default proportion values for Grid
+            if (o is Grid)
+            {
+                var value = p.GetValue(o);
+                if ((p.Name == DefaultColumnProportionName || p.Name == DefaultRowProportionName) &&
+                    value == Proportion.GridDefault)
+                {
+                    return false;
+                }
+            }
 
-			// Skip default proportion values for StackPanel
-			var asBox = o as StackPanel;
-			if (asBox != null)
-			{
-				var value = p.GetValue(o);
-				if (p.Name == DefaultProportionName && value == Proportion.StackPanelDefault)
-				{
-					return false;
-				}
-			}
+            // Skip default proportion values for StackPanel
+            if (o is StackPanel)
+            {
+                var value = p.GetValue(o);
+                if (p.Name == DefaultProportionName && value == Proportion.StackPanelDefault)
+                {
+                    return false;
+                }
+            }
 
-			// Skip properties that have default values (not modified)
-			if (SaveContext.HasDefaultValue(o, p))
+            // Skip properties that have default values (not modified)
+            if (SaveContext.HasDefaultValue(o, p))
 			{
 				return false;
 			}
@@ -268,15 +269,15 @@ namespace Myra.Graphics2D.UI
 		/// <summary>
 		/// Gets or sets the extra widget assemblies and namespaces to include during project loading and saving.
 		/// </summary>
-		public static Dictionary<Assembly, string[]> ExtraWidgetAssembliesAndNamespaces = new Dictionary<Assembly, string[]>();
+		public static Dictionary<Assembly, string[]> ExtraWidgetAssembliesAndNamespaces { get; } = [];
 
 		// Creates a load context for deserializing UI projects from XML.
 		// Sets up asset loading, widget type resolution, and legacy name mapping.
 		internal static LoadContext CreateLoadContext(AssetManager assetManager, Stylesheet stylesheet)
 		{
 			// Collect widget assemblies: both Myra core types and user-supplied custom widgets
-			Dictionary<Assembly, string[]> assemblies = new Dictionary<Assembly, string[]>(ExtraWidgetAssembliesAndNamespaces);
-			assemblies.Add(typeof(Widget).Assembly, new string[] { typeof(Widget).Namespace, typeof(PropertyGrid).Namespace });
+			Dictionary<Assembly, string[]> assemblies = [];
+			assemblies.Add(typeof(Widget).Assembly, [typeof(Widget).Namespace, typeof(PropertyGrid).Namespace]);
 
 			return new LoadContext
 			{
@@ -360,9 +361,8 @@ namespace Myra.Graphics2D.UI
 		/// <param name="data">The XML data as a string.</param>
 		/// <param name="assetManager">The asset manager for loading resources.</param>
 		/// <param name="stylesheet">The stylesheet to apply to loaded objects.</param>
-		/// <param name="parentType">The parent type context for loading.</param>
 		/// <returns>The loaded object.</returns>
-		internal static object LoadObjectFromXml(string data, AssetManager assetManager = null, Stylesheet stylesheet = null, Type parentType = null)
+		internal static object LoadObjectFromXml(string data, AssetManager assetManager = null, Stylesheet stylesheet = null)
 		{
 			XDocument xDoc = XDocument.Parse(data, LoadOptions.SetLineInfo);
 
@@ -376,15 +376,14 @@ namespace Myra.Graphics2D.UI
 			}
 			else if (!IsProportionName(name))
 			{
-				// Check if it's a legacy name and get modern name
-				string newName;
-				if (LegacyClassNames.TryGetValue(name, out newName))
-				{
-					name = newName;
-				}
+                // Check if it's a legacy name and get modern name
+                if (LegacyClassNames.TryGetValue(name, out string newName))
+                {
+                    name = newName;
+                }
 
-				// Look up widget type by name in Myra assemblies
-				itemType = GetWidgetTypeByName(name);
+                // Look up widget type by name in Myra assemblies
+                itemType = GetWidgetTypeByName(name);
 			}
 			else
 			{
@@ -466,7 +465,7 @@ namespace Myra.Graphics2D.UI
 							throw ex.InnerException;
 						}
 
-						throw ex;
+						throw;
 					}
 				}
 			}
@@ -491,8 +490,8 @@ namespace Myra.Graphics2D.UI
 				styleName = Stylesheet.DefaultStyleName;
 			}
 
-			object obj = null;
-			try
+            object obj;
+            try
 			{
 				obj = w.GetStyle(stylesheet, styleName);
 			}
@@ -515,10 +514,10 @@ namespace Myra.Graphics2D.UI
 			{
 				// Custom path specified (e.g., "/SomeProperty/NestedProperty")
 				var path = stylePropertyPathAttribute.Name;
-				if (path.StartsWith("/"))
+				if (path.StartsWith('/'))
 				{
 					obj = stylesheet;
-					path = path.Substring(1);
+					path = path[1..];
 				}
 
 				// Traverse path segments separated by '/'

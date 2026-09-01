@@ -44,7 +44,7 @@ namespace Myra.Graphics2D
 	public partial class RenderContext : IDisposable
 	{
 #if MONOGAME
-		private static SamplerState _textureFilteringAnisotropic = new SamplerState
+		private static readonly SamplerState _textureFilteringAnisotropic = new()
 		{
 			Filter = TextureFilter.Anisotropic,
 			AddressU = TextureAddressMode.Clamp,
@@ -595,16 +595,24 @@ namespace Myra.Graphics2D
 		private void ReleaseUnmanagedResources()
 		{
 #if MONOGAME || FNA || STRIDE
-			_renderer?.Dispose();
+			_renderer?.Dispose(); 
 #endif
 		}
+
+		/// <summary>
+		/// Disposes resources used by the RenderContext
+		/// </summary> 
+		protected virtual void Dispose(bool disposing)
+		{
+            ReleaseUnmanagedResources();
+        }
 
 		/// <summary>
 		/// Disposes resources used by the RenderContext.
 		/// </summary>
 		public void Dispose()
 		{
-			ReleaseUnmanagedResources();
+			Dispose(true);
 			GC.SuppressFinalize(this);
 		}
 
@@ -613,7 +621,7 @@ namespace Myra.Graphics2D
 		/// </summary>
 		~RenderContext()
 		{
-			ReleaseUnmanagedResources();
+			Dispose(false); 
 		}
 	}
 }

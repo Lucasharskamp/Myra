@@ -31,7 +31,7 @@ namespace Myra.Graphics2D.UI
 		// Transform and layout state
 		private Rectangle _lastBounds;  // Cached bounds from last BoundsFetcher call
 		private Vector2 _scale = Vector2.One;  // Desktop scale factor for zoom/scaling UI
-		private Vector2 _transformOrigin = new Vector2(0.5f, 0.5f);  // Rotation center point (0.5,0.5 = center)
+		private Vector2 _transformOrigin = new(0.5f, 0.5f);  // Rotation center point (0.5,0.5 = center)
 		private float _rotation = 0.0f;  // Rotation angle in degrees
 
 		// Transform caching: recompute only when scale/origin/rotation changes
@@ -39,14 +39,14 @@ namespace Myra.Graphics2D.UI
 		private Transform _transform;  // Cached transformation matrix for coordinate conversion
 
 		// Input and rendering contexts
-		private readonly InputContext _inputContext = new InputContext();  // Manages input event queuing and processing
-		private readonly RenderContext _renderContext = new RenderContext();  // Manages rendering operations and state
+		private readonly InputContext _inputContext = new ();  // Manages input event queuing and processing
+		private readonly RenderContext _renderContext = new ();  // Manages rendering operations and state
 
 		// Layout and widget management
 		private bool _layoutDirty = true;  // Flag: layout needs recalculation on next update
 		private bool _widgetsDirty = true;  // Flag: widget list needs re-sorting by Z-index
 		private Widget _focusedKeyboardWidget;  // Widget currently receiving keyboard input
-		private readonly List<Widget> _widgetsCopy = new List<Widget>();  // Sorted copy of Widgets for iteration (avoids modifications during enumeration)
+		private readonly List<Widget> _widgetsCopy = [];  // Sorted copy of Widgets for iteration (avoids modifications during enumeration)
 		private Widget _previousKeyboardFocus;  // Widget to restore focus to after context menu closes
 
 #if MONOGAME || PLATFORM_AGNOSTIC
@@ -55,8 +55,6 @@ namespace Myra.Graphics2D.UI
 		/// </summary>
 		public bool HasExternalTextInput = false;
 #endif
-
-		private bool _isDisposed = false;  // Disposal flag to prevent double-dispose
 
 		/// <summary>
 		/// Gets or sets the function that fetches the bounds of the desktop.
@@ -113,7 +111,7 @@ namespace Myra.Graphics2D.UI
 		/// <summary>
 		/// Gets the collection of all widgets on the desktop.
 		/// </summary>
-		public ObservableCollection<Widget> Widgets { get; } = new ObservableCollection<Widget>();
+		public ObservableCollection<Widget> Widgets { get; } = [];
 
 		internal Rectangle InternalBounds
 		{
@@ -180,10 +178,7 @@ namespace Myra.Graphics2D.UI
 				}
 
 				_focusedKeyboardWidget = value;
-				if (oldValue != null)
-				{
-					oldValue.OnLostKeyboardFocus();
-				}
+				oldValue?.OnLostKeyboardFocus();
 
 				if (_focusedKeyboardWidget != null)
 				{
@@ -625,10 +620,7 @@ namespace Myra.Graphics2D.UI
 			_renderContext.Opacity = Opacity;
 
 			// Draw background
-			if (Background != null)
-			{
-				Background.Draw(_renderContext, LayoutBounds);
-			}
+			Background?.Draw(_renderContext, LayoutBounds);
 
 			// Render all visible widgets in Z-order
 			foreach (var widget in ChildrenCopy)
@@ -815,7 +807,7 @@ namespace Myra.Graphics2D.UI
 		}
 
 		// Depth-first recursive search for widget matching predicate, returning first match
-		private Widget FindChild(Widget root, Func<Widget, bool> predicate)
+		private static Widget FindChild(Widget root, Func<Widget, bool> predicate)
 		{
 			if (predicate(root))
 			{
@@ -1008,10 +1000,7 @@ namespace Myra.Graphics2D.UI
 			}
 
 			// Send character to focused widget for text editing
-			if (_focusedKeyboardWidget != null)
-			{
-				_focusedKeyboardWidget.OnChar(c);
-			}
+			_focusedKeyboardWidget?.OnChar(c);
 
 			// Fire global character event for listeners
 			Char.Invoke(c, InputEventType.CharInput);
@@ -1071,26 +1060,25 @@ namespace Myra.Graphics2D.UI
 
 			_transformDirty = false;
 		}
-
-		// Cleans up unmanaged rendering context
-		private void ReleaseUnmanagedResources()
-		{
-			_renderContext.Dispose();
-		}
+		  
+		/// <summary>
+		/// Dispose method
+		/// </summary>
+		/// <param name="disposing">Whether disposing is underway</param>
+		protected virtual void Dispose(bool disposing)
+        { 
+#if FNA
+			TextInputEXT.TextInput -= OnChar;
+#endif
+			_renderContext.Dispose(); 
+        }
 
 		/// <summary>
 		/// Releases all resources used by the desktop.
 		/// </summary>
 		public void Dispose()
-		{
-			if (_isDisposed)
-				return;
-
-#if FNA
-			TextInputEXT.TextInput -= OnChar;
-#endif
-
-			ReleaseUnmanagedResources();
+		{   
+			Dispose(true);
 			GC.SuppressFinalize(this);
 		}
 
@@ -1099,7 +1087,7 @@ namespace Myra.Graphics2D.UI
 		/// </summary>
 		~Desktop()
 		{
-			ReleaseUnmanagedResources();
+			Dispose(false);
 		}
 
 		/// <summary>

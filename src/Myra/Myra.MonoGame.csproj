@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <DefineConstants>$(DefineConstants);MONOGAME</DefineConstants>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>net8</TargetFramework>
     <AssemblyName>Myra</AssemblyName>
     <PackageId>Myra</PackageId>
     <OutputPath>bin\MonoGame\$(Configuration)</OutputPath>
@@ -28,13 +28,12 @@
     <MSBuild Projects="..\MyraXaml\MyraXaml.csproj" Targets="Build" Properties="Configuration=Release" />
     <MSBuild Projects="..\MyraAnalyzer\MyraAnalyzer.csproj" Targets="Build" Properties="Configuration=Release" />
   </Target>
-  
-  <ItemGroup>
-    <EmbeddedResource Include="Resources\**\*.*" />
-  </ItemGroup>
 
   <ItemGroup>
     <Compile Remove="Platform\**\*.*" />
+    <Compile Remove="Resources\**" />
+    <EmbeddedResource Remove="Resources\**" />
+    <None Remove="Resources\**" />
     <Compile Update="Graphics2D\UI\File\FileDialog.PlatformDependent.cs">
       <DependentUpon>FileDialog.cs</DependentUpon>
     </Compile>

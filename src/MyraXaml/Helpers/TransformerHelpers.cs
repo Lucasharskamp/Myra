@@ -1,15 +1,25 @@
-﻿using Myra.Xaml.Types;
+﻿using Mono.Cecil;
+using Mono.Cecil.Cil;
+using Mono.Cecil.Rocks;
+using Myra.Xaml.Compiler;
+using Myra.Xaml.Types;
+using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using XamlX;
 using XamlX.Ast;
+using XamlX.IL;
 using XamlX.Transform;
-using XamlX.TypeSystem; 
+using XamlX.TypeSystem;
+using static XamlX.Transform.TransformerConfiguration;
 
 namespace Myra.Xaml.Helpers
 {
     internal static class TransformerHelpers
     {
+        public const string MyraMappings = "https://github.com/MyraUI/Myra";
+
         public static void EnsureAssignability(IXamlLineInfo lineInfo, XamlAstClrProperty targetProperty, string sourceFieldName, IXamlType sourceType)
         {
             if (!targetProperty.Getter!.ReturnType.IsAssignableFrom(sourceType))
@@ -27,10 +37,7 @@ namespace Myra.Xaml.Helpers
 
             if (!context.TryGetItem<XamlStylesheetContainer>(out var stylesheetContainer))
             {
-                stylesheetContainer = new XamlStylesheetContainer(
-                    new XamlStaticOrTargetedReturnMethodCallNode(node, 
-                    TypesContainer.StyleSheet.GetAllProperties().First(c => c.Name == "Current").Getter!, 
-                    null));
+                stylesheetContainer = new XamlStylesheetContainer(node, context.Configuration.WellKnownTypes, MyraBindingCompilationContext.GetStylesheet, "default_ui_skin");
                 context.SetItem(stylesheetContainer);
             }
 
@@ -147,6 +154,119 @@ namespace Myra.Xaml.Helpers
               
             foundValue = xStatic; 
             return true;
-        } 
+        }
+
+        public static TransformerConfiguration CreateConfiguration(IXamlTypeSystem typeSystem)
+        {
+            var typeMappings = new XamlLanguageTypeMappings(typeSystem);
+
+            var contentProperty = typeSystem.FindType("Myra.Attributes.ContentAttribute")
+                ?? throw new InvalidOperationException("Cannot find ContentAttribute!");
+            typeMappings.ContentAttributes.Add(contentProperty);
+
+            var mappings = new XamlXmlnsMappings();
+
+            var xna = typeSystem.FindAssembly("MonoGame.Framework")
+                            ?? throw new InvalidOperationException("Could not find MonoGame.Framework assembly.");
+            var myraAssembly = typeSystem.FindAssembly("Myra")
+                                ?? throw new InvalidOperationException("Could not find Myra assembly.");
+
+            // get default components, brushes and styles
+            mappings.Namespaces.Add(
+                MyraMappings,
+                [
+                    (myraAssembly, "Myra.Graphics2D.Brushes"),
+                    (myraAssembly, "Myra.Graphics2D.UI"),
+                    (myraAssembly, "Myra.Graphics2D.UI.Data"),
+                    (myraAssembly, "Myra.Graphics2D.UI.Properties"),
+                    (myraAssembly, "Myra.Graphics2D.UI.Styles"),
+                    (myraAssembly, "Myra.Graphics2D.TextureAtlases"),
+                    (xna, "Microsoft.Xna.Framework")
+                ]);
+
+            // get x:(action) types
+            mappings.Namespaces.Add(
+                  XamlNamespaces.Xaml2006,
+                  [
+                      (myraAssembly, "Myra.Markup")
+                  ]);
+
+            return new TransformerConfiguration(
+                typeSystem,
+                myraAssembly,
+                typeMappings,
+                xmlnsMappings: mappings,
+                customValueConverter: ConverterHelper.MyraValueConverters,
+                identifierGenerator: null,
+                diagnosticsHandler: null);
+        }
+
+
+        public const string BuildMethodName = "InitializeComponent";
+
+        /// <summary>
+        /// Ensure that the constructor of the code-behind type has "InitializeComponent()" called
+        /// at the tail end of the constructor. <br/>
+        /// If no constructor yet exists, one willm be created.
+        /// </summary> 
+        public static void EnsureBuildMethodCalled(TypeDefinition type)
+        {
+            var module = type.Module;
+
+            var constructors = type.Methods.Where(m =>
+                m.IsConstructor &&
+                !m.IsStatic).ToArray();
+
+            if (constructors.Length > 1)
+            {
+                throw new InvalidOperationException($"Code-behind type '{type.FullName}' can only at most have 1 constructor!");
+            }
+
+            var constructor = constructors.FirstOrDefault();
+            var buildMethod = type.Methods.First(m => m.Name == BuildMethodName);
+
+            var baseConstructorDef = type.BaseType.Resolve().Methods
+                .FirstOrDefault(m => m.IsConstructor && !m.IsStatic && m.Parameters.Count == 2);
+            var baseConstructor = baseConstructorDef == null ? null : type.BaseType.Module.ImportReference(baseConstructorDef);
+
+            if (constructor == null)
+            {
+                constructor = new MethodDefinition(
+                    ".ctor",
+                    MethodAttributes.Public |
+                    MethodAttributes.HideBySig |
+                    MethodAttributes.SpecialName |
+                    MethodAttributes.RTSpecialName,
+                    module.TypeSystem.Void);
+
+                type.Methods.Add(constructor);
+            }
+            else
+            {
+                constructor.Body = new MethodBody(constructor);
+            } 
+
+            var il = constructor.Body.GetILProcessor();
+
+            // base(Stylesheet, string) 
+            if (baseConstructor != null)
+            {
+                il.Emit(OpCodes.Ldarg_0);
+                // todo replace with actual values
+                il.Emit(OpCodes.Ldstr, "default_ui_skin");
+                il.Emit(OpCodes.Call, MyraBindingCompilationContext.GetStylesheetDefinition);
+                il.Emit(OpCodes.Ldstr, "");
+                il.Emit(OpCodes.Call, baseConstructor);
+            } 
+
+            // this.InitializeComponent(IServiceProvider, this);
+            il.Emit(OpCodes.Ldnull);
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Call, module.ImportReference(buildMethod));
+
+            il.Emit(OpCodes.Ret);
+
+            return; 
+    } 
     }
 }

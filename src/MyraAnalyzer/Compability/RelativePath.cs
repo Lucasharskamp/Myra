@@ -7,9 +7,9 @@
 
 #if !NET6_0_OR_GREATER
 
-using System.Runtime.CompilerServices;
 using System.Diagnostics;
-using System.Text; 
+using System.Runtime.CompilerServices;
+using System.Text;
 
 // ReSharper disable once CheckNamespace
 namespace System.IO
@@ -289,7 +289,7 @@ namespace System.IO
         /// </summary>
         internal static bool EndsInDirectorySeparator(string path)
             => path.Length > 0 && IsDirectorySeparator(path[path.Length - 1]);
-    }  
+    }
 }
 
 #endif

@@ -44,6 +44,11 @@ namespace Myra.Graphics2D.UI.Styles
 			set => Fonts[id] = value;
 		}
 
+		public void Add(string id, StylesheetFont font)
+		{
+			Fonts.Add(id, font);
+		}
+
 		/// <summary>
 		/// Gets the underlying dictionary of fonts keyed by identifier.
 		/// </summary>

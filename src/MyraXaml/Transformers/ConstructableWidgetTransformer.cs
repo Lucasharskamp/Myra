@@ -1,17 +1,12 @@
-﻿using Mono.Cecil;
-using Myra.Xaml.Helpers;
-using System;
+﻿using Myra.Xaml.Helpers;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using XamlX;
 using XamlX.Ast;
 using XamlX.Transform;
 using XamlX.TypeSystem;
 
 namespace Myra.Xaml.Transformers
 {
-    public sealed class ConstructableWidgetTransformer : IXamlAstTransformer
+    public sealed class ConstructableWidgetTransformer() : IXamlAstTransformer
     {
         public IXamlAstNode Transform(AstTransformationContext context, IXamlAstNode node)
         {

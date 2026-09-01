@@ -1,4 +1,5 @@
-﻿using Myra.Xaml.Helpers;
+﻿using Myra.Xaml.Compiler;
+using Myra.Xaml.Helpers;
 using Myra.Xaml.Types;
 using System.Linq;
 using XamlX;
@@ -37,7 +38,7 @@ namespace Myra.Xaml.Transformers
 
             // get "x:StyleSheet" directive from the element.
             // it must be a static field/property containing the stylesheet.
-            if (valueNode.FindXDirectiveAsStatic("Stylesheet", out var styleSheetDirective, out var stylesheetNode))
+            if (valueNode.FindXDirectiveAsAny("Stylesheet", out var styleSheetDirective, out var stylesheetNode))
             {
                 if (!isRoot)
                 {
@@ -45,7 +46,15 @@ namespace Myra.Xaml.Transformers
                        $"x:Stylesheet can only be specified on the root node!",
                        styleSheetDirective);
                 }
-                context.SetItem(new XamlStylesheetContainer(stylesheetNode));
+
+                if (stylesheetNode is XamlStaticExtensionNode extensionNode)
+                {
+                    context.SetItem(new XamlStylesheetContainer(extensionNode));
+                }
+                else if (stylesheetNode is XamlAstTextNode fileNameReference)
+                {
+                    context.SetItem(new XamlStylesheetContainer(node, context.Configuration.WellKnownTypes, MyraBindingCompilationContext.GetStylesheet, fileNameReference.Text));
+                }
                 valueNode.Children.Remove(styleSheetDirective);
             }
 
@@ -60,13 +69,10 @@ namespace Myra.Xaml.Transformers
                    viewModelDirective);
             }
 
-            var viewModelType = context.Configuration.TypeSystem.FindType(viewModelReference);
-            if (viewModelType == null)
-            {
-                throw new XamlLoadException(
-                    $"The specified ViewModel type '{viewModelReference}' could not be found. Please specifiy the full namespace and type name.", 
+            var viewModelType = context.Configuration.TypeSystem.FindType(viewModelReference)
+                ?? throw new XamlLoadException(
+                    $"The specified ViewModel type '{viewModelReference}' could not be found. Please specifiy the full namespace and type name.",
                     viewModelDirective);
-            }
 
             if (!viewModelType.GetAllInterfaces().Any(i => i == TypesContainer.INotifyPropertyChanged))
             {
@@ -83,13 +89,10 @@ namespace Myra.Xaml.Transformers
                 : "ViewModel";
 
             var codeBehindClr = context.CodeBehindClrType();
-            var targetProperty = codeBehindClr.GetAllProperties().FirstOrDefault(p => p.Name == propertyName);
-            if (targetProperty == null)
-            {
-                throw new XamlLoadException(
-                    $"Cannot find property '{propertyName}' in type '{codeBehindClr.FullName}' to use for the ViewModel!", 
+            var targetProperty = codeBehindClr.GetAllProperties().FirstOrDefault(p => p.Name == propertyName)
+                ?? throw new XamlLoadException(
+                    $"Cannot find property '{propertyName}' in type '{codeBehindClr.FullName}' to use for the ViewModel!",
                     viewModelDirective);
-            }
 
             if (targetProperty.PropertyType != viewModelType)
             {

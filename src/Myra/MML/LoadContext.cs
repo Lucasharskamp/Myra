@@ -10,7 +10,6 @@ using System.Xml.Linq;
 using Myra.Attributes;
 using FontStashSharp;
 using Myra.Utility;
-using FontStashSharp.RichText;
 using AssetManagementBase;
 using Myra.Graphics2D.TextureAtlases;
 using Myra.Graphics2D.UI.Styles;
@@ -72,12 +71,12 @@ namespace Myra.MML
 							throw ex.InnerException;
 						}
 
-						throw ex;
+						throw;
 					}
 				}
-				else if (AttachedProperty != null && obj is BaseObject)
+				else if (AttachedProperty != null && obj is BaseObject baseObject)
 				{
-					AttachedProperty.SetValueObject((BaseObject)obj, value);
+					AttachedProperty.SetValueObject(baseObject, value);
 				}
 			}
 		}
@@ -102,17 +101,22 @@ namespace Myra.MML
 
 		public Stylesheet Stylesheet = null;
 
-		public bool DemandContentProperty = true;  // Whether to require [Content] attribute for implicit child addition
+        /// <summary>
+        /// Whether to require [Content] attribute for implicit child addition
+        /// </summary>
+        public bool DemandContentProperty = true;  
 
-		// Mapping of deserialized objects to their source XML elements (for debugging/position tracking)
-		public readonly List<Tuple<object, XElement>> ObjectsNodes = new List<Tuple<object, XElement>>();
+		/// <summary>
+		/// Mapping of deserialized objects to their source XML elements (for debugging/position tracking)
+		/// </summary>
+		public readonly List<Tuple<object, XElement>> ObjectsNodes = [];
 
 		private const string UserDataAttributePrefix = "_";  // Prefix for custom user attributes
 
 		private static SimplePropertyInfo LocateSimpleProperty(List<PropertyInfo> simpleProperties, string propertyName)
 		{
 			SimplePropertyInfo simplePropertyInfo = null;
-			if (propertyName.Contains("."))
+			if (propertyName.Contains('.'))
 			{
 				// Attached property: "ClassName.PropertyName" syntax
 				var parts = propertyName.Split('.');
@@ -120,20 +124,12 @@ namespace Myra.MML
 				{
 					throw new Exception($"Couldn't parse attached property {propertyName}");
 				}
-				var parentType = Project.GetWidgetTypeByName(parts[0].Trim());
-				if (parentType == null)
-				{
-					throw new Exception($"Couldn't find type {parts[0].Trim()} for attached property {propertyName}");
-				}
-
-				var properties = AttachedPropertiesRegistry.GetPropertiesOfType(parentType);
-				var property = (from p in properties where p.Name == parts[1].Trim() select p).FirstOrDefault();
-				if (property == null)
-				{
-					throw new Exception($"Type {parentType.Name} doesn't have attached property {parts[1].Trim()}");
-				}
-
-				simplePropertyInfo = new SimplePropertyInfo(property);
+                var parentType = Project.GetWidgetTypeByName(parts[0].Trim()) 
+					?? throw new Exception($"Couldn't find type {parts[0].Trim()} for attached property {propertyName}");
+                var properties = AttachedPropertiesRegistry.GetPropertiesOfType(parentType);
+                var property = (from p in properties where p.Name == parts[1].Trim() select p).FirstOrDefault()
+					?? throw new Exception($"Type {parentType.Name} doesn't have attached property {parts[1].Trim()}");
+                simplePropertyInfo = new SimplePropertyInfo(property);
 			}
 			else
 			{
@@ -150,60 +146,60 @@ namespace Myra.MML
 
 		private void LoadSimpleProperty(object obj, SimplePropertyInfo simplePropertyInfo, XAttribute attr)
 		{
-			object value = null;
+            var propertyType = simplePropertyInfo.PropertyType;
 
-			var propertyType = simplePropertyInfo.PropertyType;
+            object value;
+            do
+            {
+                var serializer = FindSerializer(propertyType);
+                if (serializer != null)
+                {
+                    // Custom serializer (e.g., for Vector2, Rectangle)
+                    value = serializer.Deserialize(attr.Value);
+                    break;
+                }
 
-			do
-			{
-				var serializer = FindSerializer(propertyType);
-				if (serializer != null)
-				{
-					// Custom serializer (e.g., for Vector2, Rectangle)
-					value = serializer.Deserialize(attr.Value);
+                if (propertyType.IsEnum ||
+                    propertyType.IsNullableEnum())
+                {
+                    // Enum parsing
+                    if (propertyType.IsNullableEnum())
+                    {
+                        propertyType = propertyType.GetNullableType();
+                    }
+                    value = Enum.Parse(propertyType, attr.Value);
+                    break;
+                }
+
+                if (typeof(IBrush).IsAssignableFrom(propertyType))
+                {
+                    value = AssetManager.LoadBrush(attr.Value, Stylesheet);
+                    break;
+                }
+
+                if (typeof(SpriteFontBase).IsAssignableFrom(propertyType))
+                {
+                    value = AssetManager.LoadFont(attr.Value, Stylesheet);
+                    break;
+                }
+
+                if (typeof(TextureRegionAtlas) == propertyType)
+                {
+                    value = AssetManager.LoadTextureRegionAtlas(attr.Value);
 					break;
-				}
+                }
 
-				if (propertyType.IsEnum ||
-					propertyType.IsNullableEnum())
-				{
-					// Enum parsing
-					if (propertyType.IsNullableEnum())
-					{
-						propertyType = propertyType.GetNullableType();
-					}
-					value = Enum.Parse(propertyType, attr.Value);
-					break;
-				}
+                // Primitive type conversion (int, float, string, etc.)
+                if (propertyType.IsNullablePrimitive())
+                {
+                    propertyType = propertyType.GetNullableType();
+                }
 
-				if (typeof(IBrush).IsAssignableFrom(propertyType))
-				{
-					value = AssetManager.LoadBrush(attr.Value, Stylesheet);
-					break;
-				}
+                value = Convert.ChangeType(attr.Value, propertyType, CultureInfo.InvariantCulture);
+            }
+            while (false);
 
-				if (typeof(SpriteFontBase).IsAssignableFrom(propertyType))
-				{
-					value = AssetManager.LoadFont(attr.Value, Stylesheet);
-					break;
-				}
-
-				if (typeof(TextureRegionAtlas) == propertyType)
-				{
-					value = AssetManager.LoadTextureRegionAtlas(attr.Value);
-				}
-
-				// Primitive type conversion (int, float, string, etc.)
-				if (propertyType.IsNullablePrimitive())
-				{
-					propertyType = propertyType.GetNullableType();
-				}
-
-				value = Convert.ChangeType(attr.Value, propertyType, CultureInfo.InvariantCulture);
-			}
-			while (false);
-
-			simplePropertyInfo.SetValue(obj, value);
+            simplePropertyInfo.SetValue(obj, value);
 		}
 
 		private void LoadComplexProperty(object obj, PropertyInfo property, XElement child)
@@ -212,43 +208,41 @@ namespace Myra.MML
 			do
 			{
 				var value = property.GetValue(obj);
-				var asList = value as IList;
-				if (asList != null)
-				{
-					// List property: each child element is a list item
-					foreach (var child2 in child.Elements())
-					{
-						var item = ObjectCreator(property.PropertyType.GenericTypeArguments[0], child2);
-						Load(item, child2);
-						asList.Add(item);
-					}
+                if (value is IList asList)
+                {
+                    // List property: each child element is a list item
+                    foreach (var child2 in child.Elements())
+                    {
+                        var item = ObjectCreator(property.PropertyType.GenericTypeArguments[0], child2);
+                        Load(item, child2);
+                        asList.Add(item);
+                    }
 
-					break;
-				}
+                    break;
+                }
 
-				var asDict = value as IDictionary;
-				if (asDict != null)
-				{
-					// Dictionary property: each child element is a dict value with optional id key
-					foreach (var child2 in child.Elements())
-					{
-						var item = ObjectCreator(property.PropertyType.GenericTypeArguments[1], child2);
-						Load(item, child2);
+                if (value is IDictionary asDict)
+                {
+                    // Dictionary property: each child element is a dict value with optional id key
+                    foreach (var child2 in child.Elements())
+                    {
+                        var item = ObjectCreator(property.PropertyType.GenericTypeArguments[1], child2);
+                        Load(item, child2);
 
-						var id = string.Empty;
-						if (child2.Attribute(IdName) != null)
-						{
-							id = child2.Attribute(IdName).Value;
-						}
+                        var id = string.Empty;
+                        if (child2.Attribute(IdName) != null)
+                        {
+                            id = child2.Attribute(IdName).Value;
+                        }
 
-						asDict[id] = item;
-					}
+                        asDict[id] = item;
+                    }
 
-					break;
-				}
+                    break;
+                }
 
-				// Single object property
-				if (property.SetMethod == null)
+                // Single object property
+                if (property.SetMethod == null)
 				{
 					// Read-only property: load into existing value
 					Load(value, child);
@@ -264,22 +258,21 @@ namespace Myra.MML
 			} while (false);
 		}
 
-		// Deserializes an object from XML element, recursively loading children and properties
-		public void Load(object obj, XElement el)
+		/// <summary>
+		/// Deserializes an object from XML element, recursively loading children and properties
+		/// </summary>
+		public void Load<T>(T obj, XElement el)
 		{
 			// Track object and its source XML for debugging/introspection
 			ObjectsNodes.Add(new Tuple<object, XElement>(obj, el));
 
-			var type = obj.GetType();
+			var type = typeof(T);
 
-			var baseObject = obj as BaseObject;
+            // Separate properties into simple (attributes) and complex (elements)
+            ParseProperties(type, false, out List<PropertyInfo> complexProperties, out List<PropertyInfo> simpleProperties);
 
-			// Separate properties into simple (attributes) and complex (elements)
-			List<PropertyInfo> complexProperties, simpleProperties;
-			ParseProperties(type, false, out complexProperties, out simpleProperties);
-
-			// Process XML attributes as simple properties
-			string newName;
+            // Process XML attributes as simple properties
+            string newName;
 			foreach (var attr in el.Attributes())
 			{
 				var propertyName = attr.Name.ToString();
@@ -298,7 +291,7 @@ namespace Myra.MML
 				else
 				{
 					// Custom user attributes with "_" prefix
-					if (propertyName.StartsWith(UserDataAttributePrefix) && baseObject != null)
+					if (propertyName.StartsWith(UserDataAttributePrefix) && obj is BaseObject baseObject)
 					{
 						baseObject.UserData.Add(propertyName, attr.Value);
 					}
@@ -324,7 +317,7 @@ namespace Myra.MML
 				}
 
 				var isProperty = false;
-				if (childName.Contains("."))
+                if (childName.Contains('.'))
 				{
 					// Property element: "ClassName.PropertyName" or "PropertyName" syntax
 					var parts = childName.Split('.');
@@ -397,18 +390,17 @@ namespace Myra.MML
 						}
 
 						var containerValue = contentProperty.GetValue(obj);
-						var asList = containerValue as IList;
-						if (asList != null)
-						{
-							// Content property is a list
-							asList.Add(item);
-						}
-						else
-						{
-							// Content property is a single value
-							contentProperty.SetValue(obj, item);
-						}
-					}
+                        if (containerValue is IList asList)
+                        {
+                            // Content property is a list
+                            asList.Add(item);
+                        }
+                        else
+                        {
+                            // Content property is a single value
+                            contentProperty.SetValue(obj, item);
+                        }
+                    }
 					else
 					{
 						throw new Exception(string.Format("Could not resolve tag '{0}'", widgetName));

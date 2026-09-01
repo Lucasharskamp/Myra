@@ -1,20 +1,19 @@
-﻿using System.Reflection.Emit;
-using XamlX.Ast;
+﻿using XamlX.Ast;
 using XamlX.Emit;
 using XamlX.IL;
 using XamlX.TypeSystem;
 
 namespace Myra.Xaml.Types
 {
-    public sealed class XamlAssignFieldValueNode : XamlAstNode, IXamlAstManipulationNode,
-         IXamlAstEmitableNode<IXamlILEmitter, XamlILNodeEmitResult>
-    {  
+    public sealed class XamlAssignLocalValueNode : XamlAstNode, IXamlAstManipulationNode,
+        IXamlLocal, IXamlAstEmitableNode<IXamlILEmitter, XamlILNodeEmitResult>
+    {
         public IXamlAstTypeReference Type { get; }
         public IXamlType SourceType { get; }
         public IXamlField TargetField { get; }
 
-        public XamlAssignFieldValueNode(
-            IXamlLineInfo lineInfo, 
+        public XamlAssignLocalValueNode(
+            IXamlLineInfo lineInfo,
             IXamlType sourceType,
             IXamlField targetField)
             : base(lineInfo)
@@ -30,7 +29,7 @@ namespace Myra.Xaml.Types
             codeGen.Stloc(temp);
             codeGen.Ldarg(1);
             codeGen.Ldloc(temp);
-            codeGen.Stfld(TargetField); 
+            codeGen.Stfld(TargetField);
             codeGen.Pop();
             return XamlILNodeEmitResult.Type(0, null);
         }

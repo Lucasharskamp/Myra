@@ -76,6 +76,11 @@ namespace Myra.Graphics2D.TextureAtlases
 			}
 		}
 
+		public void Add(string name, TextureRegion region)
+		{
+			Regions[name] = region;
+		}
+
         /// <summary>
         /// Gets a texture region by its identifier, throwing an exception if not found.
         /// </summary>

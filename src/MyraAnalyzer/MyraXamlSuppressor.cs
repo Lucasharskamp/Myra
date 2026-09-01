@@ -8,8 +8,8 @@ using System.Xml.Linq;
 
 
 namespace Myra.Analyzer
-{ 
-     
+{
+
     /// <summary>
     /// Suppresses warnings in C# that are irrelevant because the .xaml generated IL takes care of them;
     /// These are: <br/>
@@ -92,7 +92,7 @@ namespace Myra.Analyzer
                         StringComparison.OrdinalIgnoreCase))
                 {
                     continue;
-                } 
+                }
 
                 var text = additionalFile.GetText(
                     context.CancellationToken);
