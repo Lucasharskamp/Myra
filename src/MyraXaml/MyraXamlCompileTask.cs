@@ -9,7 +9,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq; 
+using System.Linq;
+using System.Threading.Tasks;
 using XamlX.TypeSystem;
 
 namespace Myra.Xaml
@@ -71,7 +72,7 @@ namespace Myra.Xaml
                 TypeSystem = new CecilTypeSystem(assemblies, TargetPath);
                 TypesContainer.Setup(TypeSystem);
 
-                var componentsCompiler = new MyraComponentsCompiler(TypeSystem);
+                var componentsCompiler = new MyraComponentsCompiler(TypeSystem, Log);
 
                 assembly = componentsCompiler.TypeSystem.GetAssembly(componentsCompiler.TypeSystem.FindAssembly(Path.GetFileNameWithoutExtension(TargetPath)!)!);
 
@@ -94,7 +95,7 @@ namespace Myra.Xaml
                 var getMethod = resourceType.GetMethods().First(m => m.Name == MyraResourcesBuilder.GetStylesheetMethodName);
                 MyraBindingCompilationContext.GetStylesheetDefinition = getMethod.Module.ImportReference(getMethod);
 
-                var stylesheetsCompiler = new MyraStylesheetsCompiler(TypeSystem);
+                var stylesheetsCompiler = new MyraStylesheetsCompiler(TypeSystem, Log);
 
 
                 // group all Myra (xaml, xmat, xmms) files by extension
@@ -130,7 +131,10 @@ namespace Myra.Xaml
             }
             catch (Exception ex)
             {
-                Log.LogErrorFromException(ex, showStackTrace: true);
+                if (ex is not TaskCanceledException)
+                {
+                    Log.LogErrorFromException(ex, false);
+                }
                 return false;
             }
             finally

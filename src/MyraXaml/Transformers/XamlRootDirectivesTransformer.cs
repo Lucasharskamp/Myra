@@ -53,7 +53,7 @@ namespace Myra.Xaml.Transformers
                 }
                 else if (stylesheetNode is XamlAstTextNode fileNameReference)
                 {
-                    context.SetItem(new XamlStylesheetContainer(node, context.Configuration.WellKnownTypes, MyraBindingCompilationContext.GetStylesheet, fileNameReference.Text));
+                    context.SetItem(new XamlStylesheetContainer(node, context.Configuration.WellKnownTypes, fileNameReference.Text));
                 }
                 valueNode.Children.Remove(styleSheetDirective);
             }

@@ -121,8 +121,8 @@ namespace Myra.Xaml.Helpers
         /// <summary>
         /// "FontStashSharp.SpriteFontBase" class
         /// </summary>
-        public static IXamlType SpriteFontBase { get; private set; } = default!; 
-
+        public static IXamlType SpriteFontBase { get; private set; } = default!;
+         
         /// <summary>
         /// "Myra.Graphics2D.UI.Styles.StyleSheet" class
         /// </summary>
@@ -161,7 +161,12 @@ namespace Myra.Xaml.Helpers
         /// <summary>
         /// "Myra.Graphics2D.UI.Widget" class.
         /// </summary>
-        public static IXamlType Widget { get; private set; } = default!; 
+        public static IXamlType Widget { get; private set; } = default!;
+
+        /// <summary>
+        /// "Myra.Graphics2D.UI.Styles.WidgetStyle" class.
+        /// </summary>
+        public static IXamlType WidgetStyle { get; private set; } = default!;
 
         internal static void Setup(IXamlTypeSystem typeSystem)
         {
@@ -197,6 +202,7 @@ namespace Myra.Xaml.Helpers
             TextureRegion = typeSystem.GetType("Myra.Graphics2D.TextureAtlases.TextureRegion");
             TextureRegionAtlas = typeSystem.GetType("Myra.Graphics2D.TextureAtlases.TextureRegionAtlas");
             Widget = typeSystem.GetType("Myra.Graphics2D.UI.Widget");
+            WidgetStyle = typeSystem.GetType("Myra.Graphics2D.UI.Styles.WidgetStyle");
         } 
     }
 }

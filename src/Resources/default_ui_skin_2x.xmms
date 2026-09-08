@@ -1,4 +1,4 @@
-<Stylesheet TextureRegionAtlas="default_ui_skin_2x.xmat">
+<Stylesheet Atlas="default_ui_skin_2x.xmat">
   <Fonts UsedSpace="0, 0, 1024, 320">
     <Font Id="default-font" File="Inter-Regular.ttf" Size="40" />
     <Font Id="tooltip-font" File="Inter-Regular.ttf" Size="32" />
@@ -109,13 +109,6 @@
   </ScrollViewerStyles>
   <DataGridStyles>
     <DataGridStyle VerticalScrollBackground="scroll" VerticalScrollKnob="scroll-knob-vertical" GridLinesColor="Gray" ColumnSpacing="8" RowSpacing="8" SelectionBackground="button-down" SelectionHoverBackground="button-over" GridSelectionMode="Row" HoverIndexCanBeNull="True">
-      <HeaderStyle SortImageTextSpacing="8" SortAscendingImage="select-up" SortDescendingImage="select-down" ContentPadding="8, 0" Background="button" OverBackground="button-over" PressedBackground="button-down">
-        <LabelStyle TextColor="White" Font="default-font" />
-      </HeaderStyle>
-      <FilterStyle TextColor="White" Font="default-font" Cursor="cursor" Selection="selection" Background="textfield" />
-      <TextCellStyle TextColor="White" Font="default-font" />
-      <CheckCellStyle PressedImage="vis-check-tick" Background="vis-check" OverBackground="vis-check-over" />
-      <ImageCellStyle />
     </DataGridStyle>
   </DataGridStyles>
   <HorizontalMenuStyles>

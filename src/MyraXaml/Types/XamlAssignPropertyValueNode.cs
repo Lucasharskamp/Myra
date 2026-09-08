@@ -11,7 +11,7 @@ namespace Myra.Xaml.Types
     /// to a code-behind reference. However, existing IL Emitters break the entire flow.
     /// </summary>
     public sealed class XamlAssignPropertyValueNode : XamlAstNode, IXamlAstManipulationNode,
-         IXamlAstEmitableNode<IXamlILEmitter, XamlILNodeEmitResult>
+        IXamlAstValueNode, IXamlAstEmitableNode<IXamlILEmitter, XamlILNodeEmitResult>
     {
         public IXamlMethod AssignMethod { get; }
 

@@ -85,7 +85,7 @@ namespace Myra.Xaml.Helpers
                 if (!GetText(node, out var text))
                     return false;
 
-                var loadMethod = TypesContainer.IFileResolver.GetMethod(m => m.IsStatic && m.Name == "GetAtlas");
+                var loadMethod = TypesContainer.IFileResolver.GetMethod(m => m.Name == "GetAtlas");
                 result = new XamlStaticOrTargetedReturnMethodCallNode(node, loadMethod,
                     [
                         new XamlStaticOrTargetedReturnMethodCallNode(node,
@@ -147,12 +147,12 @@ namespace Myra.Xaml.Helpers
             if (!GetText(node, out var text))
                 return false;
 
-            var loadMethod = TypesContainer.IFileResolver.GetMethod(m => m.IsStatic && m.Name == methodName);
+            var loadMethod = TypesContainer.IFileResolver.GetMethod(m => m.Name == methodName);
             result = new XamlStaticOrTargetedReturnMethodCallNode(node, loadMethod,
                 [
                     new XamlStaticOrTargetedReturnMethodCallNode(node,
                                     TypesContainer.MyraEnvironment.GetAllProperties().First(p => p.Name == "Resolver").Getter!,
-                                    []),
+                                    null),
                         new XamlConstantNode(node, context.Configuration.WellKnownTypes.String, text)
                 ]);
             return true;

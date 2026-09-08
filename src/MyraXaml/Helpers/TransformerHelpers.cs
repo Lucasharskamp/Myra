@@ -37,7 +37,7 @@ namespace Myra.Xaml.Helpers
 
             if (!context.TryGetItem<XamlStylesheetContainer>(out var stylesheetContainer))
             {
-                stylesheetContainer = new XamlStylesheetContainer(node, context.Configuration.WellKnownTypes, MyraBindingCompilationContext.GetStylesheet, "default_ui_skin");
+                stylesheetContainer = new XamlStylesheetContainer(node, context.Configuration.WellKnownTypes, "default_ui_skin");
                 context.SetItem(stylesheetContainer);
             }
 
@@ -198,9 +198,8 @@ namespace Myra.Xaml.Helpers
                 xmlnsMappings: mappings,
                 customValueConverter: ConverterHelper.MyraValueConverters,
                 identifierGenerator: null,
-                diagnosticsHandler: null);
+                diagnosticsHandler: new MyraDiagnosticHandler(XamlDiagnosticSeverity.Error));
         }
-
 
         public const string BuildMethodName = "InitializeComponent";
 

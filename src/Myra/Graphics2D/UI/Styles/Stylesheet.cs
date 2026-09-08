@@ -637,7 +637,7 @@ namespace Myra.Graphics2D.UI.Styles
 			{
 				foreach (var font in Fonts)
 				{
-					result.Fonts[font.Id] = font.Clone();
+					result.Fonts[font.Key] = font.Value.Clone();
 				}
 			}
 

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Myra.Xaml.Compiler;
+using System;
 using XamlX.Ast;
 using XamlX.TypeSystem;
 using static XamlX.Parsers.CommaSeparatedParenthesesTreeParser;
@@ -16,10 +17,10 @@ namespace Myra.Xaml.Types
             Node = node;
         }
 
-        public XamlStylesheetContainer(IXamlLineInfo node,  XamlTypeWellKnownTypes wellKnownTypes, IXamlMethod getMethod, string fileName)
+        public XamlStylesheetContainer(IXamlLineInfo node,  XamlTypeWellKnownTypes wellKnownTypes, string fileName)
         {
             Node = new XamlStaticOrTargetedReturnMethodCallNode(node,
-                    new XamlWrappedMethod(getMethod),
+                    new XamlWrappedMethod(MyraBindingCompilationContext.GetStylesheet),
                     [new XamlConstantNode(node, wellKnownTypes.String, fileName)]);
         }
     }
