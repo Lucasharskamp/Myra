@@ -18,7 +18,7 @@
                 <MenuItem Text="&amp;Redo" ShortcutText="Ctrl+Y" />
             </MenuItem>
             <MenuItem Text="&amp;Help">
-                <MenuItem Text="&amp;About" Click="ShowMessageBox" />
+                <MenuItem Text="&amp;About" Selected="ShowMessageBox" />
             </MenuItem>
         </HorizontalMenu>
         <HorizontalSplitPane StackPanel.ProportionType="Fill">

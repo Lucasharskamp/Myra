@@ -123,7 +123,7 @@ namespace Myra.Xaml.Compiler
             // transform the document into an AST tree for compilation
             _compiler.Transform(document);
             var handler = (MyraDiagnosticHandler)Configuration.DiagnosticsHandler;
-            handler.ResolveDiagnostics(Log, xamlPath);
+            handler.ResolveDiagnostics(Log, xamlPath, "Myra XAML");
 
             // compile the AST into IL. The IL will be written to the DLL once all files have been compiled.
             var populate = _compiler.DefinePopulateMethod(typeBuilder, document, TransformerHelpers.BuildMethodName, XamlVisibility.Private);

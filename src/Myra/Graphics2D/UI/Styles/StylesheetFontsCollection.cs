@@ -16,14 +16,12 @@ namespace Myra.Graphics2D.UI.Styles
 {
 	/// <summary>
 	/// Represents a collection of <see cref="StylesheetFont"/> objects used by a stylesheet.
-	/// </summary>
-	[XmlName("Fonts")]
+	/// </summary> 
 	public class StylesheetFontsCollection : Dictionary<string, StylesheetFont>
 	{
 		/// <summary>
 		/// Gets or sets the atlas used space rectangle for the font collection.
-		/// </summary>
-		[XmlName("UsedSpace")]
-		public Rectangle? AtlasUsedSpace { get; set; }
+		/// </summary> 
+		public Rectangle? UsedSpace { get; set; }
 	}
 }

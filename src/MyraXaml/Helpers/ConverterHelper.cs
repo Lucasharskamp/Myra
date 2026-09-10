@@ -1,13 +1,11 @@
 ﻿using Mono.Cecil;
 using Mono.Collections.Generic;
-using Myra.Xaml.Compiler;
 using Myra.Xaml.Types;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
-using System.Reflection;
 using XamlX;
 using XamlX.Ast;
 using XamlX.Transform;
@@ -62,6 +60,11 @@ namespace Myra.Xaml.Helpers
                 return false;
             } 
 
+            if (type == TypesContainer.Rectangle)
+            {
+                return ExtractMeasurement(context, node, type, ref result);
+            }
+
             if (type == TypesContainer.SolidBrush)
             {
                 return TryAssignSolidBrush(context, node, type, out result);
@@ -69,6 +72,11 @@ namespace Myra.Xaml.Helpers
 
             // handle SpriteFontBase
             if (type == TypesContainer.SpriteFontBase)
+            {
+                return AssignFileResource(context, node, "GetFont", ref result);
+            }
+
+            if (type == TypesContainer.StylesheetFont)
             {
                 return AssignFileResource(context, node, "GetFont", ref result);
             }
@@ -102,44 +110,58 @@ namespace Myra.Xaml.Helpers
             // handle thickness  
             if (type == TypesContainer.Thickness)
             {
+                return ExtractMeasurement(context, node, type, ref result);
+            }
+
+            if (TypesContainer.WidgetStyle.IsAssignableFrom(type))
+            {
                 if (!GetText(node, out var text))
                     return false;
 
-                // check if value is one of the static readonly properties.
-                var field = type.GetAllFields().FirstOrDefault(t => t.Name == text);
-                if (field != null && field.IsStatic)
-                {
-                    result = new XamlStaticFieldNode(node, field);
+                result = new XamlStaticOrTargetedReturnMethodCallNode(node, type.GetAllProperties().First(p => p.Name == text).Getter!, null);
                     return true;
-                }
-
-                // conversion time!
-                var values = text.Split(',');
-                var arguments = new List<int>();
-                foreach (var value in values)
-                {
-                    if (!Int32.TryParse(value.Trim(), out int r))
-                    {
-                        return false;
-                    }
-                    arguments.Add(r);
-                }
-                var constructor = TypesContainer.Thickness.FindConstructor([.. arguments.Select(a => context.Configuration.WellKnownTypes.Int32)]);
-                if (constructor == null)
-                {
-                    context.ReportDiagnostic(new XamlDiagnostic("MYRA003", XamlDiagnosticSeverity.Fatal, $"No constructor for Thickness has {arguments.Count} parameters!", node));
-                    return false;
-                }
-
-                result = new XamlAstNewClrObjectNode(node,
-                    new XamlAstClrTypeReference(node, TypesContainer.Thickness, false),
-                    constructor,
-                    [.. arguments.Select(a => (IXamlAstValueNode)new XamlConstantNode(node, context.Configuration.WellKnownTypes.Int32, a))]);
-                return true;
             }
 
 
             return false;
+        }
+
+        private static bool ExtractMeasurement(AstTransformationContext context, IXamlAstValueNode node, IXamlType type, ref IXamlAstValueNode result)
+        {
+            if (!GetText(node, out var text))
+                return false;
+
+            // check if value is one of the static readonly properties.
+            var field = type.GetAllFields().FirstOrDefault(t => t.Name == text);
+            if (field != null && field.IsStatic)
+            {
+                result = new XamlStaticFieldNode(node, field);
+                return true;
+            }
+
+            // conversion time!
+            var values = text.Split(',');
+            var arguments = new List<int>();
+            foreach (var value in values)
+            {
+                if (!Int32.TryParse(value.Trim(), out int r))
+                {
+                    return false;
+                }
+                arguments.Add(r);
+            }
+            var constructor = type.FindConstructor([.. arguments.Select(a => context.Configuration.WellKnownTypes.Int32)]);
+            if (constructor == null)
+            {
+                context.ReportDiagnostic(new XamlDiagnostic("MYRA003", XamlDiagnosticSeverity.Fatal, $"No constructor for Thickness has {arguments.Count} parameters!", node));
+                return false;
+            }
+
+            result = new XamlAstNewClrObjectNode(node,
+                new XamlAstClrTypeReference(node, type, false),
+                constructor,
+                [.. arguments.Select(a => (IXamlAstValueNode)new XamlConstantNode(node, context.Configuration.WellKnownTypes.Int32, a))]);
+            return true;
         }
 
         private static bool AssignFileResource(AstTransformationContext context, IXamlAstValueNode node, string methodName, ref IXamlAstValueNode result)
@@ -181,7 +203,7 @@ namespace Myra.Xaml.Helpers
 
             var styleSheetContainer = TransformerHelpers.GetStylesheet(context, node);
 
-            var atlas = TypesContainer.StyleSheet.Properties.First(p => p.Name == "Atlas");
+            var atlas = TypesContainer.Stylesheet.Properties.First(p => p.Name == "Atlas");
             var callAtlas = new XamlStaticOrTargetedReturnMethodCallNode(node, atlas.Getter!, [styleSheetContainer]);
             var ensureRegionMethod = TypesContainer.TextureRegionAtlas.GetMethod(m => m.Name == "EnsureRegion");
             result = new XamlStaticOrTargetedReturnMethodCallNode(node,

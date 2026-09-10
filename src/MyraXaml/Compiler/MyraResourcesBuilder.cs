@@ -31,8 +31,8 @@ namespace Myra.Xaml.Compiler
 
             AtlassesContainer = ResourcesTypeBuilder.DefineField(atlasContainerType, "_atlasses", XamlVisibility.Private, true);
 
-            var funcStylesheetType = wellKnownTypes.GetFuncOfT(1).MakeGenericType(TypesContainer.StyleSheet); 
-            var lazyStylesheetType = TypesContainer.LazyOfT1.MakeGenericType(TypesContainer.StyleSheet);
+            var funcStylesheetType = wellKnownTypes.GetFuncOfT(1).MakeGenericType(TypesContainer.Stylesheet); 
+            var lazyStylesheetType = TypesContainer.LazyOfT1.MakeGenericType(TypesContainer.Stylesheet);
             var stylesheetsContainerType = wellKnownTypes.DictionaryOfT2.MakeGenericType(
                                             wellKnownTypes.String,
                                             lazyStylesheetType
@@ -50,7 +50,7 @@ namespace Myra.Xaml.Compiler
              *  internal static Stylesheet Get(string name)
              *   => _stylesheets[name].Value;
              */
-            var getMethodBuilder = ResourcesTypeBuilder.DefineMethod(TypesContainer.StyleSheet,
+            var getMethodBuilder = ResourcesTypeBuilder.DefineMethod(TypesContainer.Stylesheet,
                                                         [wellKnownTypes.String],
                                                         GetStylesheetMethodName,
                                                         XamlVisibility.Assembly,
@@ -84,9 +84,9 @@ namespace Myra.Xaml.Compiler
             *      Stylesheet.Current = Get("default_ui_skin.xmms)
             *   }
             */
-            var funcStylesheetType = WellKnownTypes.GetFuncOfT(1).MakeGenericType(TypesContainer.StyleSheet);
+            var funcStylesheetType = WellKnownTypes.GetFuncOfT(1).MakeGenericType(TypesContainer.Stylesheet);
             var funcConstructor = funcStylesheetType.GetConstructor([WellKnownTypes.Object, WellKnownTypes.IntPtr]);
-            var stylesheetsCurrentSetMethod = TypesContainer.StyleSheet.GetMethod(m => m.Name == "set_Current");
+            var stylesheetsCurrentSetMethod = TypesContainer.Stylesheet.GetMethod(m => m.Name == "set_Current");
             var initializeMethod = ResourcesTypeBuilder.DefineConstructor(true, []);
 
             var initializeMethodGen = initializeMethod.Generator;

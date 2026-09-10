@@ -48,7 +48,7 @@ namespace AssetManagementBase
 			Texture2D existingTexture = null;
 			if (usedSpaceAttr != null)
 			{
-				result.Fonts.AtlasUsedSpace = usedSpaceAttr.Value.ParseRectangle();
+				result.Fonts.UsedSpace = usedSpaceAttr.Value.ParseRectangle();
 
 				existingTexture = result.Atlas.Texture;
 			}
@@ -72,9 +72,9 @@ namespace AssetManagementBase
 					font.Size = float.Parse(el.Attribute("Size").Value, CultureInfo.InvariantCulture);
 
 					FontSystem fontSystem;
-					if (existingTexture != null && result.Fonts.AtlasUsedSpace != null && firstFont.Equals(font.File, StringComparison.CurrentCultureIgnoreCase))
+					if (existingTexture != null && result.Fonts.UsedSpace != null && firstFont.Equals(font.File, StringComparison.CurrentCultureIgnoreCase))
 					{
-						fontSystem = manager.LoadFontSystem(font.File, existingTexture: existingTexture, existingTextureUsedSpace: result.Fonts.AtlasUsedSpace.Value);
+						fontSystem = manager.LoadFontSystem(font.File, existingTexture: existingTexture, existingTextureUsedSpace: result.Fonts.UsedSpace.Value);
 					} else
 					{
 						fontSystem = manager.LoadFontSystem(font.File);

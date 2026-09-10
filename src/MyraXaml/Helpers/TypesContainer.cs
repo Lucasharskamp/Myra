@@ -126,7 +126,7 @@ namespace Myra.Xaml.Helpers
         /// <summary>
         /// "Myra.Graphics2D.UI.Styles.StyleSheet" class
         /// </summary>
-        public static IXamlType StyleSheet { get; private set; } = default!;
+        public static IXamlType Stylesheet { get; private set; } = default!;
 
         /// <summary>
         /// "Myra.Graphics2D.UI.Styles.StylesheetFont" class
@@ -195,7 +195,7 @@ namespace Myra.Xaml.Helpers
             Rectangle = typeSystem.GetType("Microsoft.Xna.Framework.Rectangle");
             SolidBrush = typeSystem.GetType("Myra.Graphics2D.Brushes.SolidBrush");
             SpriteFontBase = typeSystem.GetType("FontStashSharp.SpriteFontBase");
-            StyleSheet = typeSystem.GetType("Myra.Graphics2D.UI.Styles.Stylesheet");
+            Stylesheet = typeSystem.GetType("Myra.Graphics2D.UI.Styles.Stylesheet");
             StylesheetFont = typeSystem.GetType("Myra.Graphics2D.UI.Styles.StylesheetFont");
             StylesheetFontsCollection = typeSystem.GetType("Myra.Graphics2D.UI.Styles.StylesheetFontsCollection");
             Texture2D = typeSystem.GetType("Microsoft.Xna.Framework.Graphics.Texture2D");

@@ -1,8 +1,7 @@
 ﻿using Microsoft.Build.Utilities;
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
-using System.Text;
+using System.IO;
 using System.Threading.Tasks;
 using XamlX;
 using XamlX.Transform;
@@ -54,7 +53,7 @@ namespace Myra.Xaml.Compiler
             return diagnostic.Severity;
         }
 
-        public void ResolveDiagnostics(TaskLoggingHelper log, string xamlPath)
+        public void ResolveDiagnostics(TaskLoggingHelper log, string xamlPath, string category)
         {
             foreach (var diagnostic in Diagnostics)
             {
@@ -62,7 +61,7 @@ namespace Myra.Xaml.Compiler
                 {
                     case XamlDiagnosticSeverity.Error:
                     case XamlDiagnosticSeverity.Fatal:
-                        log.LogError(subcategory: "Stylesheet",
+                        log.LogError(subcategory: category,
                             diagnostic.Code,
                             "Myra stylesheet",
                             xamlPath,

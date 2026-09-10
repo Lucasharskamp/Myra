@@ -19,7 +19,7 @@ namespace Myra.Xaml.Transformers
                 if (!TypesContainer.Widget.IsAssignableFrom(t))
                     return node;
 
-                var ctor = t.FindConstructor([TypesContainer.StyleSheet, context.Configuration.WellKnownTypes.String]);
+                var ctor = t.FindConstructor([TypesContainer.Stylesheet, context.Configuration.WellKnownTypes.String]);
                 if (ctor is not null)
                 {
                     var parameters = new List<IXamlAstValueNode>() 

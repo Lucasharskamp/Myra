@@ -201,6 +201,33 @@ namespace Myra.Xaml.Helpers
                 diagnosticsHandler: new MyraDiagnosticHandler(XamlDiagnosticSeverity.Error));
         }
 
+
+        public static IXamlType? GetGenericTypeArgument(this IXamlType type)
+        {
+            if(type.GenericTypeDefinition != null)
+            {
+                return type.GenericArguments.Last();
+            }
+            
+            if (type.BaseType?.GenericTypeDefinition != null)
+            {
+                return type.BaseType.GenericArguments.Last();
+            }
+
+            return null;
+        }
+
+        public static IXamlProperty GetProperty(this IXamlType type, IXamlLineInfo node, string name)
+        {
+            var result = type.GetAllProperties().FirstOrDefault(p => p.Name == name);
+            if (result == null)
+            {
+                throw new XamlLoadException($"Property '{name}' does not exist on type '{type.FullName}'", node);
+            }
+
+            return result;
+        }
+
         public const string BuildMethodName = "InitializeComponent";
 
         /// <summary>
@@ -266,6 +293,6 @@ namespace Myra.Xaml.Helpers
             il.Emit(OpCodes.Ret);
 
             return; 
-    } 
+        } 
     }
 }

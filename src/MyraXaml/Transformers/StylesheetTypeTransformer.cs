@@ -1,16 +1,13 @@
 ﻿using Myra.Xaml.Helpers;
-using Myra.Xaml.Types;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
 using System.Linq;
-using System.Xml.Linq;
 using XamlX;
 using XamlX.Ast;
 using XamlX.Transform;
 using XamlX.Transform.Transformers;
-using XamlX.TypeSystem;
+using XamlX.TypeSystem; 
 
 namespace Myra.Xaml.Transformers
 {
@@ -125,34 +122,22 @@ namespace Myra.Xaml.Transformers
 
             if (ni.Type is not XamlAstClrTypeReference niClrType)
             {
-                throw new InvalidOperationException("This should never happen");
+                return node; // we do not work unless we have the overhead type.
             }
 
-            var innerType = niClrType.Type.GenericTypeDefinition;
-            bool hasGenericType = innerType != null;
-            if (hasGenericType)
-            {
-                innerType = niClrType.Type.GenericArguments.Last();
-            }
-            else
-            {
-                innerType = niClrType.Type;
-            }
+            var isGenericType = niClrType.Type.GenericTypeDefinition != null || niClrType.Type.BaseType?.GenericTypeDefinition != null;
 
-            string foundId = "";
             for (var c = ni.Children.Count - 1; c >= 0; c--)
             {
-                var child = ni.Children[c];
-                if (child is XamlAstXamlPropertyValueNode propertyNode)
+                var child = ni.Children[c]; 
+
+                if (child is XamlAstXamlPropertyValueNode propertyNode && propertyNode.Property is XamlAstNamePropertyReference innerProp)
                 { 
-                    // property 
-                    var innerProp = (XamlAstNamePropertyReference)propertyNode.Property;
- 
                     // first check if the "innerTypeRef" is actually a property of the parent; if not, it must be a type.
                     // And if it is a type, it means its part of a property of a instance of a property.
                     IXamlType declaringType;
                     IXamlProperty? parentProperty = null;
-                    var innerProperty = innerType.GetAllProperties().FirstOrDefault(p => p.Name == innerProp.Name);
+                    var innerProperty = niClrType.Type.GetAllProperties().FirstOrDefault(p => p.Name == innerProp.Name);
                     if (innerProperty == null)
                     {
                         var innerTypeRef = (XamlAstXmlTypeReference)innerProp.DeclaringType;
@@ -164,19 +149,14 @@ namespace Myra.Xaml.Transformers
                                 child);
                         }
 
-                        innerProperty = declaringType.GetAllProperties().FirstOrDefault(p => p.Name == innerProp.Name);
-                        if (innerProperty == null)
-                        {
-                            throw new XamlLoadException($"Element '{innerTypeRef.Name}' is neither a property nor a type!", child);
-                        }
-
-                        parentProperty = innerType.GetAllProperties().FirstOrDefault(p => p.Name == innerTypeRef.Name);
+                        innerProperty = declaringType.GetProperty(child, innerProp.Name); 
+                        parentProperty = niClrType.Type.GetProperty(child, innerTypeRef.Name);
                     }
                     else
                     {
                         declaringType = innerProperty.PropertyType;
                     }
-                      
+
                     var innerPropertyClr = new XamlAstClrProperty(node,
                                                             innerProperty.Name,
                                                             innerProperty.DeclaringType,
@@ -186,34 +166,34 @@ namespace Myra.Xaml.Transformers
                     propertyNode.Property = innerPropertyClr;
 
                     // value
-                    var value = propertyNode.Values.FirstOrDefault();
+                    var value = propertyNode.Values.OfType<XamlAstTextNode>().FirstOrDefault();
                     if (value is not XamlAstTextNode valueNode)
-                    {
-                        throw new XamlLoadException($"Value of property '{propertyNode}' must have a valid text value!", child);
-                    } 
-                      
-                    if (valueNode.Type is not XamlAstClrProperty)
-                    {
-                        valueNode.Type = new XamlAstClrTypeReference(valueNode, innerProperty.Getter!.ReturnType, false);
-                    }
-
-                    if (innerProperty.Name == "Id")
-                    {
-                        foundId = valueNode.Text;
-                        ni.Children.RemoveAt(c);
-                    } 
-                }
-                else if (child is XamlAstObjectNode objectNode && objectNode.Type is XamlAstXmlTypeReference xmlTypeRef)
-                {
-                    var innerProperty = innerType.GetAllProperties().FirstOrDefault(p => p.Name == xmlTypeRef.Name);
-                    if (innerProperty == null)
                     {
                         continue;
                     }
+
+                    valueNode.Type = new XamlAstClrTypeReference(child, context.Configuration.WellKnownTypes.String, false); 
+
+                    if (!XamlTransformHelpers.TryGetCorrectlyTypedValue(context, value, innerProperty.PropertyType, out var rv))
+                    {
+                        throw new XamlLoadException("Type not found", child);
+                    }
+
+                    propertyNode.Values.Remove(value);
+                    propertyNode.Values.Add(rv);
+
+                    continue;
+                }
+
+                // for properties, convert it to a property assignment rather than dictionary "content" 
+                if (!isGenericType && child is XamlAstObjectNode objectNode && objectNode.Type is XamlAstXmlTypeReference xmlReference)
+                {
+                    var innerProperty = niClrType.Type.GetAllProperties().First(p => p.Name == xmlReference.Name);
+                      
                     if (innerProperty.Getter == null || !innerProperty.Getter.IsPublic || innerProperty.Getter.IsStatic)
                     {
                         throw new XamlLoadException(
-                            $"Property '{xmlTypeRef.Name}' of type '{innerType.FullName}' must have a public, non-static getter!",
+                            $"Property '{innerProperty.PropertyType.Name}' of type '{niClrType.Type.FullName}' must have a public, non-static getter!",
                             node);
                     }
 
@@ -222,43 +202,113 @@ namespace Myra.Xaml.Transformers
                         (innerProperty.Setter == null || !innerProperty.Setter.IsPublic || innerProperty.Setter.IsStatic))
                     {
                         throw new XamlLoadException(
-                            $"Property '{xmlTypeRef.Name}' of type '{innerType.FullName}' must have a public, non-static setter!",
+                            $"Property '{innerProperty.PropertyType.Name}' of type '{niClrType.Type.FullName}' must have a public, non-static setter!",
                             node);
                     }
 
-                    ni.Children.RemoveAt(c); 
-                    ni.Children.Insert(c, new XamlAstXamlPropertyValueNode(child,
-                        new XamlAstClrProperty(node, innerProperty, context.Configuration),
-                        objectNode.Children.OfType<XamlAstObjectNode>().Select((p) =>
-                        {
-                            if (p is XamlAstObjectNode objectNode)
-                            {
-                                return new XamlAstObjectNode(objectNode, new XamlAstClrTypeReference(objectNode, innerProperty.PropertyType, false))
-                                {
-                                    Arguments = objectNode.Arguments,
-                                    Children = objectNode.Children
-                                };
-                            }
+                    objectNode.Type = new XamlAstClrTypeReference(child, innerProperty.PropertyType, false);
+                    var replacement = ResolveChildren(context, objectNode, innerProperty);
+                    ni.Children.Remove(child);
+                    ni.Children.Insert(c, replacement);
 
-                            return p;
-                        }),
-                        false)); 
+                    continue;
+                }
+
+            }
+             
+            return node;
+        }
+
+        private IXamlAstNode ResolveChildren(AstTransformationContext context, XamlAstObjectNode objectNode, IXamlProperty? parentProperty)
+        { 
+            var declaringType = objectNode.Type.GetClrType();
+            var isGenericType = declaringType.GenericTypeDefinition != null || declaringType.BaseType?.GenericTypeDefinition != null;
+
+            for (int c = objectNode.Children.Count - 1; c >= 0; c--)
+            { 
+                IXamlAstNode child = objectNode.Children[c];
+                if (child is XamlAstTextNode textNode && String.IsNullOrWhiteSpace(textNode.Text))
+                {
+                    objectNode.Children.RemoveAt(c);
+                    continue;
+                }
+
+
+                if (child is XamlAstXamlPropertyValueNode propertyNode)
+                {
+                    // property 
+                    var innerProp = (XamlAstNamePropertyReference)propertyNode.Property;
+
+                    var innerProperty = declaringType.GetProperty(child, innerProp.Name);
+                    var innerPropertyClr = new XamlAstClrProperty(child,
+                                                           innerProperty.Name,
+                                                           innerProperty.DeclaringType,
+                                                           innerProperty.Getter,
+                                                           [innerProperty.Setter],
+                                                           innerProperty.CustomAttributes);
+                    propertyNode.Property = innerPropertyClr;
+
+                    // value
+                    var value = propertyNode.Values.FirstOrDefault();
+                    if (value is not XamlAstTextNode valueNode)
+                    {
+                        throw new XamlLoadException($"Value of property '{propertyNode}' must have a valid text value!", child);
+                    }
+
+                    valueNode.Type = new XamlAstClrTypeReference(child, context.Configuration.WellKnownTypes.String, false);
+
+                    if (!XamlTransformHelpers.TryGetCorrectlyTypedValue(context, value, innerProperty.PropertyType, out var rv))
+                    {
+                        throw new XamlLoadException("Type not found", child);
+                    }
+
+                    propertyNode.Values.Clear();
+                    propertyNode.Values.Add(rv); 
+                    continue;
+                }
+
+                if (child is XamlAstObjectNode childNode)
+                {
+                    if (isGenericType)
+                    {
+                        // ensure the child has a x:Key attribute.
+                        var xKey = childNode.Children.OfType<XamlAstXmlDirective>().FirstOrDefault();
+                        if (xKey == null)
+                        {
+                            childNode.Children.Insert(0, new XamlAstXmlDirective(childNode,
+                                XamlNamespaces.Xaml2006,
+                                "Key",
+                                [new XamlConstantNode(childNode, context.Configuration.WellKnownTypes.String, "")]));
+
+                        }
+                        childNode.Type = new XamlAstClrTypeReference(child, declaringType.GetGenericTypeArgument()!, false);
+                        ResolveChildren(context, childNode, null);
+                        continue;
+                    }
+
+                    if (childNode.Type is XamlAstXmlTypeReference xmlType)
+                    {
+                        var innerProperty = declaringType.GetProperty(child, xmlType.Name);
+                        childNode.Type = new XamlAstClrTypeReference(child, innerProperty.PropertyType, false);
+                        var result = ResolveChildren(context, childNode, innerProperty);
+                        objectNode.Children.Remove(child);
+                        objectNode.Children.Insert(c, result);
+                    }
                 }
             }
+            if (parentProperty == null)
+                return objectNode;
 
-            // handle ID, given we don't use x:Key and need to create that manually.
-            // if Id attribute is present, use that. If not, use empty string.
-            if (hasGenericType &&
-                TypesContainer.WidgetStyle.IsAssignableFrom(innerType)
-                || innerType == TypesContainer.StylesheetFontsCollection)
+            var propReference = new XamlAstClrProperty(objectNode, parentProperty, context.Configuration);
+
+            if (isGenericType)
             {
-                ni.Children.Insert(0, new XamlAstXmlDirective(ni,
-                        XamlNamespaces.Xaml2006,
-                        "Key",
-                        [new XamlConstantNode(ni, context.Configuration.WellKnownTypes.String, foundId)]));
+                return new XamlAstXamlPropertyValueNode(objectNode, propReference, objectNode.Children.OfType<IXamlAstValueNode>(), false);
             }
-
-            return node;
+            else
+            {
+                return new XamlAstXamlPropertyValueNode(objectNode, propReference, objectNode, false);
+            }
         }
 
         private IXamlType? GetLocalType(AstTransformationContext context, XamlAstXmlTypeReference typeReference)

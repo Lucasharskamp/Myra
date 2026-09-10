@@ -17,6 +17,8 @@ namespace Myra.Samples.AllWidgets
 		public VerticalProgressBar _verticalProgressBar { get; set; }
 		public Label _labelOverGui { get; set; }
 
+		public MenuItem _menuFile { get; set; }
+
         public void Init()
 		{             
 			var tree = new TreeView();

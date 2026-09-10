@@ -4,10 +4,8 @@ using Mono.Cecil;
 using Myra.Xaml.Helpers;
 using Myra.Xaml.Transformers;
 using Myra.Xaml.Types;
-using System;
 using System.Collections.Generic;
 using System.IO;
-using XamlX;
 using XamlX.Ast;
 using XamlX.Emit;
 using XamlX.IL;
@@ -47,6 +45,7 @@ namespace Myra.Xaml.Compiler
             _compiler.Transformers.AddRange(
                 [
                     new XamlIntrinsicsTransformer(),
+                    new StylesheetIdTransformer(),
                     new StylesheetTypeTransformer(),
                     new PropertyReferenceResolver(),
                     new ContentConvertTransformer(),
@@ -97,9 +96,9 @@ namespace Myra.Xaml.Compiler
             // transform the document into an AST tree for compilation
             _compiler.Transform(document);
             var handler = (MyraDiagnosticHandler)Configuration.DiagnosticsHandler;
-            handler.ResolveDiagnostics(Log, xamlPath); 
+            handler.ResolveDiagnostics(Log, xamlPath, "Myra Stylesheet"); 
 
-            var holder = typeBuilder.DefineField(TypesContainer.StyleSheet, "_stylesheet", XamlVisibility.Private, true);
+            var holder = typeBuilder.DefineField(TypesContainer.Stylesheet, "_stylesheet", XamlVisibility.Private, true);
             document.Root = new XamlValueWithManipulationNode(document.Root, 
                 (IXamlAstValueNode)document.Root, 
                 new XamlAssignLocalValueNode(document.Root, typeBuilder, holder));
@@ -119,7 +118,7 @@ namespace Myra.Xaml.Compiler
                 Path.GetDirectoryName(fileSource.FilePath),
                 fileSource);
 
-            var createWrapper = typeBuilder.DefineMethod(TypesContainer.StyleSheet, [], buildMethod, XamlVisibility.Assembly, true, false);
+            var createWrapper = typeBuilder.DefineMethod(TypesContainer.Stylesheet, [], buildMethod, XamlVisibility.Assembly, true, false);
 
             // Create() => _create(null);
             var wrapperCodeGen = createWrapper.Generator;
