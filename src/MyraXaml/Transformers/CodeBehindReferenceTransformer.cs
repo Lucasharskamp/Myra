@@ -85,6 +85,18 @@ namespace Myra.Xaml.Transformers
                         valueNode);
                 }
 
+                // Wrapper for AOT
+                
+                if (eventHandler.Parameters.Count == 0)
+                {
+                    var wrapper = new MyraMethodWrapperNode(
+                       node,
+                       eventHandler,
+                       eventHandler.DeclaringType,
+                       invoke.DeclaringType,
+                       invoke.Parameters[1]);
+                }
+
                 var delegateNode = new XamlLoadMethodDelegateNode(valueNode, context.RootObject, delegateType, eventHandler);
                 return new XamlPropertyAssignmentNode(valueNode, source,
                     [new XamlDirectCallPropertySetter(sourceEvent.Add)],

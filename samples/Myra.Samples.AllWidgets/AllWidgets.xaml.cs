@@ -2,6 +2,7 @@ using Myra.Graphics2D.UI;
 using Myra.Graphics2D.UI.ColorPicker;
 using Myra.Graphics2D.UI.File;
 using Myra.Graphics2D.UI.Styles;
+using System;
 
 namespace Myra.Samples.AllWidgets
 {
@@ -18,6 +19,11 @@ namespace Myra.Samples.AllWidgets
 		public Label _labelOverGui { get; set; }
 
 		public MenuItem _menuFile { get; set; }
+
+		public AllWidgets()
+		{
+			Console.WriteLine("Test");
+		}
 
         public void Init()
 		{             

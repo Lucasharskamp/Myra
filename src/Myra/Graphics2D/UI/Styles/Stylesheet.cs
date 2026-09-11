@@ -22,30 +22,13 @@ namespace Myra.Graphics2D.UI.Styles
 		/// The default style identifier used when no specific style name is provided.
 		/// </summary>
 		public const string DefaultStyleName = "";
-
-		internal static Stylesheet _current;
+		 
 
 		/// <summary>
 		/// Gets or sets the current active stylesheet used globally.
 		/// If not explicitly set, returns the default stylesheet from DefaultAssets.
 		/// </summary>
-		public static Stylesheet Current
-		{
-			get
-			{
-				if (_current == null)
-				{
-					_current = DefaultAssets.DefaultStylesheet;
-				}
-
-				return _current;
-			}
-
-			set
-			{
-				_current = value;
-			}
-		}
+		public static Stylesheet Current { get; set; }
 
 		private TextureRegion _whiteRegion;
 

@@ -1,6 +1,4 @@
-﻿using Mono.Cecil;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.ComponentModel;
 using XamlX.TypeSystem;
 
@@ -67,16 +65,11 @@ namespace Myra.Xaml.Helpers
         /// "Microsoft.Xna.Framework.Color" class
         /// </summary>
         public static IXamlType Color { get; private set; } = default!;
-         
+
         /// <summary>
-        /// "Myra.Graphics2D.UI.Container" class.
+        /// "System.Console"
         /// </summary>
-        public static IXamlType Container { get; private set; } = default!;
-         
-        /// <summary>
-        /// <see cref="System.Func{TResult}"/>
-        /// </summary>
-        public static IXamlType Func { get; private set; } = default!;
+        public static IXamlType Console { get; private set; } = default!;
 
         /// <summary>
         /// "Myra.Graphics2D.IBrush" class
@@ -114,6 +107,11 @@ namespace Myra.Xaml.Helpers
         public static IXamlType Rectangle { get; private set; } = default!;
 
         /// <summary>
+        /// "System.Runtime.CompilerServices.RuntimeHelpers" class
+        /// </summary>
+        public static IXamlType RuntimeHelpers { get; private set; } = default!;
+
+        /// <summary>
         /// "Myra.Graphics2D.Brushes.SolidBrush" class
         /// </summary>
         public static IXamlType SolidBrush { get; private set; } = default!;
@@ -131,22 +129,12 @@ namespace Myra.Xaml.Helpers
         /// <summary>
         /// "Myra.Graphics2D.UI.Styles.StylesheetFont" class
         /// </summary>
-        public static IXamlType StylesheetFont { get; private set; } = default!;
-
-        /// <summary>
-        /// "Myra.Graphics2D.UI.Styles" class
-        /// </summary>
-        public static IXamlType StylesheetFontsCollection { get; private set; } = default!;
+        public static IXamlType StylesheetFont { get; private set; } = default!; 
 
         /// <summary>
         /// "Myra.Graphics2D.TextureAtlases.Texture2D" class
         /// </summary>
         public static IXamlType Texture2D { get; private set; } = default!;
-
-        /// <summary>
-        /// "Myra.Graphics2D.TextureAtlases.TextureRegion" class
-        /// </summary>
-        public static IXamlType TextureRegion { get; private set; } = default!;
 
         /// <summary>
         /// "Myra.Graphics2D.TextureAtlases.TextureRegionAtlas" class
@@ -182,8 +170,7 @@ namespace Myra.Xaml.Helpers
             PropertyChangedEventArgs = typeSystem.GetType(typeof(PropertyChangedEventArgs).FullName);
             PropertyChangedEventHandler = typeSystem.GetType(typeof(PropertyChangedEventHandler).FullName);
             Color = typeSystem.GetType("Microsoft.Xna.Framework.Color");
-            Container = typeSystem.GetType("Myra.Graphics2D.UI.Container");
-            Func = typeSystem.GetType("System.Func`1");
+            Console = typeSystem.GetType("System.Console");
             IBrush = typeSystem.GetType("Myra.Graphics2D.IBrush");
             IFileResolver = typeSystem.GetType("Myra.Utility.IFileResolver");
             IImage = typeSystem.GetType("Myra.Graphics2D.IImage");
@@ -193,13 +180,12 @@ namespace Myra.Xaml.Helpers
             Thickness = typeSystem.GetType("Myra.Graphics2D.Thickness");
             Proportion = typeSystem.GetType("Myra.Graphics2D.UI.Proportion");
             Rectangle = typeSystem.GetType("Microsoft.Xna.Framework.Rectangle");
+            RuntimeHelpers = typeSystem.GetType("System.Runtime.CompilerServices.RuntimeHelpers");
             SolidBrush = typeSystem.GetType("Myra.Graphics2D.Brushes.SolidBrush");
             SpriteFontBase = typeSystem.GetType("FontStashSharp.SpriteFontBase");
             Stylesheet = typeSystem.GetType("Myra.Graphics2D.UI.Styles.Stylesheet");
             StylesheetFont = typeSystem.GetType("Myra.Graphics2D.UI.Styles.StylesheetFont");
-            StylesheetFontsCollection = typeSystem.GetType("Myra.Graphics2D.UI.Styles.StylesheetFontsCollection");
             Texture2D = typeSystem.GetType("Microsoft.Xna.Framework.Graphics.Texture2D");
-            TextureRegion = typeSystem.GetType("Myra.Graphics2D.TextureAtlases.TextureRegion");
             TextureRegionAtlas = typeSystem.GetType("Myra.Graphics2D.TextureAtlases.TextureRegionAtlas");
             Widget = typeSystem.GetType("Myra.Graphics2D.UI.Widget");
             WidgetStyle = typeSystem.GetType("Myra.Graphics2D.UI.Styles.WidgetStyle");

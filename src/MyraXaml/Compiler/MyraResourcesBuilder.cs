@@ -15,7 +15,7 @@ namespace Myra.Xaml.Compiler
         private IXamlField StylesheetsContainer { get; }
         public const string GetStylesheetMethodName = "GetStylesheet";
 
-        public MyraResourcesBuilder(CecilTypeSystem typeSystem, TypeDefinition resourceType, XamlTypeWellKnownTypes wellKnownTypes)
+        public MyraResourcesBuilder(ModuleDefinition mainModule, CecilTypeSystem typeSystem, TypeDefinition resourceType, XamlTypeWellKnownTypes wellKnownTypes)
         {
             WellKnownTypes = wellKnownTypes;
             ResourcesTypeBuilder = typeSystem.CreateTypeBuilder(resourceType, true);
@@ -38,10 +38,13 @@ namespace Myra.Xaml.Compiler
 
             var lazyGetValue = lazyStylesheetType.GetMethod(m => m.Name == "get_Value");
             var lazyConstructor = lazyStylesheetType.GetConstructor([funcStylesheetType]);
-              
+
             /*
              *  internal static Stylesheet Get(string name)
-             *   => _stylesheets[name].Value;
+             *  {
+             *     RuntimeHelpers.RunClassConstructor(typeof(__MyraXamlResources).TypeHandle);
+             *     return _stylesheets[name].Value;
+             *  }
              */
             var getMethodBuilder = ResourcesTypeBuilder.DefineMethod(TypesContainer.Stylesheet,
                                                         [wellKnownTypes.String],
@@ -50,6 +53,11 @@ namespace Myra.Xaml.Compiler
                                                         true,
                                                         false);
             var getMethodGen = getMethodBuilder.Generator;
+            getMethodGen.Ldstr("Aot Build Test");
+            getMethodGen.EmitCall(TypesContainer.Console.GetMethod(m => m.Name == "WriteLine" && m.Parameters.Count == 1 && m.Parameters[0] == WellKnownTypes.String));
+            getMethodGen.Ldtoken(ResourcesTypeBuilder);
+            getMethodGen.EmitCall(TypesContainer.RuntimeHelpers.GetMethod(m => m.Name == "RunClassConstructor"));
+ 
             getMethodGen.Ldsfld(StylesheetsContainer);
             getMethodGen.Ldarg(0);
             getMethodGen.EmitCall(stylesheetsGetMethod);
@@ -63,7 +71,7 @@ namespace Myra.Xaml.Compiler
 
         public void BuildStaticConstructor(List<(string, IXamlMethod)> stylesheetTypes)
         {
-            /*
+            /*            *  
             *   static __MyraXamlResources()
             *   {                   
             *      _stylesheets = new();
@@ -71,8 +79,12 @@ namespace Myra.Xaml.Compiler
             *      _stylesheets.Add(typename, stylesheet)
             *      
             *      Stylesheet.Current = Get("default_ui_skin.xmms)
-            *   }
+            *   } 
             */
+
+            var staticConstructor = ResourcesTypeBuilder.DefineConstructor(true, []);
+             
+            // set up types for use in the method.
             var funcStylesheetType = WellKnownTypes.GetFuncOfT(1).MakeGenericType(TypesContainer.Stylesheet);
             var funcStylesheetConstructor = funcStylesheetType.GetConstructor([WellKnownTypes.Object, WellKnownTypes.IntPtr]);
             var lazyStylesheetConstructor = TypesContainer
@@ -80,32 +92,31 @@ namespace Myra.Xaml.Compiler
                 .MakeGenericType(TypesContainer.Stylesheet)
                 .GetConstructor([funcStylesheetType]);
             var stylesheetsCurrentSetMethod = TypesContainer.Stylesheet.GetMethod(m => m.Name == "set_Current");
-            var initializeMethod = ResourcesTypeBuilder.DefineConstructor(true, []);
 
-            var initializeMethodGen = initializeMethod.Generator;
+            var constructorGen = staticConstructor.Generator;
 
             // _stylesheets = new();
-            initializeMethodGen.Newobj(StylesheetsContainer.FieldType.GetConstructor([]));
-            initializeMethodGen.Stsfld(StylesheetsContainer);
+            constructorGen.Newobj(StylesheetsContainer.FieldType.GetConstructor([]));
+            constructorGen.Stsfld(StylesheetsContainer);
 
             // _stylesheets.Add(typename, stylesheet)
             foreach (var stylesheetType in stylesheetTypes)
             {
-                initializeMethodGen.Ldsfld(StylesheetsContainer);
-                initializeMethodGen.Ldstr(stylesheetType.Item1);
-                initializeMethodGen.Ldnull();
-                initializeMethodGen.Ldftn(stylesheetType.Item2);
-                initializeMethodGen.Newobj(funcStylesheetConstructor);
-                initializeMethodGen.Newobj(lazyStylesheetConstructor);
-                initializeMethodGen.EmitCall(StylesheetAddMethod);
+                constructorGen.Ldsfld(StylesheetsContainer);
+                constructorGen.Ldstr(stylesheetType.Item1);
+                constructorGen.Ldnull();
+                constructorGen.Ldftn(stylesheetType.Item2);
+                constructorGen.Newobj(funcStylesheetConstructor);
+                constructorGen.Newobj(lazyStylesheetConstructor);
+                constructorGen.EmitCall(StylesheetAddMethod);
             }
 
             // Stylesheet.Current = Get("default_ui_skin");
-            initializeMethodGen.Ldstr("default_ui_skin");
-            initializeMethodGen.EmitCall(GetMethod);
-            initializeMethodGen.EmitCall(stylesheetsCurrentSetMethod);
+            constructorGen.Ldstr("default_ui_skin");
+            constructorGen.EmitCall(GetMethod);
+            constructorGen.EmitCall(stylesheetsCurrentSetMethod);
 
-            initializeMethodGen.Ret();
+            constructorGen.Ret(); 
         }
     }
 }

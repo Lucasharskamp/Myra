@@ -30,7 +30,7 @@ namespace Myra.Xaml.Transformers
                 }
                 if (styleNode is XamlAstTextNode textNode)
                 {
-                    styleNode = new XamlConstantNode(node, context.Configuration.WellKnownTypes.String, textNode.Text);
+                    styleNode = textNode.ToConstantNode(context);
                 }
                 valueNode.Children.Remove(styleDirective);
             }

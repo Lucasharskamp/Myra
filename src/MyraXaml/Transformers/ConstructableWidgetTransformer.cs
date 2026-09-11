@@ -26,7 +26,7 @@ namespace Myra.Xaml.Transformers
                     var parameters = new List<IXamlAstValueNode>()
                     {
                          new XamlStylesheetProperty(node, context, null),
-                         new XamlConstantNode(node, context.Configuration.WellKnownTypes.String, "")
+                         node.ToConstantNode(context, "")
                     };
                      
                     return new XamlAstConstructableObjectNode(ni,

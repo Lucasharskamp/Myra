@@ -248,7 +248,7 @@ namespace Myra.Xaml.Helpers
         public static XamlConstantNode ToConstantNode(this XamlAstTextNode text, AstTransformationContext context) 
             => new XamlConstantNode(text, context.Configuration.WellKnownTypes.String, text.Text);
 
-        public static XamlConstantNode ToConstantNode(this XamlAstTextNode text, AstTransformationContext context, string overrideText)
+        public static XamlConstantNode ToConstantNode(this IXamlLineInfo text, AstTransformationContext context, string overrideText)
             => new XamlConstantNode(text, context.Configuration.WellKnownTypes.String, overrideText);
 
         public const string BuildMethodName = "InitializeComponent";
@@ -258,7 +258,7 @@ namespace Myra.Xaml.Helpers
         /// at the tail end of the constructor. <br/>
         /// If no constructor yet exists, one willm be created.
         /// </summary> 
-        public static void EnsureBuildMethodCalled(TypeDefinition type)
+        public static void EnsureBuildMethodCalled(TypeDefinition type, XamlTypeWellKnownTypes wellKnownTypes)
         {
             var module = type.Module;
 
@@ -306,7 +306,19 @@ namespace Myra.Xaml.Helpers
                 il.Emit(OpCodes.Call, MyraBindingCompilationContext.GetStylesheetDefinition);
                 il.Emit(OpCodes.Ldstr, "");
                 il.Emit(OpCodes.Call, baseConstructor);
-            } 
+            }
+
+            // Console.WriteLine("Aot Build Test");
+            //  RuntimeHelpers.RunClassConstructor(typeof(__MyraXamlResources).TypeHandle);
+            var consoleWriteLine = TypesContainer.Console.GetMethod(m => m.Name == "WriteLine" && m.Parameters.Count == 1 && m.Parameters[0] == wellKnownTypes.String);
+            var runClassConstructor = TypesContainer.RuntimeHelpers.GetMethod(m => m.Name == "RunClassConstructor");
+            var consoleWriteLineImport = module.ImportReference(((CecilTypeSystem.CecilMethodBase)consoleWriteLine).Definition);
+            var runClassConstructorImport = module.ImportReference(((CecilTypeSystem.CecilMethodBase)runClassConstructor).Definition);
+
+            il.Emit(OpCodes.Ldstr, "Aot Build Test");
+            il.Emit(OpCodes.Call, consoleWriteLineImport);
+            il.Emit(OpCodes.Ldtoken, type);
+            il.Emit(OpCodes.Call, runClassConstructorImport);
 
             // this.InitializeComponent(IServiceProvider, this, Stylesheet);
             il.Emit(OpCodes.Ldnull);

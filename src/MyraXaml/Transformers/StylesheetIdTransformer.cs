@@ -36,7 +36,7 @@ namespace Myra.Xaml.Transformers
             objectNode.Children.Insert(0, new XamlAstXmlDirective(node,
                     XamlNamespaces.Xaml2006,
                     "Key",
-                    [new XamlConstantNode(node, context.Configuration.WellKnownTypes.String, foundId)]));
+                    [node.ToConstantNode(context, foundId)]));
 
             return objectNode;
         } 
