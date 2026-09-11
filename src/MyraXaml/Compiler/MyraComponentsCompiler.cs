@@ -7,6 +7,7 @@ using Myra.Xaml.Types;
 using System;
 using System.IO;
 using System.Linq;
+using System.Xml.Linq;
 using XamlX.Ast; 
 using XamlX.Emit;
 using XamlX.IL;
@@ -126,7 +127,10 @@ namespace Myra.Xaml.Compiler
             handler.ResolveDiagnostics(Log, xamlPath, "Myra XAML");
 
             // compile the AST into IL. The IL will be written to the DLL once all files have been compiled.
-            var populate = _compiler.DefinePopulateMethod(typeBuilder, document, TransformerHelpers.BuildMethodName, XamlVisibility.Private);
+            var rootGrp = (XamlValueWithManipulationNode)document.Root;
+            var populate = typeBuilder.DefineMethod(Configuration.WellKnownTypes.Void,
+                new[] { Configuration.TypeMappings.ServiceProvider, rootGrp.Type.GetClrType(), TypesContainer.Stylesheet },
+                TransformerHelpers.BuildMethodName, XamlVisibility.Private, true, false);
 
             _compiler.Compile(
                 document, 

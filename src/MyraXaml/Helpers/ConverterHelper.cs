@@ -104,6 +104,7 @@ namespace Myra.Xaml.Helpers
                                     null),
                         new XamlConstantNode(node, context.Configuration.WellKnownTypes.String, text)
                     ]);
+
                 return true;
             }
 
@@ -201,10 +202,7 @@ namespace Myra.Xaml.Helpers
             if (!GetText(node, out var text))
                 return false;
 
-            var styleSheetContainer = TransformerHelpers.GetStylesheet(context, node);
-
-            var atlas = TypesContainer.Stylesheet.Properties.First(p => p.Name == "Atlas");
-            var callAtlas = new XamlStaticOrTargetedReturnMethodCallNode(node, atlas.Getter!, [styleSheetContainer]);
+            var callAtlas = new XamlStylesheetProperty(node, context, TypesContainer.TextureRegionAtlas);
             var ensureRegionMethod = TypesContainer.TextureRegionAtlas.GetMethod(m => m.Name == "EnsureRegion");
             result = new XamlStaticOrTargetedReturnMethodCallNode(node,
                 new XamlWrappedMethod(ensureRegionMethod),

@@ -25,6 +25,21 @@
     <!-- Myra XAML analyzer -->
     <AdditionalFiles Include="**\*.xaml" />
     <Analyzer Include="..\..\src\MyraAnalyzer\bin\Debug\netstandard2.0\Myra.Analyzer.dll" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="..\..\src\Resources\default_ui_skin.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Update="..\..\src\Resources\default_ui_skin.xmat">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Update="..\..\src\Resources\default_ui_skin_2x.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Update="..\..\src\Resources\default_ui_skin_2x.xmat">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup> 
   <UsingTask TaskFactory="MyraXamlTaskFactory" TaskName="MyraXamlCompileTask" AssemblyFile="..\..\src\MyraXaml\bin\Debug\netstandard2.0\Myra.Xaml.dll" />
   

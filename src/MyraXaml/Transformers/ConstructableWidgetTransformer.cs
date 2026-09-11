@@ -1,4 +1,5 @@
 ﻿using Myra.Xaml.Helpers;
+using Myra.Xaml.Types;
 using System.Collections.Generic;
 using XamlX.Ast;
 using XamlX.Transform;
@@ -22,10 +23,10 @@ namespace Myra.Xaml.Transformers
                 var ctor = t.FindConstructor([TypesContainer.Stylesheet, context.Configuration.WellKnownTypes.String]);
                 if (ctor is not null)
                 {
-                    var parameters = new List<IXamlAstValueNode>() 
+                    var parameters = new List<IXamlAstValueNode>()
                     {
-                         TransformerHelpers.GetStylesheet(context, ni),
-                         TransformerHelpers.GetStyleName(context, ni)
+                         new XamlStylesheetProperty(node, context, null),
+                         new XamlConstantNode(node, context.Configuration.WellKnownTypes.String, "")
                     };
                      
                     return new XamlAstConstructableObjectNode(ni,

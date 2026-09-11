@@ -36,7 +36,7 @@ namespace Myra.Xaml.Types
             // we do this by setting the source and target objects onto the CIL stack. These CIL stack items are then consumed,
             // and the original CIL stack can continue without being interfered with.
             var temp = codeGen.DefineLocal(AssignMethod.Parameters[0]);
-            codeGen.Emit(OpCodes.Stloc, temp);
+            codeGen.Stloc(temp);
             // Get target object to assign to (the class instance whose property x:Name refers to).
             // If not set, we presume it's the code-behind object (second parameter in InitializeComponent() )
             if (TargetObject != null)
@@ -45,12 +45,12 @@ namespace Myra.Xaml.Types
             }
             else
             {
-                codeGen.Emit(OpCodes.Ldarg_1);
+                codeGen.Ldarg(1);
             }
-            codeGen.Emit(OpCodes.Ldloc, temp);
+            codeGen.Ldloc(temp);
 
             // TargetObject.Assignment(SourceObject)
-            codeGen.Emit(OpCodes.Callvirt, AssignMethod); 
+            codeGen.EmitCall(AssignMethod); 
 
             // return void
             return XamlILNodeEmitResult.Type(0, null);

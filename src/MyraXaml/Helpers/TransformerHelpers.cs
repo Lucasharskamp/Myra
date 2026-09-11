@@ -32,30 +32,6 @@ namespace Myra.Xaml.Helpers
         }
 
 
-        public static IXamlAstValueNode GetStylesheet(AstTransformationContext context, IXamlAstValueNode node)
-        {
-
-            if (!context.TryGetItem<XamlStylesheetContainer>(out var stylesheetContainer))
-            {
-                stylesheetContainer = new XamlStylesheetContainer(node, context.Configuration.WellKnownTypes, "default_ui_skin");
-                context.SetItem(stylesheetContainer);
-            }
-
-            return stylesheetContainer.Node;
-        }
-
-        public static IXamlAstValueNode GetStyleName(AstTransformationContext context, XamlAstObjectNode node)
-        { 
-
-            if (!context.TryGetItem<XamlStyleContainer>(out var styleContainer))
-            {
-                styleContainer = new XamlStyleContainer(new XamlConstantNode(node, context.Configuration.WellKnownTypes.String, ""));
-                context.SetItem(styleContainer);
-            }
-
-            return styleContainer.Node;
-        }
-
         /// <summary>
         /// Retrieves the code-behind's CLR type the transformers are currently working on.
         /// </summary> 
@@ -160,9 +136,9 @@ namespace Myra.Xaml.Helpers
         {
             var typeMappings = new XamlLanguageTypeMappings(typeSystem);
 
-            var contentProperty = typeSystem.FindType("Myra.Attributes.ContentAttribute")
+            var contentAttribute = typeSystem.FindType("Myra.Attributes.ContentAttribute")
                 ?? throw new InvalidOperationException("Cannot find ContentAttribute!");
-            typeMappings.ContentAttributes.Add(contentProperty);
+            typeMappings.ContentAttributes.Add(contentAttribute); 
 
             var mappings = new XamlXmlnsMappings();
 
@@ -228,6 +204,21 @@ namespace Myra.Xaml.Helpers
             return result;
         }
 
+        public static string GetTypeName(this IXamlAstTypeReference reference)
+        {
+            if (reference is XamlAstXmlTypeReference xmlReference)
+            {
+                return xmlReference.Name;
+            }
+            
+            if (reference is XamlAstClrTypeReference typeReference)
+            {
+                return typeReference.Type.Name;
+            }
+
+            throw new InvalidOperationException("Unknown reference type");
+        }
+
         public const string BuildMethodName = "InitializeComponent";
 
         /// <summary>
@@ -285,9 +276,12 @@ namespace Myra.Xaml.Helpers
                 il.Emit(OpCodes.Call, baseConstructor);
             } 
 
-            // this.InitializeComponent(IServiceProvider, this);
+            // this.InitializeComponent(IServiceProvider, this, Stylesheet);
             il.Emit(OpCodes.Ldnull);
             il.Emit(OpCodes.Ldarg_0);
+            // todo replace with actual values
+            il.Emit(OpCodes.Ldstr, "default_ui_skin");
+            il.Emit(OpCodes.Call, MyraBindingCompilationContext.GetStylesheetDefinition);
             il.Emit(OpCodes.Call, module.ImportReference(buildMethod));
 
             il.Emit(OpCodes.Ret);

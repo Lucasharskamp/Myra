@@ -8,12 +8,10 @@ namespace Myra.Xaml.Compiler
 {
     public sealed class MyraResourcesBuilder
     {
-        private IXamlMethod AtlasAddMethod { get; }
         private IXamlMethod StylesheetAddMethod { get; }
         private IXamlTypeBuilder<IXamlILEmitter> ResourcesTypeBuilder { get; }
         public IXamlMethod GetMethod { get; }
         private XamlTypeWellKnownTypes WellKnownTypes { get; }
-        private IXamlField AtlassesContainer { get; }
         private IXamlField StylesheetsContainer { get; }
         public const string GetStylesheetMethodName = "GetStylesheet";
 
@@ -26,10 +24,6 @@ namespace Myra.Xaml.Compiler
             var atlasContainerType = wellKnownTypes.DictionaryOfT2.MakeGenericType(wellKnownTypes.String,
                                                 TypesContainer.TextureRegionAtlas);
 
-            AtlasAddMethod = atlasContainerType.GetMethod(m => m.Name == "Add");
-            var atlasGetMethod = atlasContainerType.GetMethod(m => m.Name == "get_Item");
-
-            AtlassesContainer = ResourcesTypeBuilder.DefineField(atlasContainerType, "_atlasses", XamlVisibility.Private, true);
 
             var funcStylesheetType = wellKnownTypes.GetFuncOfT(1).MakeGenericType(TypesContainer.Stylesheet); 
             var lazyStylesheetType = TypesContainer.LazyOfT1.MakeGenericType(TypesContainer.Stylesheet);
@@ -45,7 +39,6 @@ namespace Myra.Xaml.Compiler
             var lazyGetValue = lazyStylesheetType.GetMethod(m => m.Name == "get_Value");
             var lazyConstructor = lazyStylesheetType.GetConstructor([funcStylesheetType]);
               
-             
             /*
              *  internal static Stylesheet Get(string name)
              *   => _stylesheets[name].Value;
@@ -68,15 +61,11 @@ namespace Myra.Xaml.Compiler
             MyraBindingCompilationContext.GetStylesheet = GetMethod;
         }
 
-        public void BuildStaticConstructor(List<(string, IXamlMethod)> atlasTypes, List<(string, IXamlMethod)> stylesheetTypes)
+        public void BuildStaticConstructor(List<(string, IXamlMethod)> stylesheetTypes)
         {
             /*
             *   static __MyraXamlResources()
-            *   { 
-            *      _atlasses = new();
-            *      // for every atlas
-            *      _atlasses.Add(typename, atlas);
-            *      
+            *   {                   
             *      _stylesheets = new();
             *      // for each stylesheet
             *      _stylesheets.Add(typename, stylesheet)
@@ -85,25 +74,15 @@ namespace Myra.Xaml.Compiler
             *   }
             */
             var funcStylesheetType = WellKnownTypes.GetFuncOfT(1).MakeGenericType(TypesContainer.Stylesheet);
-            var funcConstructor = funcStylesheetType.GetConstructor([WellKnownTypes.Object, WellKnownTypes.IntPtr]);
+            var funcStylesheetConstructor = funcStylesheetType.GetConstructor([WellKnownTypes.Object, WellKnownTypes.IntPtr]);
+            var lazyStylesheetConstructor = TypesContainer
+                .LazyOfT1
+                .MakeGenericType(TypesContainer.Stylesheet)
+                .GetConstructor([funcStylesheetType]);
             var stylesheetsCurrentSetMethod = TypesContainer.Stylesheet.GetMethod(m => m.Name == "set_Current");
             var initializeMethod = ResourcesTypeBuilder.DefineConstructor(true, []);
 
             var initializeMethodGen = initializeMethod.Generator;
-
-            // _atlasses = new();
-            initializeMethodGen.Newobj(AtlassesContainer.FieldType.GetConstructor([]));
-            initializeMethodGen.Stsfld(AtlassesContainer);
-
-            // _atlasses.Add(typename, atlasType())
-            foreach (var atlasType in atlasTypes)
-            {
-                initializeMethodGen.Ldstr(atlasType.Item1);
-                initializeMethodGen.Ldnull();
-                initializeMethodGen.EmitCall(atlasType.Item2);
-                initializeMethodGen.Newobj(funcConstructor);
-                initializeMethodGen.EmitCall(AtlasAddMethod);
-            }
 
             // _stylesheets = new();
             initializeMethodGen.Newobj(StylesheetsContainer.FieldType.GetConstructor([]));
@@ -112,10 +91,12 @@ namespace Myra.Xaml.Compiler
             // _stylesheets.Add(typename, stylesheet)
             foreach (var stylesheetType in stylesheetTypes)
             {
+                initializeMethodGen.Ldsfld(StylesheetsContainer);
                 initializeMethodGen.Ldstr(stylesheetType.Item1);
                 initializeMethodGen.Ldnull();
                 initializeMethodGen.Ldftn(stylesheetType.Item2);
-                initializeMethodGen.Newobj(funcConstructor);
+                initializeMethodGen.Newobj(funcStylesheetConstructor);
+                initializeMethodGen.Newobj(lazyStylesheetConstructor);
                 initializeMethodGen.EmitCall(StylesheetAddMethod);
             }
 

@@ -58,8 +58,8 @@ namespace Myra.Xaml.Compiler
                     new ConstructableObjectTransformer(),
                     // now onto assignments.
                     new NewObjectTransformer(),
-                    new DeferredContentTransformer(),
-                    new TopDownInitializationTransformer(),
+                    //new StylesheetToLocalTransformer(),
+                    new DeferredContentTransformer(), 
                 ]);
             _compiler.SimplificationTransformers.Add(new FlattenAstTransformer());
             _compiler.Emitters.AddRange(
@@ -96,12 +96,7 @@ namespace Myra.Xaml.Compiler
             // transform the document into an AST tree for compilation
             _compiler.Transform(document);
             var handler = (MyraDiagnosticHandler)Configuration.DiagnosticsHandler;
-            handler.ResolveDiagnostics(Log, xamlPath, "Myra Stylesheet"); 
-
-            var holder = typeBuilder.DefineField(TypesContainer.Stylesheet, "_stylesheet", XamlVisibility.Private, true);
-            document.Root = new XamlValueWithManipulationNode(document.Root, 
-                (IXamlAstValueNode)document.Root, 
-                new XamlAssignLocalValueNode(document.Root, typeBuilder, holder));
+            handler.ResolveDiagnostics(Log, xamlPath, "Myra Stylesheet");  
 
             // compile the AST into IL. The IL will be written to the DLL once all files have been compiled.
             var populate = _compiler.DefinePopulateMethod(typeBuilder, document, initializeMethod, XamlVisibility.Private);
@@ -118,9 +113,9 @@ namespace Myra.Xaml.Compiler
                 Path.GetDirectoryName(fileSource.FilePath),
                 fileSource);
 
-            var createWrapper = typeBuilder.DefineMethod(TypesContainer.Stylesheet, [], buildMethod, XamlVisibility.Assembly, true, false);
 
             // Create() => _create(null);
+            var createWrapper = typeBuilder.DefineMethod(TypesContainer.Stylesheet, [], buildMethod, XamlVisibility.Assembly, true, false);
             var wrapperCodeGen = createWrapper.Generator;
             wrapperCodeGen.Ldnull();
             wrapperCodeGen.EmitCall(build);

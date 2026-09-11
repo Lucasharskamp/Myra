@@ -32,7 +32,6 @@ namespace Myra.Xaml.Transformers
                 {
                     styleNode = new XamlConstantNode(node, context.Configuration.WellKnownTypes.String, textNode.Text);
                 }
-                context.SetItem(new XamlStyleContainer(styleNode));
                 valueNode.Children.Remove(styleDirective);
             }
 
@@ -47,14 +46,6 @@ namespace Myra.Xaml.Transformers
                        styleSheetDirective);
                 }
 
-                if (stylesheetNode is XamlStaticExtensionNode extensionNode)
-                {
-                    context.SetItem(new XamlStylesheetContainer(extensionNode));
-                }
-                else if (stylesheetNode is XamlAstTextNode fileNameReference)
-                {
-                    context.SetItem(new XamlStylesheetContainer(node, context.Configuration.WellKnownTypes, fileNameReference.Text));
-                }
                 valueNode.Children.Remove(styleSheetDirective);
             }
 

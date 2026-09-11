@@ -66,9 +66,7 @@ namespace Myra.Samples.AllWidgets
 
 			MyraEnvironment.Game = this;
 			MyraEnvironment.EnableModalDarkening = true;
-
-//			Stylesheet.Current = DefaultAssets.DefaultStylesheet2X;
-
+			 
 			_allWidgets = new AllWidgets();
 			_allWidgets.Init();
 
