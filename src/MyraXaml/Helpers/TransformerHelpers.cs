@@ -1,18 +1,15 @@
-﻿using Mono.Cecil;
+﻿using Microsoft.Build.Framework;
+using Mono.Cecil;
 using Mono.Cecil.Cil;
-using Mono.Cecil.Rocks;
 using Myra.Xaml.Compiler;
-using Myra.Xaml.Types;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Linq;
 using XamlX;
 using XamlX.Ast;
-using XamlX.IL;
 using XamlX.Transform;
 using XamlX.TypeSystem;
-using static XamlX.Transform.TransformerConfiguration;
 
 namespace Myra.Xaml.Helpers
 {
@@ -287,6 +284,53 @@ namespace Myra.Xaml.Helpers
             il.Emit(OpCodes.Ret);
 
             return; 
-        } 
+        }
+
+        internal static string CurrentRelativePath = ""; 
+        internal static void SetCurrentRelativePath(string targetPath, ITaskItem currentFile)
+        { 
+            var targetDir = Path.GetDirectoryName(targetPath);
+            CurrentRelativePath = PathNetCore.GetRelativePath(targetDir, GetPath(targetDir, currentFile.ItemSpec));
+        }
+
+        private static string GetPath(string targetDir, string filePath)
+        {
+            // we cannot use the relative path of an asset compared to the asset it is referring to;
+            // files are loaded from the perspective of the executing assembly, not the assets its using!
+            if (!filePath.Contains("..\\", StringComparison.OrdinalIgnoreCase))
+            {
+                var attempt = Path.Combine(targetDir, filePath);
+                if (File.Exists(attempt))
+                {
+                    return Path.GetDirectoryName(attempt);
+                }
+            }
+
+            if (filePath.Contains("..\\", StringComparison.OrdinalIgnoreCase))
+            {
+                filePath = filePath.Replace("..\\", "");
+            }
+
+            // relative not found; try finding the file in the output directory.
+            var combinedPath = Path.Combine(targetDir, Path.GetDirectoryName(filePath));
+
+            while (!Directory.Exists(combinedPath))
+            {
+                // keep chopping off a part of the path of FilePath, until there is no more "relative directory" to be found.
+                var nextSlash = filePath.IndexOf('\\');
+                if (nextSlash == -1)
+                    return targetDir; // work from directory root if relative folder not found.
+
+                filePath = filePath.Substring(nextSlash+1);
+                combinedPath = Path.Combine(targetDir, Path.GetDirectoryName(filePath));
+            }
+
+            return combinedPath;
+        }
+
+        internal static string GetRelativePathOfResource(string localPath)
+        {  
+            return Path.Combine(CurrentRelativePath, localPath);
+        }
     }
 }

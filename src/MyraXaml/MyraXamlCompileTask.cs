@@ -38,7 +38,8 @@ namespace Myra.Xaml
 
         public bool Debug { get; set; }
 
-        public CecilTypeSystem? TypeSystem { get; set; }
+        internal CecilTypeSystem? TypeSystem { get; set; } 
+
         private List<(string, IXamlMethod)> StylesheetTypes { get; set; } =  [];
 
         public override bool Execute()
@@ -107,14 +108,16 @@ namespace Myra.Xaml
                 if (myraFilesGroupedByExtension.TryGetValue(".xmms", out var stylesheetFiles)) {
                     foreach (var item in stylesheetFiles)
                     {
+                        TransformerHelpers.SetCurrentRelativePath(TargetPath, item);
                         StylesheetTypes.Add(stylesheetsCompiler.CompileStylesheetFile(assembly, item));
                     }
                 }
 
                 if (myraFilesGroupedByExtension.TryGetValue(".xaml", out var xamlFiles))
                 {
-                    foreach (var item in myraFilesGroupedByExtension[".xaml"])
+                    foreach (var item in xamlFiles)
                     {
+                        TransformerHelpers.SetCurrentRelativePath(TargetPath, item);
                         componentsCompiler.CompileXamlFile(Log, TargetPath, ProjectDirectory, assembly, item);
                     }
                 }

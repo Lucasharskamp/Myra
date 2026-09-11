@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TextureAtlas Image="default_ui_skin_2x.png">
+<TextureAtlas Image="Resources\default_ui_skin_2x.png">
   <TextureRegion Id="border-circle-error" Left="0" Top="0" Width="28" Height="28" />
   <TextureRegion Id="border-circle" Left="28" Top="0" Width="28" Height="28" />
   <NinePatchRegion Id="border-dark-blue" Left="56" Top="0" Width="3" Height="3" NinePatchLeft="1" NinePatchTop="1" NinePatchRight="1" NinePatchBottom="1" />

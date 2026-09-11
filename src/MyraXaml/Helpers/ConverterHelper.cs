@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using XamlX;
 using XamlX.Ast;
@@ -73,25 +74,27 @@ namespace Myra.Xaml.Helpers
             // handle SpriteFontBase
             if (type == TypesContainer.SpriteFontBase)
             {
-                return AssignFileResource(context, node, "GetFont", ref result);
+                return AssignFileResource(context, node, null, "GetFont", ref result);
             }
 
             if (type == TypesContainer.StylesheetFont)
             {
-                return AssignFileResource(context, node, "GetFont", ref result);
+                return AssignFileResource(context, node, null, "GetFont", ref result);
             }
 
             // handle Texture2D
             if (type == TypesContainer.Texture2D)
-            {
-                return AssignFileResource(context, node, "GetTexture", ref result);
+            { 
+                return AssignFileResource(context, node, TransformerHelpers.CurrentRelativePath, "GetTexture", ref result);
             }
 
-            // handle SpriteFontBase
+            // handle Texture Atlas
             if (type == TypesContainer.TextureRegionAtlas)
             {
                 if (!GetText(node, out var text))
                     return false;
+
+                var path = TransformerHelpers.GetRelativePathOfResource(text);
 
                 var loadMethod = TypesContainer.IFileResolver.GetMethod(m => m.Name == "GetAtlas");
                 result = new XamlStaticOrTargetedReturnMethodCallNode(node, loadMethod,
@@ -102,7 +105,7 @@ namespace Myra.Xaml.Helpers
                         new XamlStaticOrTargetedReturnMethodCallNode(node,
                                     TypesContainer.MyraEnvironment.GetAllProperties().First(p => p.Name == "GraphicsDevice").Getter!,
                                     null),
-                        new XamlConstantNode(node, context.Configuration.WellKnownTypes.String, text)
+                        new XamlConstantNode(node, context.Configuration.WellKnownTypes.String, path)
                     ]);
 
                 return true;
@@ -165,18 +168,18 @@ namespace Myra.Xaml.Helpers
             return true;
         }
 
-        private static bool AssignFileResource(AstTransformationContext context, IXamlAstValueNode node, string methodName, ref IXamlAstValueNode result)
+        private static bool AssignFileResource(AstTransformationContext context, IXamlAstValueNode node, string? relativePath, string methodName, ref IXamlAstValueNode result)
         {
             if (!GetText(node, out var text))
-                return false;
-
+                return false;  
+ 
             var loadMethod = TypesContainer.IFileResolver.GetMethod(m => m.Name == methodName);
             result = new XamlStaticOrTargetedReturnMethodCallNode(node, loadMethod,
                 [
                     new XamlStaticOrTargetedReturnMethodCallNode(node,
                                     TypesContainer.MyraEnvironment.GetAllProperties().First(p => p.Name == "Resolver").Getter!,
                                     null),
-                        new XamlConstantNode(node, context.Configuration.WellKnownTypes.String, text)
+                        new XamlConstantNode(node, context.Configuration.WellKnownTypes.String, relativePath == null ? text : Path.Combine(relativePath, text))
                 ]);
             return true;
         }
