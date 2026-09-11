@@ -149,8 +149,8 @@ namespace Myra.Xaml.Transformers
                                 child);
                         }
 
-                        innerProperty = declaringType.GetProperty(child, innerProp.Name); 
-                        parentProperty = niClrType.Type.GetProperty(child, innerTypeRef.Name);
+                        innerProperty = declaringType.GetTypeProperty(child, innerProp.Name); 
+                        parentProperty = niClrType.Type.GetTypeProperty(child, innerTypeRef.Name);
                     }
                     else
                     {
@@ -239,7 +239,7 @@ namespace Myra.Xaml.Transformers
                     // property 
                     var innerProp = (XamlAstNamePropertyReference)propertyNode.Property;
 
-                    var innerProperty = declaringType.GetProperty(child, innerProp.Name);
+                    var innerProperty = declaringType.GetTypeProperty(child, innerProp.Name);
                     var innerPropertyClr = new XamlAstClrProperty(child,
                                                            innerProperty.Name,
                                                            innerProperty.DeclaringType,
@@ -288,7 +288,7 @@ namespace Myra.Xaml.Transformers
 
                     if (childNode.Type is XamlAstXmlTypeReference xmlType)
                     {
-                        var innerProperty = declaringType.GetProperty(child, xmlType.Name);
+                        var innerProperty = declaringType.GetTypeProperty(child, xmlType.Name);
                         childNode.Type = new XamlAstClrTypeReference(child, innerProperty.PropertyType, false);
                         var result = ResolveChildren(context, childNode, innerProperty);
                         objectNode.Children.Remove(child);

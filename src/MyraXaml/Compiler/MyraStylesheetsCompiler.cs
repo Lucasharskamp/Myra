@@ -55,6 +55,7 @@ namespace Myra.Xaml.Compiler
                     // Should happen before we split on clr and xaml assignments 
                     new ResolveContentPropertyTransformer(), 
                     new ConvertPropertyValuesToAssignmentsTransformer(),
+                    new StylesheetFontsTransformer(),
                     new ConstructableObjectTransformer(),
                     // now onto assignments.
                     new NewObjectTransformer(),

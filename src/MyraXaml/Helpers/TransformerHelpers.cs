@@ -190,7 +190,7 @@ namespace Myra.Xaml.Helpers
             return null;
         }
 
-        public static IXamlProperty GetProperty(this IXamlType type, IXamlLineInfo node, string name)
+        public static IXamlProperty GetTypeProperty(this IXamlType type, IXamlLineInfo node, string name)
         {
             var result = type.GetAllProperties().FirstOrDefault(p => p.Name == name);
             if (result == null)
@@ -199,6 +199,20 @@ namespace Myra.Xaml.Helpers
             }
 
             return result;
+        }
+
+        public static XamlAstXamlPropertyValueNode? GetProperty(this XamlAstObjectNode objectNode, string name)
+        {
+            return objectNode.Children.OfType<XamlAstXamlPropertyValueNode>().FirstOrDefault(c => c is XamlAstXamlPropertyValueNode propNode
+                                && propNode.Property is XamlAstNamePropertyReference propRef
+                                && propRef.Name == name);
+        }
+
+        public static XamlPropertyAssignmentNode? GetPropertyAssignment(this XamlAstObjectNode objectNode, string name)
+        {
+            return objectNode.Children.OfType<XamlPropertyAssignmentNode>().FirstOrDefault(c => c is XamlPropertyAssignmentNode propNode
+                                && propNode.Property is XamlAstClrProperty propRef
+                                && propRef.Name == name);
         }
 
         public static string GetTypeName(this IXamlAstTypeReference reference)
@@ -215,6 +229,27 @@ namespace Myra.Xaml.Helpers
 
             throw new InvalidOperationException("Unknown reference type");
         }
+
+        public static string GetTypeName(this IXamlAstPropertyReference propertyReference)
+        {
+            if (propertyReference is XamlAstNamePropertyReference namePropertyReference)
+            {
+                return namePropertyReference.TargetType.GetTypeName();
+            }
+
+            if (propertyReference is XamlAstClrProperty clrProperty)
+            {
+                return clrProperty.DeclaringType.Name;
+            }
+
+            throw new InvalidOperationException("Unknown reference type");
+        }
+
+        public static XamlConstantNode ToConstantNode(this XamlAstTextNode text, AstTransformationContext context) 
+            => new XamlConstantNode(text, context.Configuration.WellKnownTypes.String, text.Text);
+
+        public static XamlConstantNode ToConstantNode(this XamlAstTextNode text, AstTransformationContext context, string overrideText)
+            => new XamlConstantNode(text, context.Configuration.WellKnownTypes.String, overrideText);
 
         public const string BuildMethodName = "InitializeComponent";
 

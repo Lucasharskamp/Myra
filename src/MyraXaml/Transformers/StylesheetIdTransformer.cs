@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Myra.Xaml.Helpers;
 using System.Linq;
-using System.Text;
 using XamlX;
 using XamlX.Ast;
 using XamlX.Transform;
@@ -17,19 +15,22 @@ namespace Myra.Xaml.Transformers
         {
             if (node is not XamlAstObjectNode objectNode)
                 return node;
-
-            var idProperty = objectNode.Children.FirstOrDefault(c => c is XamlAstXamlPropertyValueNode propNode
-                                && propNode.Property is XamlAstNamePropertyReference propRef
-                                && propRef.Name == "Id");
+             
+            var idProperty = objectNode.GetProperty("Id");
 
             if (idProperty == null)
                 return node;
 
-            string foundId = "";
-            if (((XamlAstXamlPropertyValueNode)idProperty).Values.FirstOrDefault() is XamlAstTextNode propText)
+            string foundId = ""; 
+            if (idProperty.Values.FirstOrDefault() is XamlAstTextNode propText)
             {
                 foundId = propText.Text;
-                objectNode.Children.Remove(idProperty);
+
+                // ID properties need to be removed, except for StylesheetFont
+                if (objectNode.Type.GetTypeName() != "StylesheetFont")
+                {
+                    objectNode.Children.Remove(idProperty);
+                }
             }
 
             objectNode.Children.Insert(0, new XamlAstXmlDirective(node,
@@ -38,6 +39,6 @@ namespace Myra.Xaml.Transformers
                     [new XamlConstantNode(node, context.Configuration.WellKnownTypes.String, foundId)]));
 
             return objectNode;
-        }
+        } 
     }
 }

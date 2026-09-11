@@ -31,7 +31,7 @@ namespace Myra.Utility
             return _textures[id];
         }
 
-        public SpriteFontBase RegisterFont(GraphicsDevice device, string id, string path, int size)
+        public SpriteFontBase RegisterFont(GraphicsDevice device, string id, string path, float size)
         {
             if (_fonts.TryGetValue(id, out var font))
             {

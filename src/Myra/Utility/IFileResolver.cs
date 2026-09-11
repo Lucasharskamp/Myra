@@ -27,7 +27,7 @@ namespace Myra.Utility
         /// <summary>
         /// Register a font from a .xmms file
         /// </summary> 
-        public SpriteFontBase RegisterFont(GraphicsDevice device, string id, string path, int size);
+        public SpriteFontBase RegisterFont(GraphicsDevice device, string id, string path, float size);
 
         /// <summary>
         /// Register a texture referenced in a .xmat, .xmms or .xaml file.

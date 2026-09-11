@@ -42,7 +42,7 @@ namespace Myra.Graphics2D.UI.Styles
 		{
 			get => _font;
 
-			internal set
+			set
 			{
 				_font = value ?? throw new ArgumentNullException(nameof(value));
 				_font.Name = Id;
