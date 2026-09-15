@@ -17,6 +17,8 @@ namespace Myra.Xaml.Helpers
     {
         public const string MyraMappings = "https://github.com/MyraUI/Myra";
 
+        public static MyraXamlCompileTask CurrentTask { get; set; } = default!;
+
         public static void EnsureAssignability(IXamlLineInfo lineInfo, XamlAstClrProperty targetProperty, string sourceFieldName, IXamlType sourceType)
         {
             if (!targetProperty.Getter!.ReturnType.IsAssignableFrom(sourceType))
@@ -35,6 +37,11 @@ namespace Myra.Xaml.Helpers
         public static IXamlType CodeBehindClrType(this AstTransformationContext context)
         {
             return context.RootObject.Type.GetClrType();
+        }
+
+        public static XamlAstClrTypeReference GetClrTypeReference(this IXamlLineInfo lineInfo, IXamlType type, bool isMarkupExtension = false)
+        {
+            return new XamlAstClrTypeReference(lineInfo, type, isMarkupExtension);
         }
 
         public static bool FindXDirectiveAsAny(this XamlAstObjectNode valueNode, string xDirectiveName,
@@ -307,18 +314,6 @@ namespace Myra.Xaml.Helpers
                 il.Emit(OpCodes.Ldstr, "");
                 il.Emit(OpCodes.Call, baseConstructor);
             }
-
-            // Console.WriteLine("Aot Build Test");
-            //  RuntimeHelpers.RunClassConstructor(typeof(__MyraXamlResources).TypeHandle);
-            var consoleWriteLine = TypesContainer.Console.GetMethod(m => m.Name == "WriteLine" && m.Parameters.Count == 1 && m.Parameters[0] == wellKnownTypes.String);
-            var runClassConstructor = TypesContainer.RuntimeHelpers.GetMethod(m => m.Name == "RunClassConstructor");
-            var consoleWriteLineImport = module.ImportReference(((CecilTypeSystem.CecilMethodBase)consoleWriteLine).Definition);
-            var runClassConstructorImport = module.ImportReference(((CecilTypeSystem.CecilMethodBase)runClassConstructor).Definition);
-
-            il.Emit(OpCodes.Ldstr, "Aot Build Test");
-            il.Emit(OpCodes.Call, consoleWriteLineImport);
-            il.Emit(OpCodes.Ldtoken, type);
-            il.Emit(OpCodes.Call, runClassConstructorImport);
 
             // this.InitializeComponent(IServiceProvider, this, Stylesheet);
             il.Emit(OpCodes.Ldnull);

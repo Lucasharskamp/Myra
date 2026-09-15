@@ -13,14 +13,12 @@ using XamlX.TypeSystem;
 
 namespace Myra.Xaml.Compiler
 {
-    public sealed class MyraBindingCompilationContext
+    public sealed class MyraBindingCompilationContext(IXamlTypeSystem typeSystem)
     {
-        private IXamlTypeSystem TypeSystem { get; }
-
         /// <summary>
-        /// the Get(string) method to retrieve a stylesheet.
+        /// Reference to the configuration's type system.
         /// </summary>
-        public static IXamlMethod GetStylesheet { get; set; } = default!;
+        private IXamlTypeSystem TypeSystem { get; } = typeSystem;
 
         /// <summary>
         /// The Get(string) method from a module reference.
@@ -39,13 +37,6 @@ namespace Myra.Xaml.Compiler
         /// </summary>
         private Dictionary<string, XamlVisibility> FieldModifiers { get; } = [];
 
-
-        public MyraBindingCompilationContext(IXamlTypeSystem typeSystem)
-        {
-            TypeSystem = typeSystem;
-        }
-
-        
         private int _handlerIndex;
         private IXamlTypeBuilder<IXamlILEmitter>? _typeBuilder;
         private IXamlTypeBuilder<IXamlILEmitter> TypeBuilder {
@@ -94,9 +85,7 @@ namespace Myra.Xaml.Compiler
                 throw new InvalidOperationException(
                     $"ViewModel property '{viewModelSource.Name}' has no getter.");
 
-            /*
-             * Persistent reference to the XAML-created Widget.
-             */
+            // Persistent reference to the XAML-created Widget.
             var targetField = TypeBuilder.DefineField(
                 widgetType,
                 $"__MyraBindingTarget{_handlerIndex}",
@@ -199,7 +188,7 @@ namespace Myra.Xaml.Compiler
             // ---------------------------------------------------------
             // source
             //
-            // this.ViewModel.ButtonsEnabled
+            // this.ViewModel.{Property}
             // ---------------------------------------------------------
 
             il.Ldarg(0);
@@ -211,7 +200,7 @@ namespace Myra.Xaml.Compiler
             // target assignment
             //
             // this.__MyraBindingTarget0.{widgetProperty} =
-            //     this.ViewModel.ButtonsEnabled;
+            //     this.ViewModel.{Property};
             // ---------------------------------------------------------
             il.EmitCall(widgetProperty.Setter!, true);
 

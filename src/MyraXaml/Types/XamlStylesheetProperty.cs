@@ -22,7 +22,7 @@ namespace Myra.Xaml.Types
         {
             IsXaml = context.RootObject.Type.GetTypeName() != "Stylesheet"; 
             Property = type == null ? null : TypesContainer.Stylesheet.GetAllProperties().First(p => p.PropertyType == type);
-            Type = new XamlAstClrTypeReference(lineInfo, type ?? TypesContainer.Stylesheet, false);
+            Type = lineInfo.GetClrTypeReference(type ?? TypesContainer.Stylesheet);
         }
 
         public XamlILNodeEmitResult Emit(XamlEmitContext<IXamlILEmitter, XamlILNodeEmitResult> context, IXamlILEmitter codeGen)

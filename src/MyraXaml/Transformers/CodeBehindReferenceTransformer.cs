@@ -74,7 +74,7 @@ namespace Myra.Xaml.Transformers
                         valueNode);
                 }
 
-                var eventHandler = FindEventHandler(rootClrType, invokedValue!, invoke);
+                var eventHandler = FindEventHandler(context, rootClrType, invokedValue!, invoke);
 
                 if (eventHandler == null)
                 {
@@ -93,8 +93,7 @@ namespace Myra.Xaml.Transformers
                        node,
                        eventHandler,
                        eventHandler.DeclaringType,
-                       invoke.DeclaringType,
-                       invoke.Parameters[1]);
+                       invoke.DeclaringType);
                 }
 
                 var delegateNode = new XamlLoadMethodDelegateNode(valueNode, context.RootObject, delegateType, eventHandler);
@@ -189,7 +188,7 @@ namespace Myra.Xaml.Transformers
         }
 
 
-        private static IXamlMethod? FindEventHandler(IXamlType rootType, string name,  IXamlMethod delegateInvoke)
+        private static IXamlMethod? FindEventHandler(AstTransformationContext context, IXamlType rootType, string name,  IXamlMethod delegateInvoke)
         {
             var methods = rootType.FindMethods(m => m.Name == name).OrderByDescending(m => m.Parameters.Count).ToArray();
             if (methods.Length == 0)
@@ -224,7 +223,20 @@ namespace Myra.Xaml.Transformers
             // invoke fallback (if it has no parameters)
             var lastMethod = methods.Last();
             if (lastMethod.Parameters.Count == 0)
+            {
+                if (TransformerHelpers.CurrentTask.IsAotBuild)
+                {
+                    context.ReportDiagnostic(new XamlDiagnostic("Myra003", XamlDiagnosticSeverity.Fatal,
+                        $"Method '{lastMethod.Name}' is used for an event, but lacks the 'object sender, MyraEventArgs e' parameters."));
+                }
+                else
+                {
+                    context.ReportDiagnostic(new XamlDiagnostic("Myra003", XamlDiagnosticSeverity.Warning,
+                    $"Method '{lastMethod.Name}' is used for an event, but lacks the 'object sender, MyraEventArgs e' parameters." +
+                    $"This will prevent AOT compilations from being built!"));
+                }
                 return lastMethod;
+            }
 
             return null;
         }

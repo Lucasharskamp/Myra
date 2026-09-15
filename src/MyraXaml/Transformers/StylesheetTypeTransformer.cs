@@ -31,7 +31,7 @@ namespace Myra.Xaml.Transformers
             {
                 if (type == null)
                     return null;
-                return new XamlAstClrTypeReference(lineInfo, type!, isMarkupExtension);
+                return lineInfo.GetClrTypeReference(type, isMarkupExtension);  
             }
 
             var res = ResolveTypeCore(context, xmlns, name, isMarkupExtension, lineInfo);
@@ -93,8 +93,7 @@ namespace Myra.Xaml.Transformers
 
             if (found != null)
             {
-                return new XamlAstClrTypeReference(lineInfo, found,
-                    isMarkupExtension || found.Name.EndsWith("Extension"));
+                return lineInfo.GetClrTypeReference(found, isMarkupExtension || found.Name.EndsWith("Extension"));
             }
 
             return null;
@@ -172,7 +171,7 @@ namespace Myra.Xaml.Transformers
                         continue;
                     }
 
-                    valueNode.Type = new XamlAstClrTypeReference(child, context.Configuration.WellKnownTypes.String, false); 
+                    valueNode.Type = child.GetClrTypeReference(context.Configuration.WellKnownTypes.String); 
 
                     if (!XamlTransformHelpers.TryGetCorrectlyTypedValue(context, value, innerProperty.PropertyType, out var rv))
                     {
@@ -206,7 +205,7 @@ namespace Myra.Xaml.Transformers
                             node);
                     }
 
-                    objectNode.Type = new XamlAstClrTypeReference(child, innerProperty.PropertyType, false);
+                    objectNode.Type = child.GetClrTypeReference(innerProperty.PropertyType);
                     var replacement = ResolveChildren(context, objectNode, innerProperty);
                     ni.Children.Remove(child);
                     ni.Children.Insert(c, replacement);
@@ -255,7 +254,7 @@ namespace Myra.Xaml.Transformers
                         throw new XamlLoadException($"Value of property '{propertyNode}' must have a valid text value!", child);
                     }
 
-                    valueNode.Type = new XamlAstClrTypeReference(child, context.Configuration.WellKnownTypes.String, false);
+                    valueNode.Type = child.GetClrTypeReference(context.Configuration.WellKnownTypes.String);
 
                     if (!XamlTransformHelpers.TryGetCorrectlyTypedValue(context, value, innerProperty.PropertyType, out var rv))
                     {
@@ -281,7 +280,7 @@ namespace Myra.Xaml.Transformers
                                 [new XamlConstantNode(childNode, context.Configuration.WellKnownTypes.String, "")]));
 
                         }
-                        childNode.Type = new XamlAstClrTypeReference(child, declaringType.GetGenericTypeArgument()!, false);
+                        childNode.Type = child.GetClrTypeReference(declaringType.GetGenericTypeArgument()!);
                         ResolveChildren(context, childNode, null);
                         continue;
                     }
@@ -289,7 +288,7 @@ namespace Myra.Xaml.Transformers
                     if (childNode.Type is XamlAstXmlTypeReference xmlType)
                     {
                         var innerProperty = declaringType.GetTypeProperty(child, xmlType.Name);
-                        childNode.Type = new XamlAstClrTypeReference(child, innerProperty.PropertyType, false);
+                        childNode.Type = child.GetClrTypeReference(innerProperty.PropertyType);
                         var result = ResolveChildren(context, childNode, innerProperty);
                         objectNode.Children.Remove(child);
                         objectNode.Children.Insert(c, result);

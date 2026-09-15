@@ -1,4 +1,5 @@
-﻿using System.Reflection.Emit;
+﻿using Myra.Xaml.Helpers;
+using System.Reflection.Emit;
 using XamlX.Ast;
 using XamlX.Emit;
 using XamlX.IL;
@@ -26,7 +27,7 @@ namespace Myra.Xaml.Types
         {
             AssignMethod = assignmentMethod; 
             TargetObject = targetObject;
-            Type = new XamlAstClrTypeReference(lineInfo, assignmentMethod.Parameters[0], false);
+            Type = lineInfo.GetClrTypeReference(assignmentMethod.Parameters[0]);
         } 
 
         public XamlILNodeEmitResult Emit(XamlEmitContext<IXamlILEmitter, XamlILNodeEmitResult> context, IXamlILEmitter codeGen)

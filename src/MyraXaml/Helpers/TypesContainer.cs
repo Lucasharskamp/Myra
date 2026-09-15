@@ -1,5 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Linq;
+using XamlX.Ast;
 using XamlX.TypeSystem;
 
 namespace Myra.Xaml.Helpers
@@ -67,9 +69,9 @@ namespace Myra.Xaml.Helpers
         public static IXamlType Color { get; private set; } = default!;
 
         /// <summary>
-        /// "System.Console"
+        ///  "Microsoft.Xna.Framework.Color" (uint32) constructor
         /// </summary>
-        public static IXamlType Console { get; private set; } = default!;
+        public static IXamlConstructor Color_HexConstructor { get; private set; } = default!;
 
         /// <summary>
         /// "Myra.Graphics2D.IBrush" class
@@ -89,12 +91,17 @@ namespace Myra.Xaml.Helpers
         /// <summary>
         /// <see cref="System.Lazy{T}"/>
         /// </summary>
-        public static IXamlType LazyOfT1 { get; private set; } = default!;
+        public static IXamlType LazyOfT1 { get; private set; } = default!; 
+         
+        /// <summary>
+        /// "Myra.MyraEnvironment" -> "GraphicsDevice" property (get method)
+        /// </summary>
+        public static IXamlMethod MyraEnvironment_GraphicsDevice { get; private set; } = default!;
 
         /// <summary>
-        /// "Myra.MyraEnvironment" class
+        /// "Myra.MyraEnvironment" -> "Resolver" property (get method)
         /// </summary>
-        public static IXamlType MyraEnvironment { get; private set; } = default!;
+        public static IXamlMethod MyraEnvironment_Resolver { get; private set; } = default!;
           
         /// <summary>
         /// "Myra.Graphics2D.UI.Proportion" class
@@ -105,11 +112,6 @@ namespace Myra.Xaml.Helpers
         /// "Microsoft.Xna.Framework.Rectangle" class
         /// </summary>
         public static IXamlType Rectangle { get; private set; } = default!;
-
-        /// <summary>
-        /// "System.Runtime.CompilerServices.RuntimeHelpers" class
-        /// </summary>
-        public static IXamlType RuntimeHelpers { get; private set; } = default!;
 
         /// <summary>
         /// "Myra.Graphics2D.Brushes.SolidBrush" class
@@ -142,6 +144,11 @@ namespace Myra.Xaml.Helpers
         public static IXamlType TextureRegionAtlas { get; private set; } = default!;
 
         /// <summary>
+        ///  "Myra.Graphics2D.TextureAtlases.TextureRegionAtlas" -> EnsureRegion
+        /// </summary>
+        public static XamlWrappedMethod TextureRegionAtlas_EnsureRegion { get; private set; } = default!;
+
+        /// <summary>
         /// "Myra.Graphics2D.Thickness" class
         /// </summary>
         public static IXamlType Thickness { get; private set; } = default!;
@@ -169,23 +176,26 @@ namespace Myra.Xaml.Helpers
             Single = typeSystem.GetType(typeof(float).FullName);
             PropertyChangedEventArgs = typeSystem.GetType(typeof(PropertyChangedEventArgs).FullName);
             PropertyChangedEventHandler = typeSystem.GetType(typeof(PropertyChangedEventHandler).FullName);
+
             Color = typeSystem.GetType("Microsoft.Xna.Framework.Color");
-            Console = typeSystem.GetType("System.Console");
+            Color_HexConstructor = Color.GetConstructor([UInt32]);
             IBrush = typeSystem.GetType("Myra.Graphics2D.IBrush");
             IFileResolver = typeSystem.GetType("Myra.Utility.IFileResolver");
             IImage = typeSystem.GetType("Myra.Graphics2D.IImage");
             LazyOfT1 = typeSystem.GetType("System.Lazy`1");
-            MyraEnvironment = typeSystem.GetType("Myra.MyraEnvironment");
+            var myraEnvironment = typeSystem.GetType("Myra.MyraEnvironment");
+            MyraEnvironment_GraphicsDevice = myraEnvironment.GetAllProperties().First(p => p.Name == "GraphicsDevice").Getter!;
+            MyraEnvironment_Resolver = myraEnvironment.GetAllProperties().First(p => p.Name == "Resolver").Getter!;
             Thickness = typeSystem.GetType("Myra.Graphics2D.Thickness");
             Proportion = typeSystem.GetType("Myra.Graphics2D.UI.Proportion");
             Rectangle = typeSystem.GetType("Microsoft.Xna.Framework.Rectangle");
-            RuntimeHelpers = typeSystem.GetType("System.Runtime.CompilerServices.RuntimeHelpers");
             SolidBrush = typeSystem.GetType("Myra.Graphics2D.Brushes.SolidBrush");
             SpriteFontBase = typeSystem.GetType("FontStashSharp.SpriteFontBase");
             Stylesheet = typeSystem.GetType("Myra.Graphics2D.UI.Styles.Stylesheet");
             StylesheetFont = typeSystem.GetType("Myra.Graphics2D.UI.Styles.StylesheetFont");
             Texture2D = typeSystem.GetType("Microsoft.Xna.Framework.Graphics.Texture2D");
             TextureRegionAtlas = typeSystem.GetType("Myra.Graphics2D.TextureAtlases.TextureRegionAtlas");
+            TextureRegionAtlas_EnsureRegion = new XamlWrappedMethod(TextureRegionAtlas.GetMethod(m => m.Name == "EnsureRegion"));
             Widget = typeSystem.GetType("Myra.Graphics2D.UI.Widget");
             WidgetStyle = typeSystem.GetType("Myra.Graphics2D.UI.Styles.WidgetStyle");
         } 

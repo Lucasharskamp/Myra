@@ -67,10 +67,10 @@ namespace Myra.Xaml.Transformers
                     [new XamlStaticOrTargetedReturnMethodCallNode(node, loadMethod,
                         [
                             new XamlStaticOrTargetedReturnMethodCallNode(node,
-                                TypesContainer.MyraEnvironment.GetAllProperties().First(p => p.Name == "Resolver").Getter!,
+                                TypesContainer.MyraEnvironment_Resolver,
                                 null),
                             new XamlStaticOrTargetedReturnMethodCallNode(node,
-                                TypesContainer.MyraEnvironment.GetAllProperties().First(p => p.Name == "GraphicsDevice").Getter!,
+                                TypesContainer.MyraEnvironment_GraphicsDevice,
                                 null),
                             idText.ToConstantNode(context),
                             fileText.ToConstantNode(context, Path.Combine(TransformerHelpers.CurrentRelativePath, fileText.Text)),

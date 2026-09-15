@@ -30,7 +30,7 @@ namespace Myra.Xaml.Helpers
                 if (TryAssignColor(context, node, type, out result))
                 {
                     result = new XamlAstNewClrObjectNode(node,
-                        new XamlAstClrTypeReference(node, TypesContainer.SolidBrush, false),
+                        node.GetClrTypeReference(TypesContainer.SolidBrush),
                         TypesContainer.SolidBrush.GetConstructor([TypesContainer.Color]),
                         [result]);
                     return true;
@@ -100,10 +100,10 @@ namespace Myra.Xaml.Helpers
                 result = new XamlStaticOrTargetedReturnMethodCallNode(node, loadMethod,
                     [
                         new XamlStaticOrTargetedReturnMethodCallNode(node,
-                                    TypesContainer.MyraEnvironment.GetAllProperties().First(p => p.Name == "Resolver").Getter!,
+                                    TypesContainer.MyraEnvironment_Resolver,
                                     null),
                         new XamlStaticOrTargetedReturnMethodCallNode(node,
-                                    TypesContainer.MyraEnvironment.GetAllProperties().First(p => p.Name == "GraphicsDevice").Getter!,
+                                    TypesContainer.MyraEnvironment_GraphicsDevice,
                                     null),
                         new XamlConstantNode(node, context.Configuration.WellKnownTypes.String, path)
                     ]);
@@ -162,7 +162,7 @@ namespace Myra.Xaml.Helpers
             }
 
             result = new XamlAstNewClrObjectNode(node,
-                new XamlAstClrTypeReference(node, type, false),
+                node.GetClrTypeReference(type),
                 constructor,
                 [.. arguments.Select(a => (IXamlAstValueNode)new XamlConstantNode(node, context.Configuration.WellKnownTypes.Int32, a))]);
             return true;
@@ -177,7 +177,7 @@ namespace Myra.Xaml.Helpers
             result = new XamlStaticOrTargetedReturnMethodCallNode(node, loadMethod,
                 [
                     new XamlStaticOrTargetedReturnMethodCallNode(node,
-                                    TypesContainer.MyraEnvironment.GetAllProperties().First(p => p.Name == "Resolver").Getter!,
+                                    TypesContainer.MyraEnvironment_Resolver,
                                     null),
                         new XamlConstantNode(node, context.Configuration.WellKnownTypes.String, relativePath == null ? text : Path.Combine(relativePath, text))
                 ]);
@@ -190,7 +190,7 @@ namespace Myra.Xaml.Helpers
             if (TryAssignColor(context, node, type, out result))
             {
                 result = new XamlAstNewClrObjectNode(node,
-                    new XamlAstClrTypeReference(node, TypesContainer.SolidBrush, false),
+                    node.GetClrTypeReference(TypesContainer.SolidBrush),
                     TypesContainer.SolidBrush.GetConstructor([TypesContainer.Color]),
                     [result]);
                 return true;
@@ -206,9 +206,8 @@ namespace Myra.Xaml.Helpers
                 return false;
 
             var callAtlas = new XamlStylesheetProperty(node, context, TypesContainer.TextureRegionAtlas);
-            var ensureRegionMethod = TypesContainer.TextureRegionAtlas.GetMethod(m => m.Name == "EnsureRegion");
             result = new XamlStaticOrTargetedReturnMethodCallNode(node,
-                new XamlWrappedMethod(ensureRegionMethod),
+                TypesContainer.TextureRegionAtlas_EnsureRegion,
                 [callAtlas, new XamlConstantNode(node, context.Configuration.WellKnownTypes.String, text)]);
             return true;
         }
@@ -246,8 +245,8 @@ namespace Myra.Xaml.Helpers
                 }
 
                 result = new XamlAstNewClrObjectNode(node,
-                     new XamlAstClrTypeReference(node, TypesContainer.Color, false),
-                     TypesContainer.Color.FindConstructor([TypesContainer.UInt32])!,
+                     node.GetClrTypeReference(TypesContainer.Color),
+                     TypesContainer.Color_HexConstructor,
                      [(new XamlConstantNode(node, TypesContainer.UInt32, color))]);
                 return true;
             }
@@ -274,7 +273,7 @@ namespace Myra.Xaml.Helpers
 
                     var intConstructor = TypesContainer.Color.FindConstructor([.. intArguments.Select(a => context.Configuration.WellKnownTypes.Int32)])!;
                     result = new XamlAstNewClrObjectNode(node,
-                        new XamlAstClrTypeReference(node, TypesContainer.Color, false),
+                        node.GetClrTypeReference(TypesContainer.Color),
                         intConstructor,
                         [.. intArguments.Select(a => (IXamlAstValueNode)new XamlConstantNode(node, context.Configuration.WellKnownTypes.Int32, a))]);
                     return true;
@@ -293,7 +292,7 @@ namespace Myra.Xaml.Helpers
 
                 var constructor = TypesContainer.Color.FindConstructor([.. floatArguments.Select(a => TypesContainer.Single)])!;
                 result = new XamlAstNewClrObjectNode(node,
-                    new XamlAstClrTypeReference(node, TypesContainer.Color, false),
+                    node.GetClrTypeReference(TypesContainer.Color),
                     constructor,
                     [.. floatArguments.Select(a => (IXamlAstValueNode)new XamlConstantNode(node, TypesContainer.Single, a))]);
                 return true;

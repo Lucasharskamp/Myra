@@ -6,8 +6,7 @@ using Mono.Collections.Generic;
 using Myra.Xaml.Compiler;
 using Myra.Xaml.Helpers; 
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
+using System.Collections.Generic; 
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -36,6 +35,10 @@ namespace Myra.Xaml
         [Required]
         public ITaskItem[] ReferenceAssemblies { get; set; } = [];
 
+        [Required]
+        public bool IsAotBuild { get; set; }
+
+        [Required]
         public bool Debug { get; set; }
 
         internal CecilTypeSystem? TypeSystem { get; set; } 
@@ -43,8 +46,7 @@ namespace Myra.Xaml
         private List<(string, IXamlMethod)> StylesheetTypes { get; set; } =  [];
 
         public override bool Execute()
-        {
-            Debugger.Launch();
+        { 
             AssemblyDefinition? assembly = null;
             try
             {
@@ -60,6 +62,18 @@ namespace Myra.Xaml
                     Log.LogMessage(MessageImportance.Low, "Myra XAML: no Myra files found.");
 
                     return true;
+                }
+
+                // group all Myra (xaml, xmat, xmms) files by extension
+                // we do the xmat (texture regions) first, given stylesheets (xmms) use them,
+                // which in turn are used by XAML files.
+                var myraFilesGroupedByExtension = MyraFiles
+                    .GroupBy(m => Path.GetExtension(m.ItemSpec))
+                    .ToDictionary(m => m.Key, m => m.ToArray());
+
+                if (!myraFilesGroupedByExtension.TryGetValue(".xmms", out var stylesheetFiles))
+                {
+                    throw new InvalidOperationException("There must be at least one .xmms stylesheet file!");
                 }
 
                 Log.LogMessage(MessageImportance.Normal, "Myra XAML: weaving '{0}'.", TargetPath);
@@ -91,28 +105,18 @@ namespace Myra.Xaml
  
                 assembly.Write(TargetPath, writerParameters);
 
-                var resourcesBuilder = new MyraResourcesBuilder(assembly.MainModule, TypeSystem, resourceType, componentsCompiler.Configuration.WellKnownTypes);
+                var resourcesBuilder = new MyraResourcesBuilder(TypeSystem, resourceType, componentsCompiler.Configuration.WellKnownTypes);
                 assembly.Write(TargetPath, writerParameters);
                 var getMethod = resourceType.GetMethods().First(m => m.Name == MyraResourcesBuilder.GetStylesheetMethodName);
                 MyraBindingCompilationContext.GetStylesheetDefinition = getMethod.Module.ImportReference(getMethod);
 
                 var stylesheetsCompiler = new MyraStylesheetsCompiler(TypeSystem, Log);
-
-
-                // group all Myra (xaml, xmat, xmms) files by extension
-                // we do the xmat (texture regions) first, given stylesheets (xmms) use them,
-                // which in turn are used by XAML files.
-                var myraFilesGroupedByExtension = MyraFiles
-                    .GroupBy(m => Path.GetExtension(m.ItemSpec))
-                    .ToDictionary(m => m.Key, m => m.ToArray());
                  
-                if (myraFilesGroupedByExtension.TryGetValue(".xmms", out var stylesheetFiles)) {
-                    foreach (var item in stylesheetFiles)
-                    {
-                        TransformerHelpers.SetCurrentRelativePath(TargetPath, item);
-                        StylesheetTypes.Add(stylesheetsCompiler.CompileStylesheetFile(assembly, item));
-                    }
-                }
+                foreach (var item in stylesheetFiles)
+                {
+                    TransformerHelpers.SetCurrentRelativePath(TargetPath, item);
+                    StylesheetTypes.Add(stylesheetsCompiler.CompileStylesheetFile(assembly, item));
+                } 
 
                 if (myraFilesGroupedByExtension.TryGetValue(".xaml", out var xamlFiles))
                 {
@@ -146,8 +150,6 @@ namespace Myra.Xaml
             }
         }
 
-        
-        
 
         private static TypeDefinition? FindTypeRecursive(Collection<TypeDefinition> types, string fullName)
         {

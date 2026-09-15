@@ -1,4 +1,5 @@
-﻿using XamlX.Ast;
+﻿using Myra.Xaml.Helpers;
+using XamlX.Ast;
 using XamlX.Emit;
 using XamlX.IL;
 using XamlX.TypeSystem;
@@ -12,15 +13,13 @@ namespace Myra.Xaml.Types
             IXamlLineInfo lineInfo,
             IXamlMethod method,
             IXamlType declaringType,
-            IXamlType senderType,
-            IXamlType argsType)
+            IXamlType senderType)
             : base(lineInfo)
         {
             Method = method;
             DeclaringType = declaringType;
             SenderType = senderType;
-            ArgsType = argsType;
-            Type = new XamlAstClrTypeReference(lineInfo, DeclaringType, false);
+            Type = lineInfo.GetClrTypeReference(DeclaringType);
         }
 
         public IXamlMethod Method { get; }
@@ -28,8 +27,6 @@ namespace Myra.Xaml.Types
         public IXamlType DeclaringType { get; }
 
         public IXamlType SenderType { get; }
-
-        public IXamlType ArgsType { get; }
 
         public IXamlAstTypeReference Type { get; }
 

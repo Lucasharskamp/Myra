@@ -1,4 +1,5 @@
-﻿using XamlX.Ast;
+﻿using Myra.Xaml.Helpers;
+using XamlX.Ast;
 using XamlX.Emit;
 using XamlX.IL;
 using XamlX.TypeSystem;
@@ -20,7 +21,7 @@ namespace Myra.Xaml.Types
         {
             SourceType = sourceType;
             TargetField = targetField;
-            Type = new XamlAstClrTypeReference(lineInfo, targetField.FieldType, false);
+            Type = lineInfo.GetClrTypeReference(targetField.FieldType);
         }
 
         public XamlILNodeEmitResult Emit(XamlEmitContext<IXamlILEmitter, XamlILNodeEmitResult> context, IXamlILEmitter codeGen)

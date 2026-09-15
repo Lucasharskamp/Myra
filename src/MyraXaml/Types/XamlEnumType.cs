@@ -34,7 +34,7 @@ namespace Myra.Xaml.Types
                     nameof(value));
 
             Value = value;
-            Type = new XamlAstClrTypeReference(lineInfo, clrType, false);
+            Type = lineInfo.GetClrTypeReference(clrType);
         }
 
         public IXamlAstTypeReference Type { get; }

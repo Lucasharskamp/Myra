@@ -39,9 +39,7 @@
   </ItemGroup> 
   <UsingTask TaskFactory="MyraXamlTaskFactory" TaskName="MyraXamlCompileTask" AssemblyFile="..\..\src\MyraXaml\bin\Debug\netstandard2.0\Myra.Xaml.dll" />
   
-  <Target Name="MyraXamlCompile" AfterTargets="Build" Condition="'$(DesignTimeBuild)' != 'true'"> 
-    <Message Importance="High"
-         Text="Myra XAML: Intermediate=$(IntermediateOutputPath), Target=$(TargetPath), File=$(TargetFileName)" />
+  <Target Name="MyraXamlCompile" AfterTargets="Build" Condition="'$(DesignTimeBuild)' != 'true'">  
     <MyraXamlCompileTask TargetPath="$(TargetPath)"
                         MyraFiles="@(MyraXaml)" RootNamespace="$(RootNamespace)" ProjectDirectory="$(MSBuildProjectDirectory)" ReferenceAssemblies="@(ReferencePath)" Debug="$(DebugSymbols)" />
     <MyraXamlCompileTask TargetPath="$(IntermediateOutputPath)$(TargetFileName)"

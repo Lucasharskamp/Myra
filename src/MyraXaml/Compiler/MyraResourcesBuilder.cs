@@ -15,7 +15,7 @@ namespace Myra.Xaml.Compiler
         private IXamlField StylesheetsContainer { get; }
         public const string GetStylesheetMethodName = "GetStylesheet";
 
-        public MyraResourcesBuilder(ModuleDefinition mainModule, CecilTypeSystem typeSystem, TypeDefinition resourceType, XamlTypeWellKnownTypes wellKnownTypes)
+        public MyraResourcesBuilder(CecilTypeSystem typeSystem, TypeDefinition resourceType, XamlTypeWellKnownTypes wellKnownTypes)
         {
             WellKnownTypes = wellKnownTypes;
             ResourcesTypeBuilder = typeSystem.CreateTypeBuilder(resourceType, true);
@@ -36,8 +36,7 @@ namespace Myra.Xaml.Compiler
 
             /*
              *  internal static Stylesheet Get(string name)
-             *  {
-             *     RuntimeHelpers.RunClassConstructor(typeof(__MyraXamlResources).TypeHandle);
+             *  { 
              *     return _stylesheets[name].Value;
              *  }
              */
@@ -47,11 +46,7 @@ namespace Myra.Xaml.Compiler
                                                         XamlVisibility.Assembly,
                                                         true,
                                                         false);
-            var getMethodGen = getMethodBuilder.Generator;
-            getMethodGen.Ldstr("Aot Build Test");
-            getMethodGen.EmitCall(TypesContainer.Console.GetMethod(m => m.Name == "WriteLine" && m.Parameters.Count == 1 && m.Parameters[0] == WellKnownTypes.String));
-            getMethodGen.Ldtoken(ResourcesTypeBuilder);
-            getMethodGen.EmitCall(TypesContainer.RuntimeHelpers.GetMethod(m => m.Name == "RunClassConstructor"));
+            var getMethodGen = getMethodBuilder.Generator; 
  
             getMethodGen.Ldsfld(StylesheetsContainer);
             getMethodGen.Ldarg(0);
@@ -60,13 +55,11 @@ namespace Myra.Xaml.Compiler
             getMethodGen.Ret();
             GetMethod = getMethodBuilder;
             WellKnownTypes = wellKnownTypes;
-
-            MyraBindingCompilationContext.GetStylesheet = GetMethod;
         }
 
         public void BuildStaticConstructor(List<(string, IXamlMethod)> stylesheetTypes)
         {
-            /*            *  
+            /*              
             *   static __MyraXamlResources()
             *   {                   
             *      _stylesheets = new();

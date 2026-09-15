@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Myra.Xaml.Helpers;
+using System;
 using System.Reflection.Emit;
 using XamlX.Ast;
 using XamlX.Emit;
@@ -24,7 +25,7 @@ namespace Myra.Xaml.Types
                     nameof(field));
 
             Field = field;
-            Type = new XamlAstClrTypeReference(lineInfo, field.FieldType, false);
+            Type = lineInfo.GetClrTypeReference(field.FieldType);
         }
 
         public IXamlAstTypeReference Type { get; }
