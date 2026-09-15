@@ -334,46 +334,25 @@ namespace Myra.Xaml.Helpers
         }
 
         internal static string CurrentRelativePath = ""; 
+
+        /// <summary>
+        /// When a .xaml or .xmms is loaded in, it might depend on local resources (an image or font file, for example)
+        /// The paths must be calculated from the directory of the current .xaml or .xmms, not the project directory itself!
+        /// </summary>
+        /// <remarks>
+        /// Not all files that are included may come from the project itself, and might be external and included using csproj's "content"
+        /// functionality. If so, the "LogicalPath" parameter is used to set the local relative path.
+        /// </remarks>
         internal static void SetCurrentRelativePath(string targetPath, ITaskItem currentFile)
         { 
             var targetDir = Path.GetDirectoryName(targetPath);
-            CurrentRelativePath = PathNetCore.GetRelativePath(targetDir, GetPath(targetDir, currentFile.ItemSpec));
-        }
-
-        private static string GetPath(string targetDir, string filePath)
-        {
-            // we cannot use the relative path of an asset compared to the asset it is referring to;
-            // files are loaded from the perspective of the executing assembly, not the assets its using!
-            if (!filePath.Contains("..\\", StringComparison.OrdinalIgnoreCase))
+            var relativePath = currentFile.GetMetadata("LogicalPath");
+            if (String.IsNullOrEmpty(relativePath))
             {
-                var attempt = Path.Combine(targetDir, filePath);
-                if (File.Exists(attempt))
-                {
-                    return Path.GetDirectoryName(attempt);
-                }
+                relativePath = currentFile.ItemSpec;
             }
-
-            if (filePath.Contains("..\\", StringComparison.OrdinalIgnoreCase))
-            {
-                filePath = filePath.Replace("..\\", "");
-            }
-
-            // relative not found; try finding the file in the output directory.
-            var combinedPath = Path.Combine(targetDir, Path.GetDirectoryName(filePath));
-
-            while (!Directory.Exists(combinedPath))
-            {
-                // keep chopping off a part of the path of FilePath, until there is no more "relative directory" to be found.
-                var nextSlash = filePath.IndexOf('\\');
-                if (nextSlash == -1)
-                    return targetDir; // work from directory root if relative folder not found.
-
-                filePath = filePath.Substring(nextSlash+1);
-                combinedPath = Path.Combine(targetDir, Path.GetDirectoryName(filePath));
-            }
-
-            return combinedPath;
-        }
+            CurrentRelativePath = String.IsNullOrEmpty(relativePath) ? "" : Path.GetDirectoryName(relativePath);
+        } 
 
         internal static string GetRelativePathOfResource(string localPath)
         {  

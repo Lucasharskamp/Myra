@@ -19,12 +19,7 @@ namespace Myra.Xaml.Compiler
         {
             WellKnownTypes = wellKnownTypes;
             ResourcesTypeBuilder = typeSystem.CreateTypeBuilder(resourceType, true);
-
-
-            var atlasContainerType = wellKnownTypes.DictionaryOfT2.MakeGenericType(wellKnownTypes.String,
-                                                TypesContainer.TextureRegionAtlas);
-
-
+             
             var funcStylesheetType = wellKnownTypes.GetFuncOfT(1).MakeGenericType(TypesContainer.Stylesheet); 
             var lazyStylesheetType = TypesContainer.LazyOfT1.MakeGenericType(TypesContainer.Stylesheet);
             var stylesheetsContainerType = wellKnownTypes.DictionaryOfT2.MakeGenericType(

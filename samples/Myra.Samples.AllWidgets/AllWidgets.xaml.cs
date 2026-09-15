@@ -1,3 +1,4 @@
+using Myra.Events;
 using Myra.Graphics2D.UI;
 using Myra.Graphics2D.UI.ColorPicker;
 using Myra.Graphics2D.UI.File;
@@ -139,19 +140,19 @@ namespace Myra.Samples.AllWidgets
 			_gridRight.Widgets.Add(tree);
 		}
 
-        private void ShowMessageBox()
+        private void ShowMessageBox(object sender, MyraEventArgs eventArgs)
         {
             var messageBox = Dialog.CreateMessageBox("AllWidgets", "Myra AllWidgets Sample " + MyraEnvironment.Version);
             messageBox.ShowModal(Desktop);
         }
 
-        private void ShowDebugModal()
+        private void ShowDebugModal(object sender, MyraEventArgs eventArgs)
         {
             var debugWindow = new DebugOptionsWindow();
             debugWindow.ShowModal(Desktop);
         }
 
-        public void OpenFile()
+        public void OpenFile(object sender, MyraEventArgs eventArgs)
 		{
 			var fileDialog = new FileDialog(FileDialogMode.OpenFile);
 			fileDialog.ShowModal(Desktop);
@@ -167,7 +168,7 @@ namespace Myra.Samples.AllWidgets
 			};
 		}
 
-		public void SaveFile()
+		public void SaveFile(object sender, MyraEventArgs eventArgs)
 		{
 			var fileDialog = new FileDialog(FileDialogMode.SaveFile);
 			fileDialog.ShowModal(Desktop);
@@ -183,7 +184,7 @@ namespace Myra.Samples.AllWidgets
 			};
 		}
 
-		public void ChooseFolder()
+		public void ChooseFolder(object sender, MyraEventArgs eventArgs)
 		{
 			var fileDialog = new FileDialog(FileDialogMode.ChooseFolder);
 			fileDialog.ShowModal(Desktop);
@@ -199,7 +200,7 @@ namespace Myra.Samples.AllWidgets
 			};
 		}
 
-		public void ChooseColor()
+		public void ChooseColor(object sender, MyraEventArgs eventArgs)
 		{
 			var colorWindow = new ColorPickerDialog();
 			colorWindow.Color = _textButtonLabel.TextColor;
@@ -216,7 +217,7 @@ namespace Myra.Samples.AllWidgets
 			};
 		}
 
-		public void Quit()
+		public void Quit(object sender, MyraEventArgs eventArgs)
 		{
 			AllWidgetsGame.Instance.Exit();
 		}

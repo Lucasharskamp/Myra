@@ -19,9 +19,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <MyraXaml Include="**\*.xaml" />
-    <MyraXaml Include="..\..\src\Resources\*.xaml" />
-    <MyraXaml Include="..\..\src\Resources\*.xmms" />
+    <MyraXaml Include="**\*.xaml" /> 
+    <MyraXaml Include="..\..\src\Resources\**\*.xmms" LogicalPath="Resources\%(RecursiveDir)%(Filename)%(Extension)" />
     <!-- Myra XAML analyzer -->
     <AdditionalFiles Include="**\*.xaml" />
     <Analyzer Include="..\..\src\MyraAnalyzer\bin\Debug\netstandard2.0\Myra.Analyzer.dll" />

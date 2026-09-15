@@ -82,16 +82,16 @@ namespace Myra.Samples.AllWidgets
 				{
 					if (_desktop.IsKeyDown(Keys.O))
 					{
-						_allWidgets.OpenFile();
+						_allWidgets.OpenFile(this, null);
 					} else if (_desktop.IsKeyDown(Keys.S))
 					{
-						_allWidgets.SaveFile();
+						_allWidgets.SaveFile(this, null);
 					} else if (_desktop.IsKeyDown(Keys.D))
 					{
-						_allWidgets.ChooseFolder();
+						_allWidgets.ChooseFolder(this, null);
 					} else if (_desktop.IsKeyDown(Keys.L))
 					{
-						_allWidgets.ChooseColor();
+						_allWidgets.ChooseColor(this, null);
 					}
 					else if (_desktop.IsKeyDown(Keys.Q))
 					{

@@ -175,7 +175,6 @@ namespace Myra.Xaml.Helpers
             IFileResolver = typeSystem.GetType("Myra.Utility.IFileResolver");
             IImage = typeSystem.GetType("Myra.Graphics2D.IImage");
             LazyOfT1 = typeSystem.GetType("System.Lazy`1");
-            LazyOfT1 = typeSystem.GetType("System.Lazy`1");
             MyraEnvironment = typeSystem.GetType("Myra.MyraEnvironment");
             Thickness = typeSystem.GetType("Myra.Graphics2D.Thickness");
             Proportion = typeSystem.GetType("Myra.Graphics2D.UI.Proportion");
