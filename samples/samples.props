@@ -1,4 +1,8 @@
 <Project> 
+    <PropertyGroup>
+	   <PublishAot>true</PublishAot>
+	</PropertyGroup>
+
     <ItemGroup>
       <ProjectReference Include="..\..\src\Myra\Myra.MonoGame.csproj" />
       <Content Include="..\..\src\Resources\*" LinkBase="Resources" />
@@ -22,5 +26,5 @@
 						  MyraFiles="@(MyraXaml)" RootNamespace="$(RootNamespace)" ProjectDirectory="$(MSBuildProjectDirectory)" ReferenceAssemblies="@(ReferencePath)" Debug="$(DebugSymbols)" />
 	  <MyraXamlCompileTask TargetPath="$(IntermediateOutputPath)$(TargetFileName)"
 						   MyraFiles="@(MyraXaml)" RootNamespace="$(RootNamespace)" ProjectDirectory="$(MSBuildProjectDirectory)" ReferenceAssemblies="@(ReferencePath)" Debug="$(DebugSymbols)" />
-	</Target>
+	</Target> 
 </Project>

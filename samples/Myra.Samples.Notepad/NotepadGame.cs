@@ -1,10 +1,8 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using Myra.Graphics2D.UI;
 using Myra.Graphics2D.UI.File;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
-using Myra.Utility;
 
 namespace Myra.Samples.Notepad
 {

@@ -6,8 +6,7 @@
     <DefineConstants>$(DefineConstants);MONOGAME</DefineConstants>
     <AssemblyName>Myra.Samples.AllWidgets</AssemblyName>
     <RootNamespace>Myra.Samples.AllWidgets</RootNamespace>
-    <PublishAot>true</PublishAot>
-  </PropertyGroup>
+   </PropertyGroup>
   
   <ItemGroup>
     <PackageReference Include="MonoGame.Framework.DesktopGL" Version="$(AppMonoGameVersion)" />
