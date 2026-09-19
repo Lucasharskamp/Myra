@@ -16,6 +16,11 @@ namespace Myra.Xaml.Helpers
 {
     public static class ConverterHelper
     {
+        /// <summary>
+        /// Default converter for the configuration; if a type is not known immediately to the resolver (Which goes for any XNA or Myra type),
+        /// it gets resolved here into a value node that will provide the element the correct value during runtime.
+        /// </summary> 
+        /// <returns>Whether this custom converter managed to resolve the type</returns>
         public static bool MyraValueConverters(AstTransformationContext context, IXamlAstValueNode node, IReadOnlyList<IXamlCustomAttribute>? customAttributes, IXamlType type, [NotNullWhen(true)] out IXamlAstValueNode? result)
         {
             result = null!;

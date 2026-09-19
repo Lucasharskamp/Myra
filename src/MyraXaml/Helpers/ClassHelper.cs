@@ -1,31 +1,13 @@
 ﻿using Microsoft.Build.Framework;
-using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using XamlX;
 using XamlX.Ast;
 
 namespace Myra.Xaml.Helpers
 {
     public static class ClassHelper
-    {
-        public static string? GetClassName(string xamlPath, string projectDirectory)
-        {
-            var fullXamlPath = Path.GetFullPath(xamlPath);
-            var fullProjectDirectory = Directory.GetParent(Path.GetFullPath(projectDirectory));
-            var relativePath = PathNetCore.GetRelativePath(fullProjectDirectory.FullName, fullXamlPath);
-            var directory = Path.GetDirectoryName(relativePath).Replace('\\', '.');
-
-            var name = Path.GetFileNameWithoutExtension(relativePath);
-
-            if (string.IsNullOrWhiteSpace(name))
-                return null;
-
-            return directory + "." + name;
-        }
-
+    { 
         public static string? GetClassType(XamlAstObjectNode node, ITaskItem item, string xamlPath, string projectDirectory)
         {
             // get "x:Class" directive from the element, in case there is an override
@@ -59,7 +41,17 @@ namespace Myra.Xaml.Helpers
             if (!string.IsNullOrWhiteSpace(explicitClass))
                 return explicitClass;
 
-            return GetClassName(xamlPath, projectDirectory);
+            var fullXamlPath = Path.GetFullPath(xamlPath);
+            var fullProjectDirectory = Directory.GetParent(Path.GetFullPath(projectDirectory));
+            var relativePath = PathNetCore.GetRelativePath(fullProjectDirectory.FullName, fullXamlPath);
+            var directory = Path.GetDirectoryName(relativePath).Replace('\\', '.');
+
+            var name = Path.GetFileNameWithoutExtension(relativePath);
+
+            if (string.IsNullOrWhiteSpace(name))
+                return null;
+
+            return directory + "." + name;
         }
     }
 }
