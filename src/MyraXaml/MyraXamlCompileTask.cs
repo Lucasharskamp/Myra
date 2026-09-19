@@ -85,7 +85,9 @@ namespace Myra.Xaml
                 TypeSystem = new CecilTypeSystem(assemblies, TargetPath);
                 TypesContainer.Setup(TypeSystem);
 
-                var componentsCompiler = new MyraComponentsCompiler(TypeSystem, Log);
+                var compilerConfiguration = TransformerHelpers.CreateConfiguration(TypeSystem);
+
+                var componentsCompiler = new MyraComponentsCompiler(TypeSystem, compilerConfiguration, Log);
 
                 assembly = componentsCompiler.TypeSystem.GetAssembly(componentsCompiler.TypeSystem.FindAssembly(Path.GetFileNameWithoutExtension(TargetPath)!)!);
 
@@ -110,7 +112,7 @@ namespace Myra.Xaml
                 var getMethod = resourceType.GetMethods().First(m => m.Name == MyraResourcesBuilder.GetStylesheetMethodName);
                 MyraBindingCompilationContext.GetStylesheetDefinition = getMethod.Module.ImportReference(getMethod);
 
-                var stylesheetsCompiler = new MyraStylesheetsCompiler(TypeSystem, Log);
+                var stylesheetsCompiler = new MyraStylesheetsCompiler(TypeSystem, compilerConfiguration, Log);
                  
                 foreach (var item in stylesheetFiles)
                 {

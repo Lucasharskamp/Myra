@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Linq;
 using XamlX.Ast;
 using XamlX.TypeSystem;
+using static XamlX.Parsers.CommaSeparatedParenthesesTreeParser;
 
 namespace Myra.Xaml.Helpers
 {
@@ -12,11 +13,6 @@ namespace Myra.Xaml.Helpers
         /// <see cref="System.ComponentModel.INotifyPropertyChanged"/> interface
         /// </summary>
         public static IXamlType INotifyPropertyChanged { get; private set; } = default!;
-
-        /// <summary>
-        /// <see cref="System.IServiceProvider"/>
-        /// </summary>
-        public static IXamlType IServiceProvider { get; private set; } = default!;
 
         /// <summary>
         /// <see cref="System.Byte"/>
@@ -131,7 +127,12 @@ namespace Myra.Xaml.Helpers
         /// <summary>
         /// "Myra.Graphics2D.UI.Styles.StylesheetFont" class
         /// </summary>
-        public static IXamlType StylesheetFont { get; private set; } = default!; 
+        public static IXamlType StylesheetFont { get; private set; } = default!;
+
+        /// <summary>
+        /// Property "Font" of "Myra.Graphics2D.UI.Styles.StylesheetFont" class
+        /// </summary>
+        public static IXamlProperty StylesheetFont_Font { get; private set; } = default!;
 
         /// <summary>
         /// "Myra.Graphics2D.TextureAtlases.Texture2D" class
@@ -166,7 +167,6 @@ namespace Myra.Xaml.Helpers
         internal static void Setup(IXamlTypeSystem typeSystem)
         {
             INotifyPropertyChanged = typeSystem.GetType(typeof(INotifyPropertyChanged).FullName);
-            IServiceProvider = typeSystem.GetType(typeof(IServiceProvider).FullName);
             Byte = typeSystem.GetType(typeof(byte).FullName);
             Int16 = typeSystem.GetType(typeof(short).FullName);
             UInt16 = typeSystem.GetType(typeof(ushort).FullName);
@@ -193,6 +193,7 @@ namespace Myra.Xaml.Helpers
             SpriteFontBase = typeSystem.GetType("FontStashSharp.SpriteFontBase");
             Stylesheet = typeSystem.GetType("Myra.Graphics2D.UI.Styles.Stylesheet");
             StylesheetFont = typeSystem.GetType("Myra.Graphics2D.UI.Styles.StylesheetFont");
+            StylesheetFont_Font = StylesheetFont.GetAllProperties().First(p => p.Name == "Font");
             Texture2D = typeSystem.GetType("Microsoft.Xna.Framework.Graphics.Texture2D");
             TextureRegionAtlas = typeSystem.GetType("Myra.Graphics2D.TextureAtlases.TextureRegionAtlas");
             TextureRegionAtlas_EnsureRegion = new XamlWrappedMethod(TextureRegionAtlas.GetMethod(m => m.Name == "EnsureRegion"));

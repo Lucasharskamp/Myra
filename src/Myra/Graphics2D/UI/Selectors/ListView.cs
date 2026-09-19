@@ -612,11 +612,14 @@ namespace Myra.Graphics2D.UI
 		/// Copies the style and items from another list view.
 		/// </summary>
 		/// <param name="w">The source list view to copy from.</param>
-		protected internal override void CopyFrom(Widget w)
+		protected internal override void CopyFrom<T>(T w)
 		{
 			base.CopyFrom(w);
 
-			var listView = (ListView)w;
+			if (w is not ListView listView)
+			{
+				throw new InvalidOperationException();
+			} 
 			ListBoxStyle = listView.ListBoxStyle;
 			SelectionMode = listView.SelectionMode;
 

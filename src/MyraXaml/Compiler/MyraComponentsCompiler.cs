@@ -7,7 +7,6 @@ using Myra.Xaml.Types;
 using System;
 using System.IO;
 using System.Linq;
-using System.Xml.Linq;
 using XamlX.Ast; 
 using XamlX.Emit;
 using XamlX.IL;
@@ -34,12 +33,12 @@ namespace Myra.Xaml.Compiler
         private readonly XamlILCompiler _compiler;
         private TaskLoggingHelper Log { get; }
 
-        public MyraComponentsCompiler(CecilTypeSystem typeSystem, TaskLoggingHelper log)
+        public MyraComponentsCompiler(CecilTypeSystem typeSystem, TransformerConfiguration compilerConfiguration, TaskLoggingHelper log)
         { 
             BindingContext = new(typeSystem);
             TypeSystem = typeSystem;
             Log = log;
-            Configuration = TransformerHelpers.CreateConfiguration(TypeSystem);
+            Configuration = compilerConfiguration;
             EmitMappings = new XamlLanguageEmitMappings<IXamlILEmitter, XamlILNodeEmitResult>();
 
             _compiler = new XamlILCompiler(Configuration, EmitMappings, true);
@@ -95,11 +94,8 @@ namespace Myra.Xaml.Compiler
                 return;
             }
 
-            var currentClass = TypeSystem!.FindType(currentClassDefinition.FullName);
-            if (currentClass == null)
-            {
-                throw new InvalidOperationException("This should never happen");
-            }
+            var currentClass = TypeSystem.FindType(currentClassDefinition.FullName)
+                 ?? throw new InvalidOperationException("This should never happen");
 
             // ensure code-behind class derives from Widget.
             if (!TypesContainer.Widget.IsAssignableFrom(currentClass))
@@ -129,7 +125,7 @@ namespace Myra.Xaml.Compiler
             // compile the AST into IL. The IL will be written to the DLL once all files have been compiled.
             var rootGrp = (XamlValueWithManipulationNode)document.Root;
             var populate = typeBuilder.DefineMethod(Configuration.WellKnownTypes.Void,
-                new[] { Configuration.TypeMappings.ServiceProvider, rootGrp.Type.GetClrType(), TypesContainer.Stylesheet },
+                [Configuration.TypeMappings.ServiceProvider, rootGrp.Type.GetClrType(), TypesContainer.Stylesheet],
                 TransformerHelpers.BuildMethodName, XamlVisibility.Private, true, false);
 
             _compiler.Compile(

@@ -79,11 +79,15 @@ namespace Myra.Graphics2D.UI
 		/// Copies properties from another widget to this container, including all child widgets.
 		/// </summary>
 		/// <param name="w">The source widget to copy from.</param>
-		protected internal override void CopyFrom(Widget w)
+		protected internal override void CopyFrom<T>(T w)
 		{
 			base.CopyFrom(w);
 
-			var container = (Container)w;
+			if (w is not Container container)
+			{
+				throw new InvalidOperationException();
+			} 
+
 			foreach(var child in container.Widgets)
 			{
 				Widgets.Add(child.Clone());

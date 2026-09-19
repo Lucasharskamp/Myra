@@ -315,11 +315,14 @@ namespace Myra.Graphics2D.UI
 		/// Copies the style and items from another combo view.
 		/// </summary>
 		/// <param name="w">The source combo view to copy from.</param>
-		protected internal override void CopyFrom(Widget w)
+		protected internal override void CopyFrom<T>(T w)
 		{
 			base.CopyFrom(w);
 
-			var comboView = (ComboView)w;
+			if (w is not ComboView comboView)
+			{
+				throw new InvalidOperationException();
+			} 
 			SelectionMode = comboView.SelectionMode;
 			DropdownMaximumHeight = comboView.DropdownMaximumHeight;
 

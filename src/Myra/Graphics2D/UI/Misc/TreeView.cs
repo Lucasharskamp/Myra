@@ -543,12 +543,15 @@ namespace Myra.Graphics2D.UI
 		/// Copies the properties and child nodes from another tree view widget.
 		/// </summary>
 		/// <param name="w">The source tree view widget to copy from.</param>
-		protected internal override void CopyFrom(Widget w)
+		protected internal override void CopyFrom<T>(T w)
 		{
 			base.CopyFrom(w);
 
-			var treeView = (TreeView)w;
-			SelectionBackground = treeView.SelectionBackground;
+            if (w is not TreeView treeView)
+            {
+                throw new InvalidOperationException();
+            }
+            SelectionBackground = treeView.SelectionBackground;
 			SelectionHoverBackground = treeView.SelectionHoverBackground;
 
 			foreach (TreeViewNode node in treeView.Children)

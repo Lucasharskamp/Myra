@@ -201,13 +201,16 @@ namespace Myra.Graphics2D.UI
 		/// Copies properties from another stack panel to this one.
 		/// </summary>
 		/// <param name="w">The source stack panel to copy from.</param>
-		protected internal override void CopyFrom(Widget w)
+		protected internal override void CopyFrom<T>(T w)
 		{
 			base.CopyFrom(w);
 
-			var stackPanel = (StackPanel)w;
+            if (w is not StackPanel stackPanel)
+            {
+                throw new InvalidOperationException();
+            }
 
-			ShowGridLines = stackPanel.ShowGridLines;
+            ShowGridLines = stackPanel.ShowGridLines;
 			GridLinesColor = stackPanel.GridLinesColor;
 			Spacing = stackPanel.Spacing;
 			DefaultProportion = stackPanel.DefaultProportion;

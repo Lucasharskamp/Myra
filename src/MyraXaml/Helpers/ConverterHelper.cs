@@ -77,12 +77,7 @@ namespace Myra.Xaml.Helpers
             }
 
             // handle SpriteFontBase
-            if (type == TypesContainer.SpriteFontBase)
-            {
-                return AssignFileResource(context, node, null, "GetFont", ref result);
-            }
-
-            if (type == TypesContainer.StylesheetFont)
+            if (type == TypesContainer.SpriteFontBase || type == TypesContainer.StylesheetFont)
             {
                 return AssignFileResource(context, node, null, "GetFont", ref result);
             }

@@ -1,4 +1,5 @@
 ﻿using Myra.Attributes;
+using System;
 using System.ComponentModel;
 
 namespace Myra.Graphics2D.UI
@@ -19,11 +20,14 @@ namespace Myra.Graphics2D.UI
 		/// Copies properties from another content control to this one, including the content widget.
 		/// </summary>
 		/// <param name="w">The source content control to copy from.</param>
-		protected internal override void CopyFrom(Widget w)
+		protected internal override void CopyFrom<T>(T w)
 		{
 			base.CopyFrom(w);
 
-			var contentControl = (ContentControl)w;
+			if (w is not ContentControl contentControl)
+			{
+				throw new InvalidOperationException();
+			} 
 			Content = contentControl.Content.Clone();
 		}
 	}

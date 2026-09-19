@@ -2,6 +2,8 @@
 using Myra.Graphics2D.UI.Styles;
 using Myra.Utility;
 using Myra.Attributes;
+using System;
+
 
 
 #if MONOGAME || FNA
@@ -277,13 +279,16 @@ namespace Myra.Graphics2D.UI
 		/// Copies all properties from another widget to this image.
 		/// </summary>
 		/// <param name="w">The widget to copy properties from.</param>
-		protected internal override void CopyFrom(Widget w)
+		protected internal override void CopyFrom<T>(T w)
 		{
 			base.CopyFrom(w);
 
-			var image = (Image)w;
+            if (w is not Image image)
+            {
+                throw new InvalidOperationException();
+            }
 
-			Color = image.Color;
+            Color = image.Color;
 			ResizeMode = image.ResizeMode;
 
 			for (var i = 0; i < WidgetVisualStateTotal; ++i)

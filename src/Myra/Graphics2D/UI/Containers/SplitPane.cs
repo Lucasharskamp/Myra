@@ -1,11 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using Myra.Attributes;
+using Myra.Events;
+using Myra.Graphics2D.UI.Styles;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
-using Myra.Graphics2D.UI.Styles;
 using System.Xml.Serialization;
-using System.Collections.ObjectModel;
-using Myra.Attributes;
-using Myra.Events;
 
 namespace Myra.Graphics2D.UI
 {
@@ -392,11 +393,13 @@ namespace Myra.Graphics2D.UI
 		/// Copies the style and properties from another split pane.
 		/// </summary>
 		/// <param name="w">The source split pane to copy from.</param>
-		protected internal override void CopyFrom(Widget w)
+		protected internal override void CopyFrom<T>(T w)
 		{
 			base.CopyFrom(w);
-
-			var splitPane = (SplitPane)w;
+            if (w is not SplitPane splitPane)
+            {
+                throw new InvalidOperationException();
+            } 
 			HandleStyle = splitPane.HandleStyle;
 		}
 	}

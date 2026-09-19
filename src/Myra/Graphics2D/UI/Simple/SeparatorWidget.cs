@@ -2,6 +2,8 @@
 using System.ComponentModel;
 using System.Xml.Serialization;
 using Myra.Utility;
+using System;
+
 
 #if MONOGAME || FNA
 using Microsoft.Xna.Framework;
@@ -101,11 +103,13 @@ namespace Myra.Graphics2D.UI
 		/// Copies the separator properties from another separator widget.
 		/// </summary>
 		/// <param name="w">The source separator to copy from.</param>
-		protected internal override void CopyFrom(Widget w)
+		protected internal override void CopyFrom<T>(T w)
 		{
 			base.CopyFrom(w);
-
-			var separator = (SeparatorWidget)w;
+            if (w is not SeparatorWidget separator)
+            {
+                throw new InvalidOperationException();
+            } 
 			Thickness = separator.Thickness;
 		}
 	}

@@ -12,11 +12,6 @@
   <ItemGroup>
     <PackageReference Include="MonoGame.Framework.DesktopGL" Version="$(AppMonoGameVersion)" />
   </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\src\Myra\Myra.MonoGame.csproj" />
-    <Content Include="..\..\src\Resources\*" LinkBase="Resources" />
-  </ItemGroup>
  
   <Import Project="$(MSBuildThisFileDirectory)..\samples.props" /> 
 </Project>

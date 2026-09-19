@@ -29,16 +29,16 @@ namespace Myra.Xaml.Compiler
 
         private readonly XamlILCompiler _compiler;
         private static readonly Dictionary<string, string> _compabilityMappings
-            = new Dictionary<string, string>()
+            = new()
             {
                 { "", TransformerHelpers.MyraMappings }
             };
 
-        public MyraStylesheetsCompiler(CecilTypeSystem typeSystem, TaskLoggingHelper log)
+        public MyraStylesheetsCompiler(CecilTypeSystem typeSystem, TransformerConfiguration configuration, TaskLoggingHelper log)
         {
             TypeSystem = typeSystem;
             Log = log;
-            Configuration = TransformerHelpers.CreateConfiguration(TypeSystem);
+            Configuration = configuration;
             var EmitMappings = new XamlLanguageEmitMappings<IXamlILEmitter, XamlILNodeEmitResult>();
 
             _compiler = new XamlILCompiler(Configuration, EmitMappings, false);

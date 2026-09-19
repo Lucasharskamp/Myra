@@ -2,6 +2,8 @@
 using Myra.Graphics2D.UI.Styles;
 using System.ComponentModel;
 using System.Xml.Serialization;
+using System;
+
 
 
 #if MONOGAME || FNA
@@ -255,13 +257,16 @@ namespace Myra.Graphics2D.UI
 		/// Copies the check button properties from another check button.
 		/// </summary>
 		/// <param name="w">The source check button to copy from.</param>
-		protected internal override void CopyFrom(Widget w)
+		protected internal override void CopyFrom<T>(T w)
 		{
 			base.CopyFrom(w);
 
-			var checkButtonBase = (CheckButtonBase)w;
+            if (w is not CheckButtonBase checkButtonBase)
+            {
+                throw new InvalidOperationException();
+            }
 
-			CheckPosition = checkButtonBase.CheckPosition;
+            CheckPosition = checkButtonBase.CheckPosition;
 			CheckContentSpacing = checkButtonBase.CheckContentSpacing;
 			CheckImage.CopyFrom(checkButtonBase.CheckImage);
 		}

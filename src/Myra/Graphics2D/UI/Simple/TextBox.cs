@@ -1873,11 +1873,13 @@ namespace Myra.Graphics2D.UI
 		/// Copies all properties from another widget to this text box.
 		/// </summary>
 		/// <param name="w">The widget to copy properties from.</param>
-		protected internal override void CopyFrom(Widget w)
+		protected internal override void CopyFrom<T>(T w)
 		{
 			base.CopyFrom(w);
-
-			var textBox = (TextBox)w;
+            if (w is not TextBox textBox)
+            {
+                throw new InvalidOperationException();
+            } 
 			VerticalSpacing = textBox.VerticalSpacing;
 			Text = textBox.Text;
 			HintText = textBox.HintText;

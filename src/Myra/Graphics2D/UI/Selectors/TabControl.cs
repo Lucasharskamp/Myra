@@ -3,6 +3,7 @@ using Myra.Graphics2D.UI.Styles;
 using System.ComponentModel;
 using System.Xml.Serialization;
 using System.Collections;
+using System;
 
 namespace Myra.Graphics2D.UI
 {
@@ -457,11 +458,14 @@ namespace Myra.Graphics2D.UI
 		/// Copies the tab control properties and items from another tab control.
 		/// </summary>
 		/// <param name="w">The source tab control to copy from.</param>
-		protected internal override void CopyFrom(Widget w)
+		protected internal override void CopyFrom<T>(T w)
 		{
 			base.CopyFrom(w);
 
-			var tabControl = (TabControl)w;
+			if (w is not TabControl tabControl)
+			{
+				throw new InvalidOperationException();
+			} 
 
 			TabControlStyle = tabControl.TabControlStyle;
 			TabSelectorPosition = tabControl.TabSelectorPosition;

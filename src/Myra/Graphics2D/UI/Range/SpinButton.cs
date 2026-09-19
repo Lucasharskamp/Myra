@@ -670,13 +670,16 @@ namespace Myra.Graphics2D.UI
 		/// Copies the properties from another spin button widget.
 		/// </summary>
 		/// <param name="w">The source spin button widget to copy from.</param>
-		protected internal override void CopyFrom(Widget w)
+		protected internal override void CopyFrom<T>(T w)
 		{
 			base.CopyFrom(w);
 
-			var spinButton = (SpinButton)w;
+            if (w is not SpinButton spinButton)
+            {
+                throw new InvalidOperationException();
+            }
 
-			Nullable = spinButton.Nullable;
+            Nullable = spinButton.Nullable;
 			Minimum = spinButton.Minimum;
 			Maximum = spinButton.Maximum;
 			Value = spinButton.Value;

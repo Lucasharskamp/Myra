@@ -2,6 +2,8 @@
 using Myra.Graphics2D.UI.Styles;
 using System.Xml.Serialization;
 using Myra.Events;
+using System;
+
 
 #if MONOGAME || FNA
 using Microsoft.Xna.Framework;
@@ -383,13 +385,16 @@ namespace Myra.Graphics2D.UI
 		/// Copies the properties from another slider widget.
 		/// </summary>
 		/// <param name="w">The source slider widget to copy from.</param>
-		protected internal override void CopyFrom(Widget w)
+		protected internal override void CopyFrom<T>(T w)
 		{
 			base.CopyFrom(w);
 
-			var slider = (Slider)w;
+            if (w is not Slider slider)
+            {
+                throw new InvalidOperationException();
+            }
 
-			Minimum = slider.Minimum;
+            Minimum = slider.Minimum;
 			Maximum = slider.Maximum;
 			Value = slider.Value;
 		}

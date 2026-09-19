@@ -60,7 +60,7 @@ namespace Myra.Xaml.Transformers
 
                 // Stylesheet fonts need to be loaded in on the resolver, so this can be added right here. 
                 var loadMethod = TypesContainer.IFileResolver.GetMethod(m => m.Name == "RegisterFont");
-                var fontProperty = new XamlAstClrProperty(node, TypesContainer.StylesheetFont.GetTypeProperty(node, "Font"), context.Configuration);
+                var fontProperty = new XamlAstClrProperty(node, TypesContainer.StylesheetFont_Font, context.Configuration);
 
                 var methodCall =
                     new XamlPropertyAssignmentNode(node, fontProperty, fontProperty.Setters,

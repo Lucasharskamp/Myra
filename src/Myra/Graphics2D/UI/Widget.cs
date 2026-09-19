@@ -1902,7 +1902,7 @@ namespace Myra.Graphics2D.UI
 		/// Copies all properties from another widget to this widget.
 		/// </summary>
 		/// <param name="w">The widget to copy properties from.</param>
-		protected internal virtual void CopyFrom(Widget w)
+		protected internal virtual void CopyFrom<T>(T w) where T : Widget, new()
 		{
 			StyleName = w.StyleName;
 			Left = w.Left;

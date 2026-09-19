@@ -740,11 +740,14 @@ namespace Myra.Graphics2D.UI
 		/// Copies the grid properties and column/row proportions from another grid.
 		/// </summary>
 		/// <param name="w">The source grid to copy from.</param>
-		protected internal override void CopyFrom(Widget w)
+		protected internal override void CopyFrom<T>(T w)
 		{
 			base.CopyFrom(w);
 
-			var grid = (Grid)w;
+			if (w is not Grid grid)
+			{
+				throw new InvalidOperationException();
+			}
 
 			ShowGridLines = grid.ShowGridLines;
 			GridLinesColor = grid.GridLinesColor;

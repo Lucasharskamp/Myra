@@ -2,6 +2,8 @@
 using Myra.Graphics2D.UI.Styles;
 using System.Xml.Serialization;
 using System.Collections;
+using System;
+
 
 #if MONOGAME || FNA
 using Microsoft.Xna.Framework.Input;
@@ -150,12 +152,15 @@ namespace Myra.Graphics2D.UI
 		/// Copies properties from another Dialog widget.
 		/// </summary>
 		/// <param name="w">The Dialog widget to copy from.</param>
-		protected internal override void CopyFrom(Widget w)
+		protected internal override void CopyFrom<T>(T w)
 		{
 			base.CopyFrom(w);
 
-			var dialog = (Dialog)w;
-			ConfirmKey = dialog.ConfirmKey;
+            if (w is not Dialog dialog)
+            {
+                throw new InvalidOperationException();
+            }
+            ConfirmKey = dialog.ConfirmKey;
 		}
 
 

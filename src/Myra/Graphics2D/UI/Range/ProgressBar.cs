@@ -3,6 +3,8 @@ using System.Xml.Serialization;
 using Myra.Graphics2D.UI.Styles;
 using Myra.Utility;
 using Myra.Events;
+using System;
+
 
 
 #if MONOGAME || FNA
@@ -169,13 +171,16 @@ namespace Myra.Graphics2D.UI
 		/// Copies the properties from another progress bar widget.
 		/// </summary>
 		/// <param name="w">The source progress bar widget to copy from.</param>
-		protected internal override void CopyFrom(Widget w)
+		protected internal override void CopyFrom<T>(T w)
 		{
 			base.CopyFrom(w);
 
-			var progressBar = (ProgressBar)w;
+            if (w is not ProgressBar progressBar)
+            {
+                throw new InvalidOperationException();
+            }
 
-			Minimum = progressBar.Minimum;
+            Minimum = progressBar.Minimum;
 			Maximum = progressBar.Maximum;
 			Value = progressBar.Value;
 			Filler = progressBar.Filler;

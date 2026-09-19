@@ -398,13 +398,16 @@ namespace Myra.Graphics2D.UI
 		/// Copies all properties from another widget to this label.
 		/// </summary>
 		/// <param name="w">The widget to copy properties from.</param>
-		protected internal override void CopyFrom(Widget w)
+		protected internal override void CopyFrom<T>(T w)
 		{
 			base.CopyFrom(w);
 
-			var label = (Label)w;
+            if (w is not Label label)
+            {
+                throw new InvalidOperationException();
+            }
 
-			VerticalSpacing = label.VerticalSpacing;
+            VerticalSpacing = label.VerticalSpacing;
 			Text = label.Text;
 			Font = label.Font;
 			Wrap = label.Wrap;

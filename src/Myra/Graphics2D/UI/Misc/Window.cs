@@ -6,6 +6,8 @@ using FontStashSharp;
 using Myra.Events;
 using System.Collections;
 using Myra.Attributes;
+using System;
+
 
 
 #if MONOGAME || FNA
@@ -419,13 +421,16 @@ namespace Myra.Graphics2D.UI
 		/// Copies the properties from another window widget.
 		/// </summary>
 		/// <param name="w">The source window widget to copy from.</param>
-		protected internal override void CopyFrom(Widget w)
+		protected internal override void CopyFrom<T>(T w)
 		{
 			base.CopyFrom(w);
 
-			var window = (Window)w;
+            if (w is not Window window)
+            {
+                throw new InvalidOperationException();
+            }
 
-			Title = window.Title;
+            Title = window.Title;
 			TitleTextColor = window.TitleTextColor;
 			TitleFont = window.TitleFont;
 			CloseKey = window.CloseKey;

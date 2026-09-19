@@ -1,6 +1,7 @@
-﻿using Myra.Graphics2D.UI.Styles;
+﻿using Myra.Events;
+using Myra.Graphics2D.UI.Styles;
 using Myra.Utility;
-using Myra.Events;
+using System;
 
 namespace Myra.Graphics2D.UI
 {
@@ -97,11 +98,14 @@ namespace Myra.Graphics2D.UI
 		/// Copies the button properties from another button.
 		/// </summary>
 		/// <param name="w">The source button to copy from.</param>
-		protected internal override void CopyFrom(Widget w)
+		protected internal override void CopyFrom<T>(T w)
 		{
 			base.CopyFrom(w);
 
-			var buttonBase = (ButtonBase)w;
+            if (w is not ButtonBase buttonBase)
+            {
+                throw new InvalidOperationException();
+            } 
 			PressedBackground = buttonBase.PressedBackground;
 			IsPressed = buttonBase.IsPressed;
 		}
