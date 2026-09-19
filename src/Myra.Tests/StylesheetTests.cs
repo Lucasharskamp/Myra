@@ -28,7 +28,7 @@ namespace Myra.Tests
 
 			// Load the UI form XML and apply the stylesheet
 			var projectXml = assetManager.ReadAsString(formPath);
-			var project = Project.LoadFromXml(projectXml, assetManager, stylesheet);
+			var project = MyraAssetManagerExtensions.LoadProjectFromXml(projectXml, assetManager, stylesheet);
 
 			// Verify form loaded successfully
 			Assert.NotNull(project.Root);
@@ -150,7 +150,7 @@ namespace Myra.Tests
 		{
 			var fontSystem = GetFontSystem(stylesheet, id);
 
-			Assert.Equal(stylesheet.Fonts.AtlasUsedSpace, fontSystem.ExistingTextureUsedSpace);
+			Assert.Equal(stylesheet.Fonts.UsedSpace, fontSystem.ExistingTextureUsedSpace);
 			Assert.Same(stylesheet.Atlas.Texture, fontSystem.ExistingTexture);
 		}
 

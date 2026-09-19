@@ -5,6 +5,7 @@ using Microsoft.Xna.Framework.Graphics;
 using FontStashSharp;
 using System.Linq;
 using Myra.Graphics2D;
+using Myra.Graphics2D.UI.Styles;
 
 namespace Myra.Samples.ObjectEditor
 {
@@ -49,7 +50,7 @@ namespace Myra.Samples.ObjectEditor
 
 			MyraEnvironment.Game = this;
 
-			_font = DefaultAssets.DefaultStylesheet.Fonts.First().Font;
+			_font = Stylesheet.Current.Fonts.First().Value.Font;
 
 			var root = new Panel();
 
@@ -76,34 +77,32 @@ namespace Myra.Samples.ObjectEditor
 				Root = root
 			};
 
-			var propertyGrid = new PropertyGrid
-			{
-				Width = 350
-			};
+            var propertyGrid = new PropertyGrid
+            {
+                Width = 350,
+                CustomWidgetProvider = new System.Func<Record, object, Widget>((r, obj) =>
+                    {
+                        RenderAsSliderAttribute att;
+                        if (r.Type == typeof(int) && (att = r.FindAttribute<RenderAsSliderAttribute>()) != null)
+                        {
+                            var value = (int)r.GetValue(obj);
+                            return new HorizontalProgressBar()
+                            {
+                                Minimum = att.Min,
+                                Maximum = att.Max,
+                                Value = value,
+                                HorizontalAlignment = HorizontalAlignment.Stretch,
+                                Height = 20
+                            };
+                        }
 
+                        return null;
+                    }),
 
-			propertyGrid.CustomWidgetProvider = new System.Func<Record, object, Widget>((r, obj) =>
-			{
-				RenderAsSliderAttribute att;
-				if (r.Type == typeof(int) && (att = r.FindAttribute<RenderAsSliderAttribute>()) != null)
-				{
-					var value = (int)r.GetValue(obj);
-					return new HorizontalProgressBar()
-					{
-						Minimum = att.Min,
-						Maximum = att.Max,
-						Value = value,
-						HorizontalAlignment = HorizontalAlignment.Stretch,
-						Height = 20
-					};
-				}
+                Object = _player
+            };
 
-				return null;
-			});
-
-			propertyGrid.Object = _player;
-
-			_windowEditor = new Window
+            _windowEditor = new Window
 			{
 				Title = "Object Editor",
 				Content = propertyGrid
@@ -184,5 +183,15 @@ namespace Myra.Samples.ObjectEditor
 
 			_desktop.Render();
 		}
+
+        protected override void Dispose(bool disposing)
+        {
+			_renderContext.Dispose();
+			_playerImage.Dispose();
+			_spriteBatch.Dispose();
+			_desktop.Dispose();
+			_graphics.Dispose();
+            base.Dispose(disposing);
+        }
 	}
 }

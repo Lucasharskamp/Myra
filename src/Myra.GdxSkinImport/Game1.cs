@@ -1,6 +1,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Myra;
+using Myra.Graphics2D.UI;
 using Myra.Graphics2D.UI.Styles;
 using Myra.MML;
 using System;
@@ -114,4 +115,10 @@ public class Game1 : Game
 		GraphicsDevice.Clear(Color.CornflowerBlue);
 		base.Draw(gameTime);
 	}
+
+    protected override void Dispose(bool disposing)
+    { 
+        _graphics.Dispose();
+        base.Dispose(disposing);
+    }
 }

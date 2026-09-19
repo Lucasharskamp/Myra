@@ -103,5 +103,12 @@ namespace Myra.Samples.CustomWidgets
 
 			_desktop.Render();
 		}
+
+        protected override void Dispose(bool disposing)
+        {
+			_desktop.Dispose();
+			_graphics.Dispose();
+            base.Dispose(disposing);
+        }
 	}
 }

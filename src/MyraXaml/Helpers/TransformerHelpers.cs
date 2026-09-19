@@ -253,10 +253,10 @@ namespace Myra.Xaml.Helpers
         }
 
         public static XamlConstantNode ToConstantNode(this XamlAstTextNode text, AstTransformationContext context) 
-            => new XamlConstantNode(text, context.Configuration.WellKnownTypes.String, text.Text);
+            => new(text, context.Configuration.WellKnownTypes.String, text.Text);
 
         public static XamlConstantNode ToConstantNode(this IXamlLineInfo text, AstTransformationContext context, string overrideText)
-            => new XamlConstantNode(text, context.Configuration.WellKnownTypes.String, overrideText);
+            => new(text, context.Configuration.WellKnownTypes.String, overrideText);
 
         public const string BuildMethodName = "InitializeComponent";
 
@@ -265,7 +265,7 @@ namespace Myra.Xaml.Helpers
         /// at the tail end of the constructor. <br/>
         /// If no constructor yet exists, one willm be created.
         /// </summary> 
-        public static void EnsureBuildMethodCalled(TypeDefinition type, XamlTypeWellKnownTypes wellKnownTypes)
+        public static void EnsureBuildMethodCalled(TypeDefinition type)
         {
             var module = type.Module;
 
@@ -281,9 +281,8 @@ namespace Myra.Xaml.Helpers
             var constructor = constructors.FirstOrDefault();
             var buildMethod = type.Methods.First(m => m.Name == BuildMethodName);
 
-            var baseConstructorDef = type.BaseType.Resolve().Methods
-                .FirstOrDefault(m => m.IsConstructor && !m.IsStatic && m.Parameters.Count == 2);
-            var baseConstructor = baseConstructorDef == null ? null : type.BaseType.Module.ImportReference(baseConstructorDef);
+            var baseConstructorDef = GetBaseConstructor(type, out var hasParameters);
+            var baseConstructor = type.BaseType.Module.ImportReference(baseConstructorDef);
 
             if (constructor == null)
             {
@@ -304,16 +303,16 @@ namespace Myra.Xaml.Helpers
 
             var il = constructor.Body.GetILProcessor();
 
-            // base(Stylesheet, string) 
-            if (baseConstructor != null)
+            // base(Stylesheet, string) or base()
+            il.Emit(OpCodes.Ldarg_0);
+            // todo replace with actual values
+            if (hasParameters)
             {
-                il.Emit(OpCodes.Ldarg_0);
-                // todo replace with actual values
                 il.Emit(OpCodes.Ldstr, "default_ui_skin");
                 il.Emit(OpCodes.Call, MyraBindingCompilationContext.GetStylesheetDefinition);
                 il.Emit(OpCodes.Ldstr, "");
-                il.Emit(OpCodes.Call, baseConstructor);
             }
+            il.Emit(OpCodes.Call, baseConstructor);
 
             // this.InitializeComponent(IServiceProvider, this, Stylesheet);
             il.Emit(OpCodes.Ldnull);
@@ -328,6 +327,31 @@ namespace Myra.Xaml.Helpers
             return; 
         }
 
+        internal static MethodDefinition GetBaseConstructor(TypeDefinition type, out bool hasParameters)
+        {
+            var availableMethods = type.BaseType.Resolve().Methods;
+            var constructor = availableMethods
+                    .FirstOrDefault(m => m.IsConstructor && !m.IsStatic && m.Parameters.Count == 2);
+
+            if (constructor != null)
+            {
+                hasParameters = true;
+                return constructor; 
+            }
+
+            hasParameters = false;
+            constructor = availableMethods
+                    .FirstOrDefault(m => m.IsConstructor && !m.IsStatic && m.Parameters.Count == 0); 
+
+            if (constructor == null)
+            {
+                throw new InvalidOperationException("This should never happen for Widget-based types");
+            }
+
+            return constructor;
+
+        }
+
         internal static string CurrentRelativePath = ""; 
 
         /// <summary>
@@ -338,9 +362,8 @@ namespace Myra.Xaml.Helpers
         /// Not all files that are included may come from the project itself, and might be external and included using csproj's "content"
         /// functionality. If so, the "LogicalPath" parameter is used to set the local relative path.
         /// </remarks>
-        internal static void SetCurrentRelativePath(string targetPath, ITaskItem currentFile)
+        internal static void SetCurrentRelativePath(ITaskItem currentFile)
         { 
-            var targetDir = Path.GetDirectoryName(targetPath);
             var relativePath = currentFile.GetMetadata("LogicalPath");
             if (String.IsNullOrEmpty(relativePath))
             {

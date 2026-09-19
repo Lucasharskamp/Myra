@@ -6,7 +6,7 @@ using Mono.Collections.Generic;
 using Myra.Xaml.Compiler;
 using Myra.Xaml.Helpers; 
 using System;
-using System.Collections.Generic; 
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -116,7 +116,7 @@ namespace Myra.Xaml
                  
                 foreach (var item in stylesheetFiles)
                 {
-                    TransformerHelpers.SetCurrentRelativePath(TargetPath, item);
+                    TransformerHelpers.SetCurrentRelativePath(item);
                     StylesheetTypes.Add(stylesheetsCompiler.CompileStylesheetFile(assembly, item));
                 } 
 
@@ -124,7 +124,7 @@ namespace Myra.Xaml
                 {
                     foreach (var item in xamlFiles)
                     {
-                        TransformerHelpers.SetCurrentRelativePath(TargetPath, item);
+                        TransformerHelpers.SetCurrentRelativePath(item);
                         componentsCompiler.CompileXamlFile(Log, TargetPath, ProjectDirectory, assembly, item);
                     }
                 }

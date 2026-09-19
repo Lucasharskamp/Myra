@@ -13,12 +13,21 @@ namespace Myra.Tests
 		{
 		}
 
+		protected virtual void Dispose(bool disposing)
+		{
+			if (disposing)
+			{
+                MyraEnvironment.MouseInfoGetter = MyraEnvironment.DefaultMouseInfoGetter;
+            }
+        }
+
 		public void Dispose()
 		{
-			MyraEnvironment.MouseInfoGetter = MyraEnvironment.DefaultMouseInfoGetter;
-		}
+			Dispose(true); 
+            GC.SuppressFinalize(this);
+        }
 
-		private (Desktop desktop, Panel panel, Button button) CreateUI()
+        private static (Desktop desktop, Panel panel, Button button) CreateUI()
 		{
 			var desktop = new Desktop();
 			var panel = new Panel();

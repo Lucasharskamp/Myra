@@ -22,7 +22,7 @@ namespace AssetManagementBase
 	/// <summary>
 	/// Provides extension methods for the AssetManager class to load Myra-specific assets like texture atlases, fonts, and stylesheets.
 	/// </summary>
-	public static partial class MyraAssetManagerExtensions
+	public static partial class MyraAssetManagerHelper
 	{
 		private static AssetLoader<StaticSpriteFont> _staticFontLoader = (manager, assetName, settings, tag) =>
 		{
@@ -55,13 +55,6 @@ namespace AssetManagementBase
 			return result;
 		};
 
-		private static AssetLoader<Project> _projectLoader = (manager, assetName, settings, tag) =>
-		{
-			var data = manager.ReadAsString(assetName);
-
-			return Project.LoadFromXml(data, manager);
-		};
-
 		/// <summary>
 		/// Loads a texture region atlas from an XML asset file.
 		/// </summary>
@@ -70,13 +63,6 @@ namespace AssetManagementBase
 		/// <returns>The loaded texture region atlas.</returns>
 		public static TextureRegionAtlas LoadTextureRegionAtlas(this AssetManager assetManager, string assetName) => assetManager.UseLoader(_atlasLoader, assetName);
 
-		/// <summary>
-		/// Loads a Myra project from an XML asset file.
-		/// </summary>
-		/// <param name="assetManager">The asset manager instance.</param>
-		/// <param name="assetName">The name of the project asset to load.</param>
-		/// <returns>The loaded project.</returns>
-		public static Project LoadProject(this AssetManager assetManager, string assetName) => assetManager.UseLoader(_projectLoader, assetName);
 
 		/// <summary>
 		/// Loads a texture region from an asset, with optional stylesheet context for resolving atlas references.

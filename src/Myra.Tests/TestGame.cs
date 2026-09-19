@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
+using Myra.Graphics2D.UI;
 
 namespace Myra.Tests
 {
@@ -16,5 +17,11 @@ namespace Myra.Tests
 
 			((IGraphicsDeviceManager)Services.GetService(typeof(IGraphicsDeviceManager))).CreateDevice();
 		}
-	}
+
+        protected override void Dispose(bool disposing)
+        { 
+            _graphics.Dispose();
+            base.Dispose(disposing);
+        }
+    }
 }

@@ -271,23 +271,7 @@ namespace Myra.Graphics2D.UI
 		/// </summary>
 		public static Dictionary<Assembly, string[]> ExtraWidgetAssembliesAndNamespaces { get; } = [];
 
-		// Creates a load context for deserializing UI projects from XML.
-		// Sets up asset loading, widget type resolution, and legacy name mapping.
-		internal static LoadContext CreateLoadContext(AssetManager assetManager, Stylesheet stylesheet)
-		{
-			// Collect widget assemblies: both Myra core types and user-supplied custom widgets
-			Dictionary<Assembly, string[]> assemblies = [];
-			assemblies.Add(typeof(Widget).Assembly, [typeof(Widget).Namespace, typeof(PropertyGrid).Namespace]);
-
-			return new LoadContext
-			{
-				Assemblies = assemblies,
-				LegacyClassNames = LegacyClassNames,
-				ObjectCreator = (t, el) => CreateItem(t, el, stylesheet),
-				AssetManager = assetManager,
-				Stylesheet = stylesheet
-			};
-		}
+ 
 
 		/// <summary>
 		/// Saves the project to an XML string.
@@ -309,100 +293,7 @@ namespace Myra.Graphics2D.UI
 		/// <returns>An XML string representation of the project.</returns>
 		[Obsolete("Use ToXml")]
 		public string Save() => ToXml();
-
-		/// <summary>
-		/// Loads a project from an XML string representation.
-		/// </summary>
-		/// <param name="data">The XML string containing the project definition.</param>
-		/// <param name="assetManager">The asset manager used to load resources referenced by the project. If null, resources will not be loaded.</param>
-		/// <param name="customStylesheet">An optional custom stylesheet to apply to the project. If not provided, the stylesheet path from the project's XML will be used.</param>
-		/// <returns>A new Project instance loaded from the provided XML data, or null if loading fails.</returns>
-		public static Project LoadFromXml(string data, AssetManager assetManager = null, Stylesheet customStylesheet = null)
-		{
-			var xDoc = XDocument.Parse(data, LoadOptions.SetLineInfo);
-
-			// Check if project specifies external stylesheet
-			Stylesheet stylesheet;
-			if (customStylesheet == null)
-			{
-				var stylesheetPathAttr = xDoc.Root.Attribute("StylesheetPath");
-				if (stylesheetPathAttr != null)
-				{
-					if (assetManager == null)
-					{
-						throw new Exception($"assetManager couldn't be null if the project has external stylesheet");
-					}
-
-					stylesheet = assetManager.LoadStylesheet(stylesheetPathAttr.Value);
-				}
-				else
-				{
-					stylesheet = Stylesheet.Current;
-				}
-			}
-			else
-			{
-				stylesheet = customStylesheet;
-			}
-
-			var result = new Project(stylesheet);
-
-			var loadContext = CreateLoadContext(assetManager, stylesheet);
-			loadContext.Load(result, xDoc.Root);
-			result.ObjectsNodes = loadContext.ObjectsNodes;
-
-			return result;
-		}
-
-		/// <summary>
-		/// Loads a single object from XML string data.
-		/// Determines object type from XML tag name, resolving legacy names and special types.
-		/// </summary>
-		/// <param name="data">The XML data as a string.</param>
-		/// <param name="assetManager">The asset manager for loading resources.</param>
-		/// <param name="stylesheet">The stylesheet to apply to loaded objects.</param>
-		/// <returns>The loaded object.</returns>
-		internal static object LoadObjectFromXml(string data, AssetManager assetManager = null, Stylesheet stylesheet = null)
-		{
-			XDocument xDoc = XDocument.Parse(data, LoadOptions.SetLineInfo);
-
-			var name = xDoc.Root.Name.ToString();
-			Type itemType;
-
-			// Determine type from XML tag name
-			if (name == "PropertyGrid")
-			{
-				itemType = typeof(PropertyGrid);
-			}
-			else if (!IsProportionName(name))
-			{
-                // Check if it's a legacy name and get modern name
-                if (LegacyClassNames.TryGetValue(name, out string newName))
-                {
-                    name = newName;
-                }
-
-                // Look up widget type by name in Myra assemblies
-                itemType = GetWidgetTypeByName(name);
-			}
-			else
-			{
-				// It's a Proportion (layout configuration)
-				itemType = typeof(Proportion);
-			}
-
-			if (itemType == null)
-			{
-				return null;
-			}
-
-			// Create and load object, applying stylesheet context if provided
-			var item = CreateItem(itemType, xDoc.Root, stylesheet);
-			var loadContext = CreateLoadContext(assetManager, stylesheet);
-			loadContext.Load(item, xDoc.Root);
-
-			return item;
-		}
+		 
 
 		/// <summary>
 		/// Saves an object to an XML string using this project's stylesheet.
@@ -417,63 +308,7 @@ namespace Myra.Graphics2D.UI
 			var saveContext = CreateSaveContext(Stylesheet);
 			return saveContext.Save(obj, true, tagName, parentType).ToString();
 		}
-
-		// Instantiates an object of the given type, handling special case of Widget constructors that accept StyleName parameter
-		private static object CreateItem(Type type, XElement element, Stylesheet stylesheet)
-		{
-			if (typeof(Widget).IsAssignableFrom(type))
-			{
-				// Check if widget constructor accepts a style name parameter (string)
-				var acceptsStyle = false;
-				foreach (var c in type.GetConstructors())
-				{
-					var p = c.GetParameters();
-					if (p != null && p.Length == 2)
-					{
-						if (p[0].ParameterType == typeof(Stylesheet) && p[1].ParameterType == typeof(string))
-						{
-							acceptsStyle = true;
-							break;
-						}
-					}
-				}
-
-				if (acceptsStyle)
-				{
-					if (stylesheet == null)
-					{
-						throw new NullReferenceException(nameof(stylesheet));
-					}
-
-					// Extract StyleName from XML attribute, defaulting if not found
-					var styleName = Stylesheet.DefaultStyleName;
-					var styleNameAttr = element.Attribute("StyleName");
-					if (styleNameAttr != null)
-					{
-						styleName = styleNameAttr.Value;
-					}
-
-					// Create widget with style name parameter
-					try
-					{
-						return (Widget)Activator.CreateInstance(type, stylesheet, styleName);
-					}
-					catch (TargetInvocationException ex)
-					{
-						if (ex.InnerException != null)
-						{
-							throw ex.InnerException;
-						}
-
-						throw;
-					}
-				}
-			}
-
-			// Create non-widget object or widget without style parameter
-			return Activator.CreateInstance(type);
-		}
-
+		 
 		// Checks if widget property value matches the value defined in the stylesheet.
 		// Used to skip serializing properties that are already defined by the applied style.
 		private static bool HasStylesheetValue(Widget w, PropertyInfo property, Stylesheet stylesheet)

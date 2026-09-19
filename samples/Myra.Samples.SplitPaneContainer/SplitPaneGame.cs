@@ -137,5 +137,11 @@ namespace Myra.Samples.SplitPaneContainer
 
 			_desktop.Render();
 		}
+
+        protected override void Dispose(bool disposing)
+        {
+			_desktop.Dispose(); 
+            base.Dispose(disposing);
+        }
 	}
 }

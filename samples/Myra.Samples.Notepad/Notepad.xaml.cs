@@ -6,8 +6,7 @@ namespace Myra.Samples.Notepad
 {
 	public partial class Notepad : VerticalStackPanel
 	{
-		public HorizontalMenu _mainMenu { get; set; } = default!;
-        public MenuItem menuItemFile { get; set; } = default!;
+		public HorizontalMenu _mainMenu { get; set; } = default!; 
         public MenuItem menuItemNew { get; set; } = default!;
         public MenuItem menuItemOpen { get; set; } = default!;
         public MenuItem menuItemSave { get; set; } = default!;

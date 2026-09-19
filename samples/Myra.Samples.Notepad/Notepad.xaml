@@ -1,7 +1,7 @@
 <Notepad xmlns="https://github.com/MyraUI/Myra"
      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <HorizontalMenu VerticalAlignment="Stretch" x:Name="_mainMenu" x:Uid="f44bb6b1-b08d-48ce-b647-75d027af9532" x:FieldModifier="">
-        <MenuItem Text="&amp;File" x:Name="menuItemFile">
+    <HorizontalMenu VerticalAlignment="Stretch" x:Name="_mainMenu" x:Uid="f44bb6b1-b08d-48ce-b647-75d027af9532">
+        <MenuItem Text="&amp;File">
             <MenuItem Text="&amp;New" ShortcutText="Ctrl+N" x:Name="menuItemNew" />
             <MenuItem Text="&amp;Open..." ShortcutText="Ctrl+O" x:Name="menuItemOpen" />
             <MenuItem Text="&amp;Save" ShortcutText="Ctrl+S" x:Name="menuItemSave" />
