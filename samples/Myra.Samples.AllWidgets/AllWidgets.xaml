@@ -15,7 +15,7 @@
                 <MenuItem Text="&amp;Paste" ShortcutText="Shift+Insert, Ctrl+V" />
                 <MenuSeparator />
                 <MenuItem Text="&amp;Undo" ShortcutText="Ctrl+Z" />
-                <MenuItem Text="&amp;Redo" ShortcutText="Ctrl+Y" />
+                <MenuItem Text="&amp;Redo" ShortcutText="Ctrl+Y" />  
             </MenuItem>
             <MenuItem Text="&amp;Help">
                 <MenuItem Text="&amp;About" Selected="ShowMessageBox" />

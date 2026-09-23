@@ -5,20 +5,32 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\src\Myra\Myra.MonoGame.csproj" />
-      <Content Include="..\..\src\Resources\*" LinkBase="Resources" />
+  
+	  <MyraXaml Include="**\*.xaml" />
+	  <MyraXaml Include="..\..\src\Resources\*.xmms" LogicalPath="Resources\%(RecursiveDir)%(Filename)%(Extension)" />
  
-	  <MyraXaml Include="**\*.xaml" /> 
-	  <MyraXaml Include="..\..\src\Resources\**\*.xmms" LogicalPath="Resources\%(RecursiveDir)%(Filename)%(Extension)" />
-	  <Content Update="..\..\src\Resources\*.png">
+	  <None Update="**\*.xaml">
+		<MyraEditor>true</MyraEditor>
+	  </None>
+	  <Content Include="..\..\src\Resources\*.png" LinkBase="Resources">
 		<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </Content>
-	  <Content Update="..\..\src\Resources\*.xmat">
+	  <Content Include="..\..\src\Resources\*.xmat" LinkBase="Resources">
 		<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </Content> 
-	  <Content Update="..\..\src\Resources\*.ttf">
+	  <Content Include="..\..\src\Resources\*.ttf" LinkBase="Resources">
 		<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </Content>
 	</ItemGroup> 
+	
+    <Target Name="MyraXamlRemoveStandardXamlItems"
+          BeforeTargets="PrepareForBuild"> 
+      <ItemGroup>
+        <Page Remove="@(MyraXaml)" />
+        <ApplicationDefinition Remove="@(MyraXaml)" />
+      </ItemGroup> 
+    </Target>
+	
 	<UsingTask TaskFactory="MyraXamlTaskFactory" TaskName="MyraXamlCompileTask" AssemblyFile="..\src\MyraXaml\bin\Debug\netstandard2.0\Myra.Xaml.dll" />
 
 	<Target Name="MyraXamlCompile" AfterTargets="Build" Condition="'$(DesignTimeBuild)' != 'true'">  

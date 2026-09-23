@@ -3,6 +3,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Myra.Xaml.Compiler;
 using System;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
@@ -265,7 +266,7 @@ namespace Myra.Xaml.Helpers
         /// at the tail end of the constructor. <br/>
         /// If no constructor yet exists, one willm be created.
         /// </summary> 
-        public static void EnsureBuildMethodCalled(TypeDefinition type)
+        public static void EnsureBuildMethodCalled(TypeDefinition type, Microsoft.Build.Utilities.TaskLoggingHelper log, ITaskItem item)
         {
             var module = type.Module;
 
@@ -298,6 +299,27 @@ namespace Myra.Xaml.Helpers
             }
             else
             {
+                var instructionsCount = constructor.Body.Instructions.Count(i => i.OpCode != OpCodes.Nop);
+
+                // expected instructions; call base class and ret. If not, the user added their own.
+                if (instructionsCount > 3)
+                {
+                    var beginLocation = constructor.Body.Method.DebugInformation.GetSequencePoint(constructor.Body.Instructions[0]);
+                    var endLocation = constructor.Body.Method.DebugInformation.GetSequencePoint(constructor.Body.Instructions.Last());
+                    // user code is overridden, so we need to warn about that.
+                    log.LogWarning(subcategory: "",
+                        warningCode: "Myr003",
+                        helpKeyword: null,
+                        helpLink: null,
+                        file: beginLocation.Document.Url,
+                        lineNumber: beginLocation.StartLine,
+                        columnNumber: beginLocation.StartColumn,
+                        endLineNumber: endLocation.EndLine,
+                        endColumnNumber: endLocation.EndColumn,
+                        "The method body of the constructor of type '{0}' will be replaced by Myra.Xaml!",
+                        type.FullName);
+
+                }
                 constructor.Body = new MethodBody(constructor);
             } 
 
@@ -331,7 +353,9 @@ namespace Myra.Xaml.Helpers
         {
             var availableMethods = type.BaseType.Resolve().Methods;
             var constructor = availableMethods
-                    .FirstOrDefault(m => m.IsConstructor && !m.IsStatic && m.Parameters.Count == 2);
+                    .FirstOrDefault(m => m.IsConstructor 
+                    && !m.IsStatic 
+                    && m.Parameters.Count == 2);
 
             if (constructor != null)
             {

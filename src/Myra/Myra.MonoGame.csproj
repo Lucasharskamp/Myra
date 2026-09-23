@@ -1,7 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <DefineConstants>$(DefineConstants);MONOGAME</DefineConstants>
-    <TargetFramework>net8</TargetFramework>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>12.0</LangVersion>
     <AssemblyName>Myra</AssemblyName>
     <PackageId>Myra</PackageId>
     <OutputPath>bin\MonoGame\$(Configuration)</OutputPath>

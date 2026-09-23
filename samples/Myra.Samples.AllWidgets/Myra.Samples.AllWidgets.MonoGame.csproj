@@ -11,6 +11,7 @@
   <ItemGroup>
     <PackageReference Include="MonoGame.Framework.DesktopGL" Version="$(AppMonoGameVersion)" />
   </ItemGroup>
+   
  
   <Import Project="$(MSBuildThisFileDirectory)..\samples.props" /> 
 </Project>

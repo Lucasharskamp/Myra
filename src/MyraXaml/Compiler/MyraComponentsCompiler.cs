@@ -140,7 +140,7 @@ namespace Myra.Xaml.Compiler
                 fileSource);
 
             typeBuilder.CreateType();
-            TransformerHelpers.EnsureBuildMethodCalled(currentClassDefinition);
+            TransformerHelpers.EnsureBuildMethodCalled(currentClassDefinition, log, item);
         }  
     }
 }

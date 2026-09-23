@@ -349,10 +349,10 @@ namespace Myra.Graphics2D.UI
 			{
 				// Custom path specified (e.g., "/SomeProperty/NestedProperty")
 				var path = stylePropertyPathAttribute.Name;
-				if (path.StartsWith('/'))
+				if (path.StartsWith("/"))
 				{
 					obj = stylesheet;
-					path = path[1..];
+					path = path.Substring(1);
 				}
 
 				// Traverse path segments separated by '/'
