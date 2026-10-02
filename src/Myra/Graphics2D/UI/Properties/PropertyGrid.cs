@@ -37,8 +37,12 @@ namespace Myra.Graphics2D.UI.Properties
 	/// and organizes them by category with support for nested objects and filtering.
 	/// </summary>
 	public class PropertyGrid : Widget
-	{
-		private const string DefaultCategoryName = "Miscellaneous";
+    {
+
+        /// <inheritdoc/>
+        protected override Widget InnerClone() => new PropertyGrid();
+
+        private const string DefaultCategoryName = "Miscellaneous";
 
 		// Nested class: represents a collapsible category group containing related properties
 		private class SubGrid : Widget

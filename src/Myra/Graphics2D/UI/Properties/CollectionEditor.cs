@@ -9,7 +9,7 @@ namespace Myra.Graphics2D.UI.Properties
 	/// </summary>
 	public class CollectionEditor : Widget
 	{
-		private readonly StackPanelLayout _layout = new StackPanelLayout(Orientation.Vertical);
+        private readonly StackPanelLayout _layout = new StackPanelLayout(Orientation.Vertical);
 		private readonly IList _collection;
 		private readonly Type _type;
 		private readonly ListView _listItems;

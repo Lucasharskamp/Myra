@@ -43,6 +43,9 @@ namespace Myra.Graphics2D.UI
 	/// </summary>
 	public class Grid : Container
 	{
+        /// <inheritdoc/>
+        protected override Widget InnerClone() => new Grid();
+
 		/// <summary>
 		/// Attached property that specifies the column index of a child widget within the grid.
 		/// </summary>

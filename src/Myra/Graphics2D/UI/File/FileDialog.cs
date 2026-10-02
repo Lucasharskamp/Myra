@@ -14,10 +14,13 @@ namespace Myra.Graphics2D.UI.File
 	/// </summary>
 	public partial class FileDialog
 	{
-		/// <summary>
-		/// Represents the path and type of a browsable location (folder or drive).
-		/// </summary>
-		protected class PathInfo
+        /// <inheritdoc/>
+        protected override Widget InnerClone() => new FileDialog();
+
+        /// <summary>
+        /// Represents the path and type of a browsable location (folder or drive).
+        /// </summary>
+        protected class PathInfo
 		{
 			/// <summary>
 			/// Gets the full path to the location.

@@ -24,7 +24,10 @@ namespace Myra.Graphics2D.UI
 	/// </summary>
 	public class Label : Widget
 	{
-		private readonly Color?[] _colors = new Color?[WidgetVisualStateTotal];
+        /// <inheritdoc/>
+        protected override Widget InnerClone() => new Label();
+
+        private readonly Color?[] _colors = new Color?[WidgetVisualStateTotal];
 		private readonly RichTextLayout _richText = new RichTextLayout
 		{
 			SupportsCommands = true

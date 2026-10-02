@@ -25,7 +25,10 @@ namespace Myra.Graphics2D.UI
 	/// </summary>
 	public class ComboView : Widget, IContainer
 	{
-		private readonly ToggleButton _button;
+        /// <inheritdoc/>
+        protected override Widget InnerClone() => new ComboView();
+
+        private readonly ToggleButton _button;
 		private readonly ListView _listView;
 		private readonly Label _labelPlaceholder = new Label();
 

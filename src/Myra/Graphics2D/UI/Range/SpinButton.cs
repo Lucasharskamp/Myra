@@ -22,7 +22,10 @@ namespace Myra.Graphics2D.UI
 	/// </summary>
 	public class SpinButton : Widget
 	{
-		private readonly GridLayout _layout = new GridLayout();
+        /// <inheritdoc/>
+        protected override Widget InnerClone() => new SpinButton();
+
+        private readonly GridLayout _layout = new GridLayout();
 		private readonly TextBox _textField;
 		private readonly Button _upButton;
 		private readonly Button _downButton;

@@ -8,10 +8,13 @@ namespace Myra.Graphics2D.UI
 	/// </summary>
 	public class VerticalStackPanel : StackPanel
 	{
-		/// <summary>
-		/// Gets the orientation of the stack panel, which is always vertical.
-		/// </summary>
-		public override Orientation Orientation => Orientation.Vertical;
+        /// <inheritdoc/>
+        protected override Widget InnerClone() => new VerticalStackPanel();
+
+        /// <summary>
+        /// Gets the orientation of the stack panel, which is always vertical.
+        /// </summary>
+        public override Orientation Orientation => Orientation.Vertical;
 
 		internal override IDictionary GetStylesDictionary(Stylesheet stylesheet) => stylesheet.VerticalStackPanelStyles;
 

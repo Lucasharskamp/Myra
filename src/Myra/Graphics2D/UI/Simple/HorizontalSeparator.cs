@@ -9,10 +9,13 @@ namespace Myra.Graphics2D.UI
 	/// </summary>
 	public class HorizontalSeparator : SeparatorWidget
 	{
-		/// <summary>
-		/// Gets or sets the horizontal alignment of the separator.
-		/// </summary>
-		[DefaultValue(HorizontalAlignment.Stretch)]
+        /// <inheritdoc/>
+        protected override Widget InnerClone() => new HorizontalSeparator();
+
+        /// <summary>
+        /// Gets or sets the horizontal alignment of the separator.
+        /// </summary>
+        [DefaultValue(HorizontalAlignment.Stretch)]
 		public override HorizontalAlignment HorizontalAlignment
 		{
 			get

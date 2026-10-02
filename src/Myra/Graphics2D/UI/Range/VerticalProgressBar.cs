@@ -9,10 +9,14 @@ namespace Myra.Graphics2D.UI
 	/// </summary>
 	public class VerticalProgressBar : ProgressBar
 	{
-		/// <summary>
-		/// Gets the orientation of the progress bar, which is always vertical.
-		/// </summary>
-		public override Orientation Orientation
+
+        /// <inheritdoc/>
+        protected override Widget InnerClone() => new VerticalProgressBar();
+
+        /// <summary>
+        /// Gets the orientation of the progress bar, which is always vertical.
+        /// </summary>
+        public override Orientation Orientation
 		{
 			get
 			{

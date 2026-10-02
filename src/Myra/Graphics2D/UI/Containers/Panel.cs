@@ -17,12 +17,15 @@ namespace Myra.Graphics2D.UI
 	/// </summary>
 	public class Panel : Container
 	{
-		/// <summary>
-		/// Initializes a new instance of the <see cref="Panel"/> class with the specified stylesheet and style name.
-		/// </summary>
-		/// <param name="stylesheet">The stylesheet to use for styling this panel.</param>
-		/// <param name="styleName">The name of the style to apply to this panel.</param>
-		public Panel(Stylesheet stylesheet, string styleName = Stylesheet.DefaultStyleName)
+        /// <inheritdoc/>
+        protected override Widget InnerClone() => new Panel();
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Panel"/> class with the specified stylesheet and style name.
+        /// </summary>
+        /// <param name="stylesheet">The stylesheet to use for styling this panel.</param>
+        /// <param name="styleName">The name of the style to apply to this panel.</param>
+        public Panel(Stylesheet stylesheet, string styleName = Stylesheet.DefaultStyleName)
 		{
 			SetStyle(stylesheet, styleName);
 		}

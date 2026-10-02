@@ -38,7 +38,11 @@ namespace Myra.Graphics2D.UI
 	/// </summary>
 	public class Image : Widget
 	{
-		private IImage[] _renderables = new IImage[WidgetVisualStateTotal];
+        /// <inheritdoc/>
+        protected override Widget InnerClone() => new Image();
+
+
+        private IImage[] _renderables = new IImage[WidgetVisualStateTotal];
 
 #if MONOGAME
 		private bool _isAnisotropicFiltering = false;

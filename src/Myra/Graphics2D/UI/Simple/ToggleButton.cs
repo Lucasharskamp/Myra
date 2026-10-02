@@ -20,7 +20,11 @@ namespace Myra.Graphics2D.UI
 	/// </summary>
 	public class ToggleButton : ButtonBase
 	{
-		private readonly SingleItemLayout<Widget> _layout;
+        /// <inheritdoc/>
+        protected override Widget InnerClone() => new ToggleButton();
+
+
+        private readonly SingleItemLayout<Widget> _layout;
 
 		/// <summary>
 		/// Gets or sets a value indicating whether the toggle button is in the toggled (pressed) state.

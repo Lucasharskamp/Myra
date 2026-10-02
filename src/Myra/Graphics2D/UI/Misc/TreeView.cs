@@ -25,7 +25,10 @@ namespace Myra.Graphics2D.UI
 	/// </summary>
 	public class TreeView : Widget, ITreeViewNode
 	{
-		private readonly StackPanelLayout _layout = new StackPanelLayout(Orientation.Vertical);
+        /// <inheritdoc/>
+        protected override Widget InnerClone() => new TreeView();
+
+        private readonly StackPanelLayout _layout = new StackPanelLayout(Orientation.Vertical);
 		private readonly List<TreeViewNode> _allNodes = new List<TreeViewNode>();
 		private TreeViewNode _selectedNode;
 		private bool _rowInfosDirty = true;

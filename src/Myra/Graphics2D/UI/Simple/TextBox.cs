@@ -33,7 +33,11 @@ namespace Myra.Graphics2D.UI
 	/// </summary>
 	public class TextBox : Widget
 	{
-		private const int CursorUpdateDelayInMs = 30;
+
+        /// <inheritdoc/>
+        protected override Widget InnerClone() => new TextBox();
+
+        private const int CursorUpdateDelayInMs = 30;
 
 		// Cursor rendering and timing
 		private DateTime _lastCursorUpdate;

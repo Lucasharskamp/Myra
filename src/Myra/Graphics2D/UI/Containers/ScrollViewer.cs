@@ -22,7 +22,10 @@ namespace Myra.Graphics2D.UI
 	/// </summary>
 	public class ScrollViewer : ContentControl
 	{
-		private readonly SingleItemLayout<Widget> _layout;
+        /// <inheritdoc/>
+        protected override Widget InnerClone() => new ScrollViewer();
+
+        private readonly SingleItemLayout<Widget> _layout;
 		private Orientation _scrollbarOrientation;
 		internal bool _horizontalScrollingOn, _verticalScrollingOn;
 		private bool _showHorizontalScrollBar, _showVerticalScrollBar;

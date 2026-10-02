@@ -20,7 +20,11 @@ namespace Myra.Graphics2D.UI
 	/// </summary>
 	public class Button : ButtonBase
 	{
-		private readonly SingleItemLayout<Widget> _layout;
+        /// <inheritdoc/>
+        protected override Widget InnerClone() => new Button();
+
+
+        private readonly SingleItemLayout<Widget> _layout;
 		internal bool ReleaseOnTouchLeft;
 
 		/// <summary>

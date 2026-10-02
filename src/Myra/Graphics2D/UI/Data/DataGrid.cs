@@ -27,8 +27,11 @@ namespace Myra.Graphics2D.UI.Data
 	/// vertical scrolling, row selection, and customizable styling.
 	/// </summary>
 	public class DataGrid : Widget
-	{
-		private enum InvalidateLevelData
+    {
+        /// <inheritdoc/>
+        protected override Widget InnerClone() => new DataGrid();
+
+        private enum InvalidateLevelData
 		{
 			None,
 			VisualData,

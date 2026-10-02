@@ -8,6 +8,9 @@ namespace Myra.Graphics2D.UI
 	/// </summary>
 	public class HorizontalStackPanel : StackPanel
 	{
+		/// <inheritdoc/>
+		protected override Widget InnerClone() => new HorizontalStackPanel();
+
 		/// <summary>
 		/// Gets the orientation of the stack panel, which is always horizontal.
 		/// </summary>

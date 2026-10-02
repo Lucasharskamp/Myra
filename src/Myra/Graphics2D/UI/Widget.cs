@@ -1867,42 +1867,36 @@ namespace Myra.Graphics2D.UI
 		public virtual bool InputFallsThrough(Point localPos) => false;
 
 		/// <summary>
-		/// Creates a deep copy of this widget with all its properties and attached properties.
-		/// </summary>
-		/// <returns>A new widget instance that is a copy of this widget.</returns>
-		public Widget Clone()
-		{
-			// Firstly try to use parameterless constructor
-			var type = GetType();
-			var constructor = type.GetConstructor(Type.EmptyTypes);
+		/// Clones the widget. Must be derived for every type derived from <see cref="Widget"/>
+		/// (except for abstract classes) wishing to use <see cref="InnerClone"/>.
+		/// </summary> 
+		protected virtual Widget InnerClone() => new Widget();
+		 
+        /// <summary>
+        /// Creates a deep copy of this widget with all its properties and attached properties.
+        /// </summary>
+        /// <returns>A new widget instance that is a copy of this widget.</returns>
+        public Widget Clone()
+        {
+            // Firstly try to use parameterless constructor
+            var result = this.InnerClone();
 
-			Widget result;
-			if (constructor != null)
-			{
-				result = (Widget)constructor.Invoke(new object[0]);
-			}
-			else
-			{
-				// Then string constructor
-				result = (Widget)Activator.CreateInstance(GetType(), (string)null);
-			}
+            result.CopyFrom(this);
 
-			result.CopyFrom(this);
+            // Copy attached properties
+            foreach (var pair in this.AttachedPropertiesValues)
+            {
+                result.AttachedPropertiesValues[pair.Key] = pair.Value;
+            }
 
-			// Copy attached properties
-			foreach (var pair in AttachedPropertiesValues)
-			{
-				result.AttachedPropertiesValues[pair.Key] = pair.Value;
-			}
+            return result;
+        }
 
-			return result;
-		}
-
-		/// <summary>
-		/// Copies all properties from another widget to this widget.
-		/// </summary>
-		/// <param name="w">The widget to copy properties from.</param>
-		protected internal virtual void CopyFrom<T>(T w) where T : Widget, new()
+        /// <summary>
+        /// Copies all properties from another widget to this widget.
+        /// </summary>
+        /// <param name="w">The widget to copy properties from.</param>
+        protected internal virtual void CopyFrom<T>(T w) where T : Widget, new()
 		{
 			StyleName = w.StyleName;
 			Left = w.Left;

@@ -18,10 +18,14 @@ namespace Myra.Graphics2D.UI
 	/// </summary>
 	public class VerticalMenu : Menu
 	{
-		/// <summary>
-		/// Gets the orientation of the menu, which is always vertical.
-		/// </summary>
-		public override Orientation Orientation
+
+        /// <inheritdoc/>
+        protected override Widget InnerClone() => new VerticalMenu();
+
+        /// <summary>
+        /// Gets the orientation of the menu, which is always vertical.
+        /// </summary>
+        public override Orientation Orientation
 		{
 			get
 			{

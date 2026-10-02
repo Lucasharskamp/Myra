@@ -8,10 +8,13 @@ namespace Myra.Graphics2D.UI
 	/// </summary>
 	public class HorizontalSplitPane : SplitPane
 	{
-		/// <summary>
-		/// Gets the orientation of the split pane, which is always horizontal.
-		/// </summary>
-		public override Orientation Orientation => Orientation.Horizontal;
+        /// <inheritdoc/>
+        protected override Widget InnerClone() => new HorizontalSplitPane();
+
+        /// <summary>
+        /// Gets the orientation of the split pane, which is always horizontal.
+        /// </summary>
+        public override Orientation Orientation => Orientation.Horizontal;
 
 		/// <summary>
 		/// Initializes a new instance of the <see cref="HorizontalSplitPane"/> class with the specified stylesheet and style.

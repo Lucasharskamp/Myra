@@ -27,7 +27,10 @@ namespace Myra.Graphics2D.UI
 	/// </summary>
 	public class TabControl : Selector<Grid, TabItem>
 	{
-		private Grid _gridButtons;
+        /// <inheritdoc/>
+        protected override Widget InnerClone() => new TabControl();
+
+        private Grid _gridButtons;
 		private Panel _panelContent;
 		private TabSelectorPosition _selectorPosition;
 

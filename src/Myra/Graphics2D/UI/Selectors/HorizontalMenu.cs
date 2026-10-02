@@ -18,10 +18,13 @@ namespace Myra.Graphics2D.UI
 	/// </summary>
 	public class HorizontalMenu : Menu
 	{
-		/// <summary>
-		/// Gets the orientation of the menu, which is always horizontal.
-		/// </summary>
-		public override Orientation Orientation
+        /// <inheritdoc/>
+        protected override Widget InnerClone() => new HorizontalMenu();
+
+        /// <summary>
+        /// Gets the orientation of the menu, which is always horizontal.
+        /// </summary>
+        public override Orientation Orientation
 		{
 			get { return Orientation.Horizontal; }
 		}

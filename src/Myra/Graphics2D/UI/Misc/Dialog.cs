@@ -20,10 +20,13 @@ namespace Myra.Graphics2D.UI
 	/// </summary>
 	public class Dialog : Window
 	{
-		/// <summary>
-		/// Gets the OK button of the dialog.
-		/// </summary>
-		[Browsable(false)]
+        /// <inheritdoc/>
+        protected override Widget InnerClone() => new Dialog();
+
+        /// <summary>
+        /// Gets the OK button of the dialog.
+        /// </summary>
+        [Browsable(false)]
 		[XmlIgnore]
 		public Button ButtonOk { get; private set; }
 

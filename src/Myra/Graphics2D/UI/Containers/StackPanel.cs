@@ -21,10 +21,10 @@ namespace Myra.Graphics2D.UI
 	/// </summary>
 	public abstract class StackPanel : Container
 	{
-		/// <summary>
-		/// Attached property that specifies the proportion type for a child element in a stack panel.
-		/// </summary>
-		public static readonly AttachedPropertyInfo<ProportionType> ProportionTypeProperty =
+        /// <summary>
+        /// Attached property that specifies the proportion type for a child element in a stack panel.
+        /// </summary>
+        public static readonly AttachedPropertyInfo<ProportionType> ProportionTypeProperty =
 			AttachedPropertiesRegistry.Create(typeof(StackPanel), "ProportionType",
 				ProportionType.Auto, AttachedPropertyOption.AffectsMeasure);
 		/// <summary>

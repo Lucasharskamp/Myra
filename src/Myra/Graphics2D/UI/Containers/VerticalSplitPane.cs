@@ -8,10 +8,13 @@ namespace Myra.Graphics2D.UI
 	/// </summary>
 	public class VerticalSplitPane : SplitPane
 	{
-		/// <summary>
-		/// Gets the orientation of the split pane, which is always vertical.
-		/// </summary>
-		public override Orientation Orientation
+        /// <inheritdoc/>
+        protected override Widget InnerClone() => new VerticalSplitPane();
+
+        /// <summary>
+        /// Gets the orientation of the split pane, which is always vertical.
+        /// </summary>
+        public override Orientation Orientation
 		{
 			get
 			{

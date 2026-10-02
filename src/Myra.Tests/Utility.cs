@@ -24,7 +24,7 @@ namespace Myra.Tests
 			var assetManager = CreateAssetManager();
 			var project = assetManager.LoadProject(name);
 
-			return project.Root.Clone();
+			return project.Root;
 		}
 
 		/// <summary>

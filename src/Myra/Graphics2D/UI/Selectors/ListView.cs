@@ -28,7 +28,11 @@ namespace Myra.Graphics2D.UI
 	/// </summary>
 	public class ListView : Widget, IContainer
 	{
-		private class WidgetsEnumerator : IEnumerator<Widget>, IEnumerator
+        /// <inheritdoc/>
+        protected override Widget InnerClone() => new ListView();
+
+
+        private class WidgetsEnumerator : IEnumerator<Widget>, IEnumerator
 		{
 			private readonly ListView _listView;
 			private int _index = -1;

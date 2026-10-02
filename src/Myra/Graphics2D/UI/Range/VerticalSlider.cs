@@ -9,10 +9,13 @@ namespace Myra.Graphics2D.UI
 	/// </summary>
 	public class VerticalSlider : Slider
 	{
-		/// <summary>
-		/// Gets the orientation of the slider, which is always vertical.
-		/// </summary>
-		public override Orientation Orientation
+        /// <inheritdoc/>
+        protected override Widget InnerClone() => new VerticalSlider();
+
+        /// <summary>
+        /// Gets the orientation of the slider, which is always vertical.
+        /// </summary>
+        public override Orientation Orientation
 		{
 			get
 			{

@@ -8,11 +8,14 @@ namespace Myra.Graphics2D.UI
 	/// </summary>
 	public class RadioButton : CheckButtonBase
 	{
-		/// <summary>
-		/// Gets or sets a value indicating whether this radio button is pressed/selected.
-		/// Only one radio button in a group can be pressed at a time.
-		/// </summary>
-		public override bool IsPressed
+        /// <inheritdoc/>
+        protected override Widget InnerClone() => new RadioButton();
+
+        /// <summary>
+        /// Gets or sets a value indicating whether this radio button is pressed/selected.
+        /// Only one radio button in a group can be pressed at a time.
+        /// </summary>
+        public override bool IsPressed
 		{
 			get => base.IsPressed;
 

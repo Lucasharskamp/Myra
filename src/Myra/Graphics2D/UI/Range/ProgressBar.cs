@@ -23,7 +23,7 @@ namespace Myra.Graphics2D.UI
 	/// </summary>
 	public abstract class ProgressBar : Widget
 	{
-		private float _value;
+        private float _value;
 
 		/// <summary>
 		/// Gets the orientation of the progress bar (horizontal or vertical).

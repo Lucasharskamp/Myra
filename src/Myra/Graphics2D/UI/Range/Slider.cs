@@ -19,8 +19,8 @@ namespace Myra.Graphics2D.UI
 	/// An abstract base class for slider widgets that allow users to select a value within a range.
 	/// </summary>
 	public abstract class Slider : Widget
-	{
-		private readonly SingleItemLayout<Button> _layout;
+	{  
+        private readonly SingleItemLayout<Button> _layout;
 
 		private float _value, _wheelStep = 1.0f;
 		private bool _wheelAdjustment;

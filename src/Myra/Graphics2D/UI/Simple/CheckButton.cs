@@ -10,10 +10,13 @@ namespace Myra.Graphics2D.UI
 	/// </summary>
 	public class CheckButton : CheckButtonBase
 	{
-		/// <summary>
-		/// Gets or sets a value indicating whether the check button is checked.
-		/// </summary>
-		[Category("Behavior")]
+        /// <inheritdoc/>
+        protected override Widget InnerClone() => new CheckButton();
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the check button is checked.
+        /// </summary>
+        [Category("Behavior")]
 		[DefaultValue(false)]
 		public bool IsChecked
 		{

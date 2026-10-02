@@ -2,7 +2,6 @@
 using Microsoft.VisualStudio.Text.Classification;
 using Microsoft.VisualStudio.Utilities;
 using Myra.Classifier;
-using System; 
 using System.ComponentModel.Composition; 
 
 namespace Myra

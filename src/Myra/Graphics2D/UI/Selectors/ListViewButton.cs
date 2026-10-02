@@ -2,7 +2,10 @@
 {
 	internal class ListViewButton : ToggleButton
 	{
-		public Widget ButtonsContainer { get; set; }
+        /// <inheritdoc/>
+        protected override Widget InnerClone() => new ListViewButton();
+
+        public Widget ButtonsContainer { get; set; }
 		public Widget TopParent => ButtonsContainer ?? Parent;
 
 
