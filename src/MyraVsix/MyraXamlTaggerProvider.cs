@@ -1,6 +1,8 @@
-﻿using Microsoft.VisualStudio.Text;
+﻿using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Tagging;
-using Microsoft.VisualStudio.Utilities; 
+using Microsoft.VisualStudio.Utilities;
+using Myra.Tagger;
 using System.ComponentModel.Composition; 
 
 namespace Myra
@@ -19,10 +21,12 @@ namespace Myra
 
         public ITagger<T> CreateTagger<T>(ITextBuffer textBuffer) where T : ITag
         {
+            ThreadHelper.ThrowIfNotOnUIThread();
+
             if (!Helpers.IsMyraXamlFile(textBuffer, _documents))
                 return null!;
 
-            return null;
+            return new MyraXamlTagger<T>(textBuffer);
         }
     }
 }

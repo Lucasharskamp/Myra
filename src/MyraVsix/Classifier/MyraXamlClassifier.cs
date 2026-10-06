@@ -47,21 +47,12 @@ namespace Myra.Classifier
             """,
             RegexOptions.Compiled | RegexOptions.IgnorePatternWhitespace);
 
-        private static readonly Regex QualifiedNameRegex = new(
-            """
-            (?<owner>[A-Za-z_][A-Za-z0-9_-]*)
-            \.
-            (?<member>[A-Za-z_][A-Za-z0-9_-]*)
-            """,
-            RegexOptions.Compiled);
-
         private readonly IClassificationType _elementClassification;
         private readonly IClassificationType _attributeClassification;
 
         private readonly Assembly _myraAssembly;
         private readonly Type _widgetType;
 
-        private Dictionary<string, string>? _namespacePrefixes;
         private Dictionary<string, Type?> _typeCache;
 
         public MyraXamlClassifier(

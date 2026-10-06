@@ -1,4 +1,5 @@
 ﻿using EnvDTE;
+using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Classification;
 using Microsoft.VisualStudio.Text.Editor;
@@ -18,6 +19,7 @@ namespace Myra
     [TextViewRole(PredefinedTextViewRoles.Document)]
     internal sealed class MyraXamlAdornmentTextViewCreationListener : IWpfTextViewCreationListener
     {
+#pragma warning disable CS0414  
         /// <summary>
         /// Defines the adornment layer for the adornment. This layer is ordered
         /// after the selection layer in the Z-order
@@ -26,9 +28,10 @@ namespace Myra
         [Name("MyraXamlAdornment")]
         [Order(After = PredefinedAdornmentLayers.Selection, Before = PredefinedAdornmentLayers.Text)]
         private AdornmentLayerDefinition editorAdornmentLayer = default!;
+#pragma warning restore IDE0044  
 
         #region IWpfTextViewCreationListener
-         
+
         private readonly ITextDocumentFactoryService _documents;
 
         [ImportingConstructor]
@@ -44,6 +47,8 @@ namespace Myra
         /// <param name="textView">The <see cref="IWpfTextView"/> upon which the adornment should be placed</param>
         public void TextViewCreated(IWpfTextView textView)
         {
+            ThreadHelper.ThrowIfNotOnUIThread();
+
             if (!Helpers.IsMyraXamlFile(textView.TextBuffer, _documents))
                 return;
 

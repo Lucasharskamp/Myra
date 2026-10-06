@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualStudio.Language.Intellisense;
+using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Utilities;
 using System.ComponentModel.Composition;
@@ -19,6 +20,8 @@ namespace Myra
 
         public ICompletionSource TryCreateCompletionSource(ITextBuffer textBuffer)
         {
+            ThreadHelper.ThrowIfNotOnUIThread();
+
             if (!Helpers.IsMyraXamlFile(textBuffer, _documents))
                 return null!;
 

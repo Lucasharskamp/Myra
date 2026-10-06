@@ -1,4 +1,5 @@
-﻿using Microsoft.VisualStudio.Text;
+﻿using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Classification;
 using Microsoft.VisualStudio.Utilities;
 using Myra.Classifier;
@@ -24,6 +25,8 @@ namespace Myra
 
         public IClassifier? GetClassifier(ITextBuffer textBuffer)
         {
+            ThreadHelper.ThrowIfNotOnUIThread();
+
             if (!Helpers.IsMyraXamlFile(textBuffer, _documents))
                 return null;
 
