@@ -28,7 +28,7 @@ namespace Myra
         [Name("MyraXamlAdornment")]
         [Order(After = PredefinedAdornmentLayers.Selection, Before = PredefinedAdornmentLayers.Text)]
         private AdornmentLayerDefinition editorAdornmentLayer = default!;
-#pragma warning restore IDE0044  
+#pragma warning restore CS0414  
 
         #region IWpfTextViewCreationListener
 

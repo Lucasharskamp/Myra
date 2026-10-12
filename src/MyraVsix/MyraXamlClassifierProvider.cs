@@ -35,7 +35,9 @@ namespace Myra
             if (elementClassification == null || attributeClassification == null)
                 return null;
 
-            return new MyraXamlClassifier(elementClassification, attributeClassification);
+            return new MyraXamlClassifier(elementClassification, 
+                attributeClassification, 
+                MyraXamlBufferServices.GetModelProvider(textBuffer));
         }
     }
 }
