@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Text.RegularExpressions;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Classification;
 
@@ -40,27 +37,18 @@ namespace Myra.Classifier
 
             foreach (var element in model.Elements)
             {
-                ClassifyElement(
-                    element,
-                    span,
-                    result);
+                ClassifyElement(element, span, result);
 
                 foreach (var attribute in element.Attributes)
                 {
-                    ClassifyAttribute(
-                        attribute,
-                        span,
-                        result);
+                    ClassifyAttribute(attribute, span, result);
                 }
             }
 
             return result;
         }
 
-        private void ClassifyElement(
-            MyraXamlElement element,
-            SnapshotSpan requestedSpan,
-            List<ClassificationSpan> result)
+        private void ClassifyElement(MyraXamlElement element, SnapshotSpan requestedSpan,  List<ClassificationSpan> result)
         {
 
             var nameSpanIntersects = element.NameSpan.IntersectsWith(requestedSpan);
@@ -131,10 +119,7 @@ namespace Myra.Classifier
             //     <local:MyButton>
             //      ^^^^^^^^^^^^^^
             //
-            result.Add(
-                new ClassificationSpan(
-                    element.NameSpan,
-                    _elementClassification));
+            result.Add(new ClassificationSpan(element.NameSpan, _elementClassification));
 
             if (closingNameSpanIntersects)
             {
@@ -142,10 +127,7 @@ namespace Myra.Classifier
             }
         }
 
-        private void ClassifyAttribute(
-            MyraXamlAttribute attribute,
-            SnapshotSpan requestedSpan,
-            List<ClassificationSpan> result)
+        private void ClassifyAttribute(MyraXamlAttribute attribute, SnapshotSpan requestedSpan,    List<ClassificationSpan> result)
         {
             if (!attribute.IsValid)
                 return;
@@ -194,10 +176,7 @@ namespace Myra.Classifier
 
         private void OnModelChanged(object? sender, MyraXamlDocumentModelChangedEventArgs e)
         {
-            ClassificationChanged?.Invoke(
-                this,
-                new ClassificationChangedEventArgs(
-                    new SnapshotSpan(e.Snapshot, 0, e.Snapshot.Length)));
+            ClassificationChanged?.Invoke(this, new ClassificationChangedEventArgs(new SnapshotSpan(e.Snapshot, 0, e.Snapshot.Length)));
         }
     }
 }

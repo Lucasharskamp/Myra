@@ -17,7 +17,7 @@ namespace Myra.Classifier
         private CancellationTokenSource? _parseCancellation;
         private bool _disposed;
 
-        public MyraXamlDocumentModelProvider(ITextBuffer buffer,  MyraXamlParser parser)
+        public MyraXamlDocumentModelProvider(ITextBuffer buffer, MyraXamlParser parser)
         {
             _buffer = buffer;
             _parser = parser;
@@ -41,9 +41,23 @@ namespace Myra.Classifier
             }
         }
 
-        private void OnBufferChanged(
-            object sender,
-            TextContentChangedEventArgs e)
+        public async Task<MyraXamlDocumentModel?> WaitForModelAsync(ITextSnapshot snapshot, CancellationToken token)
+        {
+            while(!token.IsCancellationRequested)
+            {
+                lock(_gate)
+                {
+                    if (_model?.Snapshot == snapshot)
+                        return _model;
+
+                }
+                await Task.Delay(50);
+            }
+
+            return null;
+        }
+
+        private void OnBufferChanged(object sender, TextContentChangedEventArgs e)
         {
             ScheduleParse();
         }
@@ -60,8 +74,7 @@ namespace Myra.Classifier
                 _parseCancellation?.Cancel();
                 _parseCancellation?.Dispose();
 
-                _parseCancellation =
-                    new CancellationTokenSource();
+                _parseCancellation = new CancellationTokenSource();
 
                 token = _parseCancellation.Token;
             }
@@ -74,9 +87,7 @@ namespace Myra.Classifier
             try
             {
                 // Debounce rapid typing.
-                await Task.Delay(
-                    TimeSpan.FromMilliseconds(100),
-                    token);
+                await Task.Delay(TimeSpan.FromMilliseconds(100), token);
 
                 token.ThrowIfCancellationRequested();
 
@@ -84,16 +95,12 @@ namespace Myra.Classifier
 
                 // Parsing must not touch the mutable buffer. The parser
                 // works exclusively against this immutable snapshot.
-                var model = await Task.Run(
-                    () => _parser.Parse(snapshot, token),
-                    token);
+                var model = await _parser.ParseAsync(_buffer, token);
 
                 token.ThrowIfCancellationRequested();
 
                 // The document may have changed while parsing.
-                if (!ReferenceEquals(
-                        snapshot,
-                        _buffer.CurrentSnapshot))
+                if (!ReferenceEquals(snapshot, _buffer.CurrentSnapshot))
                 {
                     return;
                 }
@@ -104,9 +111,7 @@ namespace Myra.Classifier
                         return;
 
                     // Check again after acquiring the lock.
-                    if (!ReferenceEquals(
-                            snapshot,
-                            _buffer.CurrentSnapshot))
+                    if (!ReferenceEquals(snapshot, _buffer.CurrentSnapshot))
                     {
                         return;
                     }
@@ -114,10 +119,7 @@ namespace Myra.Classifier
                     _model = model;
                 }
 
-                ModelChanged?.Invoke(
-                    this,
-                    new MyraXamlDocumentModelChangedEventArgs(
-                        snapshot));
+                ModelChanged?.Invoke(this, new MyraXamlDocumentModelChangedEventArgs(snapshot));
             }
             catch (OperationCanceledException)
             {

@@ -8,10 +8,10 @@
   
 	  <MyraXaml Include="**\*.xaml" />
 	  <MyraXaml Include="..\..\src\Resources\*.xmms" LogicalPath="Resources\%(RecursiveDir)%(Filename)%(Extension)" />
- 
-	  <None Update="**\*.xaml">
-		<MyraEditor>true</MyraEditor>
-	  </None>
+
+    <AdditionalFiles Include="**\*.xaml">
+			<MyraEditor>true</MyraEditor>
+	  </AdditionalFiles>
 	  <Content Include="..\..\src\Resources\*.png" LinkBase="Resources">
 		<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </Content>

@@ -1,10 +1,13 @@
-﻿using System;
+﻿using Microsoft.CodeAnalysis; 
+using Microsoft.VisualStudio.LanguageServices;
+using Microsoft.VisualStudio.Text;
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
+using System.IO;
+using System.Linq; 
 using System.Text.RegularExpressions;
 using System.Threading;
-using Microsoft.VisualStudio.Text;
+using System.Threading.Tasks;
 
 namespace Myra.Classifier
 {
@@ -62,50 +65,37 @@ namespace Myra.Classifier
             RegexOptions.Compiled |
             RegexOptions.IgnorePatternWhitespace);
 
-        private readonly Dictionary<string, Type> _widgetTypes;
+        private readonly Dictionary<string, MyraXamlType> _widgetTypes = new(StringComparer.Ordinal);
 
-        private readonly Dictionary<string, Type?> _typeCache =
-            new(StringComparer.Ordinal);
-
+        private readonly Dictionary<string, MyraXamlType?> _typeCache = new(StringComparer.Ordinal);
         private readonly object _typeCacheLock = new();
+        private readonly VisualStudioWorkspace _workspace;
+        private readonly IServiceProvider _serviceProvider;
 
-        public MyraXamlParser()
+        private Compilation? currentCompilation;
+        private bool _isLoaded = false;
+
+        public MyraXamlParser(IServiceProvider serviceProvider, VisualStudioWorkspace workspace)
         {
-            _widgetTypes = new Dictionary<string, Type>(
-                StringComparer.Ordinal);
-
-            var widgetAssembly =
-                typeof(Myra.Graphics2D.UI.Widget).Assembly;
-
-            foreach (var type in GetLoadableTypes(widgetAssembly))
-            {
-                if (!type.IsClass ||
-                    type.IsAbstract ||
-                    !typeof(Myra.Graphics2D.UI.Widget)
-                        .IsAssignableFrom(type))
-                {
-                    continue;
-                }
-
-                if (!string.Equals(
-                        type.Namespace,
-                        "Myra.Graphics2D.UI",
-                        StringComparison.Ordinal))
-                {
-                    continue;
-                }
-
-                if (!_widgetTypes.ContainsKey(type.Name))
-                {
-                    _widgetTypes.Add(type.Name, type);
-                }
-            }
+            _serviceProvider = serviceProvider;
+            _workspace = workspace;
         }
 
-        public MyraXamlDocumentModel Parse(
-            ITextSnapshot snapshot,
-            CancellationToken cancellationToken)
+        public async Task<MyraXamlDocumentModel?> ParseAsync(ITextBuffer buffer, CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (!_isLoaded)
+            {
+                await LoadTypesAsync(buffer);
+            }
+
+            if (currentCompilation == null)
+            {
+                return null;
+            }
+
+            var snapshot = buffer.CurrentSnapshot;
             var text = snapshot.GetText();
 
             var namespaces = ParseNamespaces(text);
@@ -162,14 +152,7 @@ namespace Myra.Classifier
                 if (parent != null)
                     parent.Children.Add(element);
 
-                ParseAttributes(
-                    snapshot,
-                    text,
-                    tagStart,
-                    tagEnd,
-                    element,
-                    namespaces,
-                    cancellationToken);
+                ParseAttributes(snapshot, text, tagStart,  tagEnd,  element,  namespaces,  cancellationToken);
 
                 if (!selfClosing)
                     stack.Push(element);
@@ -182,6 +165,103 @@ namespace Myra.Classifier
                 Namespaces = namespaces
             };
         }
+
+        private async Task LoadTypesAsync(ITextBuffer buffer)
+        {
+            var snapshot = buffer.CurrentSnapshot;
+            var filePath = buffer.GetFileName();
+            if (filePath == null)
+                return;
+
+            var project = _workspace.CurrentSolution.Projects.FirstOrDefault(p =>
+            {
+                if (p.FilePath == null)
+                    return false;
+                 
+                return p.AdditionalDocuments.Any(f => String.Equals(f.FilePath, filePath, StringComparison.OrdinalIgnoreCase));
+            });
+             
+            if (project is null)
+            { 
+                return;
+            }
+
+            var compilation = await project.GetCompilationAsync();
+             
+            if (compilation is null)
+                return;
+
+            currentCompilation = compilation;
+
+            LoadWidgetType("Myra.Graphics2D.UI.Widget"); 
+
+            _isLoaded = true;
+        }
+
+        private MyraXamlType? LoadType(string name)
+        {
+            if (currentCompilation == null)
+                throw new InvalidOperationException();
+
+            var type = currentCompilation.GetTypeByMetadataName(name);
+            if (type == null)
+            { 
+                return null;
+            }
+            return new MyraXamlType(type);
+        }
+
+        private void LoadWidgetType(string name)
+        {
+            var type = LoadType(name);
+            if (type != null) 
+            {
+                _widgetTypes[name] = type;
+            }
+        }
+
+        private MyraXamlType? ResolveType(string? prefix, string name, IReadOnlyDictionary<string, string> namespaces)
+        {
+            var key = (prefix ?? string.Empty) + ":" + name;
+
+            lock (_typeCacheLock)
+            {
+                if (_typeCache.TryGetValue(key, out var cached))
+                {
+                    return cached;
+                }
+            }
+
+            string typeNamespace;
+
+            if (prefix == null)
+            {
+                typeNamespace = "Myra.Graphics2D.UI";
+            }
+            else if (namespaces.TryGetValue(prefix, out var uri))
+            {
+                typeNamespace = uri;
+            }
+            else
+            {
+                return null;
+            }
+
+            var result = LoadType(typeNamespace + "." + name);
+            if (result == null)
+            {
+                return null;
+            }    
+
+            lock (_typeCacheLock)
+            {
+                _typeCache[key] = result;
+            }
+
+            return result;
+        }
+
+
 
         private MyraXamlElement CreateElement(
             ITextSnapshot snapshot,
@@ -218,47 +298,34 @@ namespace Myra.Classifier
              *   1. there is no namespace prefix;
              *   2. the owner resolves to a type;
              *   3. the member is a property on the parent element's type.
-             */
-            if (prefix == null)
+             */ 
+            var dot = rawName.IndexOf('.');
+
+            if (dot > 0 &&
+                dot < rawName.Length - 1
+                && parent?.Type != null)
             {
-                var dot = rawName.IndexOf('.');
+                var ownerName = rawName.Substring(0, dot);
+                var memberName = rawName.Substring(dot + 1); 
+                var ownerStart =  nameGroup.Index;
+                var memberStart =  nameGroup.Index + dot +  1;
+                var ownerType = ResolveType(prefix, ownerName, namespaces);
 
-                if (dot > 0 &&
-                    dot < rawName.Length - 1
-                    && parent?.Type != null)
-                {
-                    var ownerName = rawName.Substring(0, dot);
-                    var memberName = rawName.Substring(dot + 1); 
+                return new MyraXamlElement(snapshot, rawName, null)
+                { 
+                    Type = ownerType,
 
-                    var ownerType =
-                        ResolveType(null, ownerName, namespaces);
+                    IsPropertyElement = true,
 
-                    if (ownerType != null && IsPropertyElement(parent.Type, ownerType, memberName))
-                    {
-                        var ownerStart =  nameGroup.Index;
-                        var memberStart =  nameGroup.Index + dot +  1;
-
-                        return new MyraXamlElement
-                        {
-                            Snapshot = snapshot,
-                            Name = rawName,
-                            Prefix = null,
-                            Type = ownerType,
-
-                            IsPropertyElement = true,
-
-                            NameSpan = new SnapshotSpan(snapshot,  snapshot.Length > 0 ? ownerStart : 0,  rawName.Length),
-                            OwnerNameSpan =  new SnapshotSpan(snapshot, ownerStart,  ownerName.Length),
-                            MemberNameSpan = new SnapshotSpan(snapshot, memberStart, memberName.Length),
-                            Parent = parent,
-                            TagSpan = new SnapshotSpan(snapshot, tagStart, Math.Max(0,tagEnd - tagStart + 1))
-                        };
-                    }
-                }
-            }
-
-            var type = ResolveType(prefix, rawName, namespaces);
-
+                    NameSpan = new SnapshotSpan(snapshot,  snapshot.Length > 0 ? ownerStart : 0,  rawName.Length),
+                    OwnerNameSpan =  new SnapshotSpan(snapshot, ownerStart,  ownerName.Length),
+                    MemberNameSpan = new SnapshotSpan(snapshot, memberStart, memberName.Length),
+                    Parent = parent,
+                    TagSpan = new SnapshotSpan(snapshot, tagStart, Math.Max(0,tagEnd - tagStart + 1))
+                };
+                   
+            } 
+             
             var elementStart =
                 prefixGroup.Success
                     ? prefixGroup.Index
@@ -273,12 +340,10 @@ namespace Myra.Classifier
                         snapshot,
                         elementStart,
                         elementLength);
+            var type = ResolveType(prefix, rawName, namespaces);
 
-            return new MyraXamlElement
+            return new MyraXamlElement(snapshot, rawName, prefix)
             {
-                Snapshot = snapshot,
-                Name = rawName,
-                Prefix = prefix,
                 Type = type,
                 IsPropertyElement = false,
                 NameSpan = nameSpan,
@@ -368,17 +433,7 @@ namespace Myra.Classifier
                  */
                 if (member != null)
                 {
-                    var ownerType =
-                        ResolveType(
-                            prefix,
-                            owner,
-                            namespaces);
-
-                    var isAttached =
-                        ownerType != null &&
-                        IsAttachedProperty(
-                            ownerType,
-                            member);
+                    var ownerType =  ResolveType(prefix, owner, namespaces);
 
                     var ownerStart =
                         tagStart +
@@ -404,9 +459,8 @@ namespace Myra.Classifier
                         memberGroup.Index;
 
                     var attr =
-                        new MyraXamlAttribute
-                        {
-                            Name = member,
+                        new MyraXamlAttribute(member)
+                        { 
                             Prefix = prefix,
                             OwnerNameSpan =
                                 new SnapshotSpan(
@@ -423,9 +477,7 @@ namespace Myra.Classifier
                                     snapshot,
                                     memberStart,
                                     member.Length),
-                            OwnerType = ownerType,
-                            IsAttachedProperty = isAttached,
-                            IsValid = isAttached
+                            OwnerType = ownerType
                         };
 
                     element.Attributes.Add(attr);
@@ -446,21 +498,18 @@ namespace Myra.Classifier
                     owner;
 
                 var valid =
-                    element.Type != null &&
-                    IsInstanceProperty(
-                        element.Type,
-                        propertyName);
+                                    element.Type != null &&
+                                    IsInstanceProperty(
+                                        element.Type,
+                                        propertyName);
 
                 var attributeStart =
                     tagStart +
                     ownerGroup.Index;
 
                 var attribute =
-                    new MyraXamlAttribute
+                    new MyraXamlAttribute(propertyName)
                     {
-                        Name =
-                            propertyName,
-
                         Prefix =
                             prefix,
 
@@ -476,8 +525,7 @@ namespace Myra.Classifier
                         IsAttachedProperty =
                             false,
 
-                        IsValid =
-                            valid
+                        IsValid = valid
                     };
 
                 element.Attributes.Add(
@@ -485,10 +533,7 @@ namespace Myra.Classifier
             }
         }
 
-        private bool IsPropertyElement(
-            Type parentType,
-            Type ownerType,
-            string memberName)
+        private bool IsPropertyElement(MyraXamlType parentType, MyraXamlType ownerType, string memberName)
         {
             /*
              * The owner in:
@@ -512,21 +557,12 @@ namespace Myra.Classifier
                 memberName);
         }
 
-        private static bool IsInstanceProperty(
-            Type type,
-            string propertyName)
+        private static bool IsInstanceProperty(MyraXamlType type,string propertyName)
         {
-            return type.GetProperty(
-                       propertyName,
-                       BindingFlags.Instance |
-                       BindingFlags.Public |
-                       BindingFlags.FlattenHierarchy)
-                   != null;
+            return type.Type.GetMembers(propertyName).OfType<IPropertySymbol>().Any(p => !p.IsStatic);
         }
 
-        private static bool IsAttachedProperty(
-            Type ownerType,
-            string propertyName)
+        private static bool IsAttachedProperty(MyraXamlType ownerType,   string propertyName)
         {
             /*
              * XAML attached-property convention:
@@ -536,23 +572,17 @@ namespace Myra.Classifier
              *
              * We accept either accessor, since some frameworks
              * expose only one side.
-             */
-            var flags =
-                BindingFlags.Static |
-                BindingFlags.Public |
-                BindingFlags.FlattenHierarchy;
+             */ 
+            var getter = ownerType.Type.GetMembers("Get" + propertyName);
 
-            var getter =ownerType.GetMethod("Get" + propertyName, flags);
-
-            if (getter != null && getter.ReturnType != typeof(void))
+            if (getter != null)
             {
                 return true;
             }
 
-            var setter = ownerType.GetMethod("Set" + propertyName, flags);
+            var setter = ownerType.Type.GetMembers("Set" + propertyName);
 
-            if (setter != null &&
-                setter.ReturnType == typeof(void))
+            if (setter != null)
             {
                 return true;
             }
@@ -560,177 +590,6 @@ namespace Myra.Classifier
             return false;
         }
 
-        private Type? ResolveType(string? prefix, string name, IReadOnlyDictionary<string, string> namespaces)
-        {
-            var key = (prefix ?? string.Empty) + ":" + name;
-
-            lock (_typeCacheLock)
-            {
-                if (_typeCache.TryGetValue(
-                        key,
-                        out var cached))
-                {
-                    return cached;
-                }
-            }
-
-            Type? result;
-
-            if (prefix == null)
-            {
-                result =
-                    ResolveUnprefixedType(name);
-            }
-            else if (namespaces.TryGetValue(prefix, out var uri))
-            {
-                result = ResolvePrefixedType(uri, name);
-            }
-            else
-            {
-                result = null;
-            }
-
-            lock (_typeCacheLock)
-            {
-                _typeCache[key] = result;
-            }
-
-            return result;
-        }
-
-        private Type? ResolveUnprefixedType(string name)
-        {
-            if (_widgetTypes.TryGetValue(name, out var type))
-            {
-                return type;
-            }
-
-            return null;
-        }
-
-        private static Type? ResolvePrefixedType(
-            string uri,
-            string name)
-        {
-            /*
-             * Myra's own namespace.
-             */
-            if (string.Equals(uri, MyraNamespace,  StringComparison.Ordinal))
-            {
-                return ResolveMyraType(name);
-            }
-
-            /*
-             * CLR namespace:
-             *
-             *     xmlns:local="clr-namespace:MyGame"
-             *
-             * or:
-             *
-             *     xmlns:local=
-             *         "clr-namespace:MyGame;assembly=MyGame"
-             */
-            if (!uri.StartsWith(
-                    ClrNamespacePrefix,
-                    StringComparison.Ordinal))
-            {
-                return null;
-            }
-
-            var value =
-                uri.Substring(
-                    ClrNamespacePrefix.Length);
-
-            var match =
-                NamespaceRegex.Match(value);
-
-            if (!match.Success)
-                return null;
-
-            var clrNamespace =
-                match.Groups["namespace"].Value;
-
-            var assemblyName =
-                match.Groups["assembly"].Success
-                    ? match.Groups["assembly"].Value
-                    : null;
-
-            IEnumerable<Assembly> assemblies = !string.IsNullOrWhiteSpace(assemblyName)
-                ? AppDomain.CurrentDomain
-                        .GetAssemblies()
-                        .Where(a =>
-                            string.Equals(
-                                a.GetName().Name,
-                                assemblyName,
-                                StringComparison.Ordinal))
-                : AppDomain.CurrentDomain
-                        .GetAssemblies();
-            foreach (var assembly in assemblies)
-            {
-                foreach (var type in GetLoadableTypes(assembly))
-                {
-                    if (!string.Equals(
-                            type.Namespace,
-                            clrNamespace,
-                            StringComparison.Ordinal))
-                    {
-                        continue;
-                    }
-
-                    if (!string.Equals(
-                            type.Name,
-                            name,
-                            StringComparison.Ordinal))
-                    {
-                        continue;
-                    }
-
-                    return type;
-                }
-            }
-
-            return null;
-        }
-
-        private static Type? ResolveMyraType(
-            string name)
-        {
-            var assembly =
-                typeof(Myra.Graphics2D.UI.Widget)
-                    .Assembly;
-
-            foreach (var type in GetLoadableTypes(assembly))
-            {
-                if (string.Equals(
-                        type.Namespace,
-                        "Myra.Graphics2D.UI",
-                        StringComparison.Ordinal) &&
-                    string.Equals(
-                        type.Name,
-                        name,
-                        StringComparison.Ordinal))
-                {
-                    return type;
-                }
-            }
-
-            return null;
-        }
-
-        private static IEnumerable<Type> GetLoadableTypes(
-            Assembly assembly)
-        {
-            try
-            {
-                return assembly.GetTypes();
-            }
-            catch (ReflectionTypeLoadException e)
-            {
-                return e.Types
-                    .Where(t => t != null)!
-                    .Cast<Type>();
-            }
-        }
 
         private static Dictionary<string, string> ParseNamespaces(
             string text)

@@ -1,9 +1,10 @@
 ﻿using EnvDTE;
+using Microsoft.CodeAnalysis;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Text;
-using Microsoft.VisualStudio.Utilities;
+using Myra.Classifier;
 using System;
 
 namespace Myra
@@ -44,28 +45,17 @@ namespace Myra
             if (Package.GetGlobalService(typeof(SVsSolution)) is not IVsSolution solution)
             {
                 return false;
-            }
+            } 
 
-            ErrorHandler.ThrowOnFailure(
-                solution.GetProjectOfUniqueName(
-                    project.UniqueName,
-                    out var hierarchy));
-
-            ErrorHandler.ThrowOnFailure(
-                hierarchy.ParseCanonicalName(
-                    filePath,
-                    out var itemId));
+            ErrorHandler.ThrowOnFailure(solution.GetProjectOfUniqueName(project.UniqueName, out var hierarchy));
+            ErrorHandler.ThrowOnFailure(hierarchy.ParseCanonicalName(filePath, out var itemId));
 
             if (hierarchy is not IVsBuildPropertyStorage storage)
             {
                 return false;
             }
 
-            ErrorHandler.ThrowOnFailure(
-                storage.GetItemAttribute(
-                    itemId,
-                    "MyraEditor",
-                    out var myraEditor));
+            ErrorHandler.ThrowOnFailure(storage.GetItemAttribute(itemId, "MyraEditor", out var myraEditor));
 
             if (String.IsNullOrWhiteSpace(myraEditor))
             {
@@ -76,6 +66,30 @@ namespace Myra
 
             return (String.Equals(trim, "1", StringComparison.OrdinalIgnoreCase)
                 || String.Equals(trim, "true", StringComparison.OrdinalIgnoreCase));
+        }
+
+        public static bool IsAssignableFrom(this MyraXamlType target, MyraXamlType source)
+        {
+            return SymbolEqualityComparer.Default.Equals(target.Type, source.Type)
+                || source.Type.AllInterfaces.Contains(target.Type, SymbolEqualityComparer.Default)
+                || IsBaseTypeOf(target, source);
+        }
+
+        static bool IsBaseTypeOf(MyraXamlType target, MyraXamlType source)
+        {
+            for (var type = source.Type.BaseType; type != null; type = type.BaseType)
+            {
+                if (SymbolEqualityComparer.Default.Equals(target.Type, type))
+                    return true;
+            }
+
+            return false;
+        }
+
+        public static string? GetFileName(this ITextBuffer buffer)
+        {
+            buffer.Properties.TryGetProperty(typeof(ITextDocument), out ITextDocument? document);
+            return document?.FilePath;
         }
     }
 }

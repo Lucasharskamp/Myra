@@ -7,17 +7,24 @@ namespace Myra.Classifier
 
     internal sealed class MyraXamlElement
     {
-        public ITextSnapshot Snapshot { get; set; }
+        public MyraXamlElement(ITextSnapshot snapshot, string name, string? prefix)
+        {
+            Snapshot = snapshot;
+            Name = name;
+            Prefix = prefix;
+        }
+
+        public ITextSnapshot Snapshot { get; }
 
         public SnapshotSpan NameSpan { get; set; }
         public SnapshotSpan? ClosingNameSpan { get; set; }
 
-        public string Name { get; set; }
+        public string Name { get; }
 
-        public string? Prefix { get; set; }
+        public string? Prefix { get; }
 
-        public Type? Type { get; set; }
-        public Type? MemberType { get; set; }
+        public MyraXamlType? Type { get; set; }
+        public MyraXamlType? MemberType { get; set; }
 
         public bool IsPropertyElement { get; set; }
 

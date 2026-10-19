@@ -1,65 +1,222 @@
-﻿using Microsoft.VisualStudio.Text;
+﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.VisualStudio.Language.StandardClassification;
+using Microsoft.VisualStudio.LanguageServices;
+using Microsoft.VisualStudio.Text;
+using Microsoft.VisualStudio.Text.Classification;
 using Microsoft.VisualStudio.Text.Tagging;
+using Myra.Classifier;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Myra.Tagger
-{ 
+{
 
-    internal sealed class MyraXamlTagger<T> : ITagger<T> where T : ITag
+    internal sealed class MyraXamlTagger : ITagger<ClassificationTag>
     {
         private readonly ITextBuffer _buffer;
+        private readonly Workspace _workspace;
+        private readonly MyraXamlDocumentModelProvider _registry;
+        private readonly IClassificationTypeRegistryService _classificationRegistry;
+        private readonly object _gate = new();
+        private List<TagSpan<ClassificationTag>> _tags = [];
 
-        private static readonly Regex ElementRegex = new(
-        """
-        <
-        \s*
-        (?<closing>/)?
-        (?:
-            (?<prefix>[A-Za-z_][A-Za-z0-9_.-]*):
-        )?
-        (?<name>[A-Za-z_][A-Za-z0-9_.-]*)
-        """,
-        RegexOptions.Compiled | RegexOptions.IgnorePatternWhitespace);
+        private CancellationTokenSource? _updateCancellation;
+        private readonly CancellationTokenSource _lifetime = new();
 
-        public MyraXamlTagger(ITextBuffer buffer)
+        private int _generation;
+        private bool _disposed; 
+
+        public MyraXamlTagger(ITextBuffer buffer,
+            VisualStudioWorkspace workspace,
+            MyraXamlDocumentModelProvider modelProvider,
+            IClassificationTypeRegistryService classificationRegistry)
         {
             _buffer = buffer;
+            _registry = modelProvider;
+            this._classificationRegistry = classificationRegistry;
+            _workspace = workspace;
 
             _buffer.Changed += OnBufferChanged;
+            _ = UpdateAsync();
         }
 
         public event EventHandler<SnapshotSpanEventArgs>? TagsChanged;
 
-        public IEnumerable<ITagSpan<T>> GetTags(NormalizedSnapshotSpanCollection spans)
+        public IEnumerable<ITagSpan<ClassificationTag>> GetTags(NormalizedSnapshotSpanCollection spans)
         {
             if (spans.Count == 0)
                 yield break;
 
-            var snapshot = _buffer.CurrentSnapshot;
+            List<TagSpan<ClassificationTag>> cached;
 
-            foreach (var span in spans)
+            lock (_gate)
             {
-
+                cached = _tags;
             }
 
-           // yield return new TagSpan<ErrorTag>(spans.First(), new ErrorTag())
+            var snapshot = spans[0].Snapshot;
 
-            // Actual Myra tag discovery will go here.
-            //
-            // Example:
-            //
-            // yield return new TagSpan<MyraXamlTag>(
-            //     new SnapshotSpan(snapshot, start, length),
-            //     new MyraXamlTag("..."));
+            // Never return spans from a different buffer snapshot.
+            if (snapshot != _buffer.CurrentSnapshot)
+                yield break;
+
+            foreach (var tag in cached)
+            {
+                if (tag.Span.Snapshot != snapshot)
+                    continue;
+
+                if (spans.Any(span => span.IntersectsWith(tag.Span)))
+                    yield return tag;
+            }
         }
 
-        private void OnBufferChanged(object sender,TextContentChangedEventArgs e)
+        private void OnBufferChanged(object sender, TextContentChangedEventArgs e)
         {
-            // For now, invalidate everything.
-            TagsChanged?.Invoke(
-                this, new SnapshotSpanEventArgs(new SnapshotSpan(e.After, 0, e.After.Length)));
+            _ = UpdateAsync();
+        }
+
+        private async Task UpdateAsync()
+        {
+            if (_disposed)
+                return;
+
+            var generation = Interlocked.Increment(ref _generation);
+
+            var cancellation = CancellationTokenSource.CreateLinkedTokenSource(
+                _lifetime.Token);
+
+            CancellationTokenSource? previous;
+
+            lock (_gate)
+            {
+                previous = _updateCancellation;
+                _updateCancellation = cancellation;
+            }
+
+            previous?.Cancel();
+
+            try
+            {
+                var snapshot = _buffer.CurrentSnapshot;
+                  
+                var model = await _registry.WaitForModelAsync(snapshot, cancellation.Token);
+                if (model == null)
+                    return;
+
+                cancellation.Token.ThrowIfCancellationRequested();
+
+                var tags = new List<TagSpan<ClassificationTag>>();
+                foreach (var element in model.Elements)
+                {
+                    CreateTags(tags, element);
+                }
+
+                Publish(snapshot, generation, tags);
+            }
+            catch (OperationCanceledException)
+            {
+                // A newer edit superseded this calculation.
+            }
+            finally
+            {
+                lock (_gate)
+                {
+                    if (ReferenceEquals(_updateCancellation, cancellation))
+                        _updateCancellation = null;
+                }
+
+                cancellation.Dispose();
+            }
+        }
+
+        private void CreateTags(List<TagSpan<ClassificationTag>> tags, MyraXamlElement element)
+        {
+            if (element.MemberType != null && element.MemberNameSpan.HasValue)
+            {
+                tags.Add(new TagSpan<ClassificationTag>(
+                    element.MemberNameSpan.Value,
+                    new ClassificationTag(_classificationRegistry.GetClassificationType(PredefinedClassificationTypeNames.SymbolDefinition))));
+
+                if (element.ClosingMemberNameSpan.HasValue)
+                {
+                    tags.Add(new TagSpan<ClassificationTag>(
+                    element.ClosingMemberNameSpan.Value,
+                    new ClassificationTag(_classificationRegistry.GetClassificationType(PredefinedClassificationTypeNames.SymbolDefinition))));
+                }
+            }
+
+            if (element.Type != null)
+            {
+                tags.Add(new TagSpan<ClassificationTag>(
+                          element.NameSpan,
+                          new ClassificationTag(
+                              _classificationRegistry.GetClassificationType(
+                                  PredefinedClassificationTypeNames.SymbolDefinition))));
+                if (element.ClosingNameSpan.HasValue)
+                {
+                    tags.Add(new TagSpan<ClassificationTag>(
+                      element.ClosingNameSpan.Value,
+                      new ClassificationTag(
+                          _classificationRegistry.GetClassificationType(
+                              PredefinedClassificationTypeNames.SymbolDefinition))));
+                }
+            }
+
+            foreach (var attr in element.Attributes)
+            {
+                if (attr.OwnerType != null) 
+                {
+                    tags.Add(new TagSpan<ClassificationTag>(
+                    attr.NameSpan,
+                    new ClassificationTag(
+                        _classificationRegistry.GetClassificationType(
+                            PredefinedClassificationTypeNames.SymbolDefinition))));
+                }
+            } 
+        }
+
+        private void Publish(ITextSnapshot snapshot,  int generation, List<TagSpan<ClassificationTag>> tags)
+        {
+            if (_disposed ||
+                generation != Volatile.Read(ref _generation) ||
+                snapshot != _buffer.CurrentSnapshot)
+            {
+                return;
+            }
+
+            lock (_gate)
+            {
+                _tags = tags;
+            }
+
+            if (snapshot.Length > 0)
+            {
+                TagsChanged?.Invoke(this, new SnapshotSpanEventArgs(new SnapshotSpan(snapshot, 0, snapshot.Length)));
+            }
+        }
+
+        public void Dispose()
+        {
+            if (_disposed)
+                return;
+
+            _disposed = true;
+
+            _buffer.Changed -= OnBufferChanged;
+            _lifetime.Cancel();
+
+            lock (_gate)
+            {
+                _updateCancellation?.Cancel();
+                _tags.Clear();
+            }
+
+            _lifetime.Dispose();
         }
     }
 }
