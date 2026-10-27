@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Classification;
@@ -17,6 +18,8 @@ namespace Myra.Classifier
         private readonly IClassificationType _methodClassification;
         private readonly IClassificationType _enumClassification;
         private readonly MyraXamlDocumentModelProvider _modelProvider;
+
+        private static readonly Regex IsNumberRegex = new(@"^[\s\d.,]*$", RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
         public MyraXamlClassifier(
             IClassificationTypeRegistryService classificationTypes,
@@ -68,8 +71,10 @@ namespace Myra.Classifier
             if (!nameSpanIntersects && !closingNameSpanIntersects)
                 return;
 
+            AssignValue(element, requestedSpan, result);
+
             // use a red error highlight if the type is not found. Otherwise, use a yellow golden element classification.
-            var elementClassificationToUse = element.Type != null ? _typeClassification : _errorClassification;
+            var elementClassificationToUse = element.TypeSymbol != null ? _typeClassification : _errorClassification;
  
             // Check if the element is about the a child property, like <Grid.ColumnsProportions> 
             // If not, the classifications are straightforward.
@@ -86,7 +91,7 @@ namespace Myra.Classifier
                 return;
             }
 
-            var memberClassificationToUse = element.Type != null ? _memberClassification : _errorClassification;
+            var memberClassificationToUse = element.TypeSymbol != null ? _memberClassification : _errorClassification;
 
             // classify the <'owner'.member> area
             if (element.OwnerNameSpan is SnapshotSpan ownerSpan &&
@@ -119,49 +124,55 @@ namespace Myra.Classifier
         }
 
         private void ClassifyAttribute(MyraXamlAttribute attribute, SnapshotSpan requestedSpan, List<ClassificationSpan> result)
-        { 
+        {
             // Resolve Property name, like "Text" in 'Text="Hello World"'
             if (attribute.NameSpan.IntersectsWith(requestedSpan))
-            { 
+            {
                 result.Add(new ClassificationSpan(attribute.NameSpan,
                     attribute.IsValid ?
-                    attribute.IsFeature ? _featureClassification : _memberClassification 
+                    attribute.IsFeature ? _featureClassification : _memberClassification
                     : _errorClassification));
-            } 
-             
+            }
+
             // provide class classification if it is a property reference to another type, like 'Grid.Row'
             if (attribute.OwnerNameSpan is SnapshotSpan ownerSpan && ownerSpan.IntersectsWith(requestedSpan))
             {
                 result.Add(new ClassificationSpan(ownerSpan, (attribute.IsOwnerValid ?? true) ? _typeClassification : _errorClassification));
-            } 
+            }
 
-            if (attribute.ValueSpan.IntersectsWith(requestedSpan) && attribute.TypeSymbol != null)
+            AssignValue(attribute, requestedSpan, result);  
+        }
+
+        private void AssignValue(IMyraValueType item, SnapshotSpan requestedSpan, List<ClassificationSpan> result)
+        {
+            if (!item.ValueSpan.IntersectsWith(requestedSpan) || item.TypeSymbol == null)
             {
-                if (attribute.IsFeature ||
-                    String.Equals(attribute.TypeSymbol.Name, "MyraEventHandler", StringComparison.OrdinalIgnoreCase))
-                {
-                    result.Add(new ClassificationSpan(attribute.ValueSpan, _methodClassification));
-                    return;
-                }
+                return;
+            }
 
-                if (attribute.TypeSymbol.TypeKind == TypeKind.Enum)
-                {
-                    result.Add(new ClassificationSpan(attribute.ValueSpan, _enumClassification));
-                    return;
-                }
+            if (String.Equals(item.TypeSymbol.Name, "MyraEventHandler", StringComparison.OrdinalIgnoreCase))
+            {
+                result.Add(new ClassificationSpan(item.ValueSpan, _methodClassification));
+                return;
+            }
 
-                if (String.Equals(attribute.TypeSymbol.Name, "String", StringComparison.OrdinalIgnoreCase))
-                {
-                    result.Add(new ClassificationSpan(attribute.ValueSpan, _stringClassification));
-                    return;
-                } 
+            if (item.TypeSymbol.TypeKind == TypeKind.Enum)
+            {
+                result.Add(new ClassificationSpan(item.ValueSpan, _enumClassification));
+                return;
+            }
 
-                if (attribute.TypeSymbol.Name.StringMatchesAnyOf("Byte", "Int16", "Int32", "Int64", "Single", "Double", "UInt16", "UInt32", "UInt64"))
-                {
-                    result.Add(new ClassificationSpan(attribute.ValueSpan, _numberClassification));
-                    return;
-                }
-                 
+            if (item.TypeSymbol.TypeKind == TypeKind.Struct)
+            {
+                result.Add(new ClassificationSpan(item.ValueSpan,
+                                    IsNumberRegex.IsMatch(item.Value) ? _numberClassification : _methodClassification));
+                return;
+            }
+
+            if (String.Equals(item.TypeSymbol.Name, "String", StringComparison.OrdinalIgnoreCase))
+            {
+                result.Add(new ClassificationSpan(item.ValueSpan, _stringClassification));
+                return;
             }
         }
 

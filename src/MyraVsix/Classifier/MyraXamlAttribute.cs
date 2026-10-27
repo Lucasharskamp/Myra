@@ -5,10 +5,11 @@ namespace Myra.Classifier
 {
 
 
-    internal sealed class MyraXamlAttribute
+    internal sealed class MyraXamlAttribute : IMyraValueType
     {
         public MyraXamlAttribute(string name, string? prefix, 
             SnapshotSpan nameSpan, SnapshotSpan valueSpan,
+            string value,
             bool isValid, bool isFeature)
         {
             Name = name;
@@ -17,6 +18,7 @@ namespace Myra.Classifier
             ValueSpan = valueSpan;
             IsValid = isValid;
             IsFeature = isFeature;
+            Value = value;
         }
         public SnapshotSpan NameSpan { get; }
 
@@ -35,5 +37,6 @@ namespace Myra.Classifier
         public bool IsValid { get; }
 
         public SnapshotSpan ValueSpan { get; }
+        public string Value { get; }
     }
 }

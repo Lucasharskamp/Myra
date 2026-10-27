@@ -110,7 +110,7 @@ namespace Myra.Classifier
                 // Closing tags don't create semantic elements.
                 if (closingGroup.Success)
                 {
-                    CloseElement(snapshot, rawName, closingGroup, stack);
+                    CloseElement(snapshot, text, rawName, closingGroup, stack);
 
                     continue;
                 }
@@ -142,12 +142,7 @@ namespace Myra.Classifier
                     stack.Push(element);
             }
 
-            return new MyraXamlDocumentModel
-            {
-                Snapshot = snapshot,
-                Elements = elements,
-                Namespaces = namespaces
-            };
+            return new MyraXamlDocumentModel(snapshot, elements, namespaces);
         }
 
         private async Task LoadTypesAsync(ITextBuffer buffer, CancellationToken cancellationToken)
@@ -300,24 +295,24 @@ namespace Myra.Classifier
 
             if (dot > 0 &&
                 dot < rawName.Length - 1
-                && parent?.Type != null)
+                && parent?.TypeSymbol != null)
             {
                 var ownerName = rawName.Substring(0, dot);
                 var memberName = rawName.Substring(dot + 1); 
                 var ownerStart =  nameGroup.Index;
                 var memberStart =  nameGroup.Index + dot +  1;
                 var ownerType = ResolveType(prefix, ownerName, namespaces);
+                var elementSpan = new SnapshotSpan(snapshot, tagStart, Math.Max(0, tagEnd - tagStart + 1));
                 var isValid = ownerType != null && IsInstancePropertyOrEvent(ownerType, memberName, out var memberSymbol);
 
-                return new MyraXamlElement(snapshot, rawName, null, isValid)
+                return new MyraXamlElement(snapshot, rawName, null, isValid, elementSpan)
                 { 
-                    Type = ownerType, 
+                    TypeSymbol = ownerType, 
                     IsPropertyElement = true, 
                     NameSpan = new SnapshotSpan(snapshot,  snapshot.Length > 0 ? ownerStart : 0,  rawName.Length),
                     OwnerNameSpan =  new SnapshotSpan(snapshot, ownerStart,  ownerName.Length),
                     MemberNameSpan = new SnapshotSpan(snapshot, memberStart, memberName.Length),
-                    Parent = parent,
-                    TagSpan = new SnapshotSpan(snapshot, tagStart, Math.Max(0,tagEnd - tagStart + 1))
+                    Parent = parent
                 };
                    
             } 
@@ -334,14 +329,14 @@ namespace Myra.Classifier
 
             var nameSpan = new SnapshotSpan(snapshot, elementStart, elementLength);
             var type = ResolveType(prefix, rawName, namespaces);
+            var tagSpan = new SnapshotSpan(snapshot, tagStart, Math.Max(0, tagEnd - tagStart + 1));
 
-            return new MyraXamlElement(snapshot, rawName, prefix, type != null)
+            return new MyraXamlElement(snapshot, rawName, prefix, type != null, tagSpan)
             {
-                Type = type,
+                TypeSymbol = type,
                 IsPropertyElement = false,
                 NameSpan = nameSpan,
-                Parent = parent,
-                TagSpan = new SnapshotSpan(snapshot, tagStart, Math.Max(0, tagEnd - tagStart + 1))
+                Parent = parent
             };
         }
 
@@ -408,7 +403,7 @@ namespace Myra.Classifier
                     var memberSpan = new SnapshotSpan(snapshot, tagStart + memberGroup.Index, member.Length);
 
                     var attr =
-                        new MyraXamlAttribute(member, prefix, memberSpan, valueSpan, isValid, false)
+                        new MyraXamlAttribute(member, prefix, memberSpan, valueSpan, valueGroup.Value, isValid, false)
                         {  
                             IsAttachedProperty = true,
                             OwnerNameSpan = ownerSpan,
@@ -432,12 +427,12 @@ namespace Myra.Classifier
                 }
                 else  // regular property, say Width="100" or Text="Hello world!"
                 {
-                    valid = element.Type != null && IsInstancePropertyOrEvent(element.Type, owner, out memberSymbol);
+                    valid = element.TypeSymbol != null && IsInstancePropertyOrEvent(element.TypeSymbol, owner, out memberSymbol);
                     isFeature = false;
                 }
                  
                 var attribute =
-                    new MyraXamlAttribute(owner, prefix, ownerSpan, valueSpan, valid, isFeature)
+                    new MyraXamlAttribute(owner, prefix, ownerSpan, valueSpan, valueGroup.Value, valid, isFeature)
                     {  
                         TypeSymbol = memberSymbol
                     };
@@ -468,7 +463,7 @@ namespace Myra.Classifier
         }
 
 
-        public static bool IsInstancePropertyOrEvent(INamedTypeSymbol type, string name, out ITypeSymbol? found)
+        public static bool IsInstancePropertyOrEvent(ITypeSymbol type, string name, out ITypeSymbol? found)
         {
             found = null;
             for (var current = type; current is not null; current = current.BaseType)
@@ -514,7 +509,7 @@ namespace Myra.Classifier
             return result;
         }
 
-        private static void CloseElement(ITextSnapshot snapshot, string name, Group closingGroup, Stack<MyraXamlElement> stack)
+        private static void CloseElement(ITextSnapshot snapshot, string text, string name, Group closingGroup, Stack<MyraXamlElement> stack)
         {
             /*
              * For well-formed XML this is simply the top element.
@@ -530,15 +525,13 @@ namespace Myra.Classifier
             if (stack.Count == 0)
                 return;
 
-            var elements =
-                stack.ToArray();
+            var elements = stack.ToArray();
+
+            int descendingCounter = 0;
 
             foreach (var element in elements)
             {
-                if (!string.Equals(
-                        element.Name,
-                        name,
-                        StringComparison.Ordinal))
+                if (!string.Equals(element.Name, name, StringComparison.Ordinal))
                 {
                     continue;
                 }
@@ -547,6 +540,7 @@ namespace Myra.Classifier
                 {
                     var popped =
                         stack.Pop();
+                    descendingCounter++;
 
                     if (ReferenceEquals(popped,element))
                     {
@@ -562,6 +556,21 @@ namespace Myra.Classifier
                         if (element.MemberNameSpan.HasValue)
                         {
                             element.ClosingMemberNameSpan = new SnapshotSpan(snapshot, start, element.MemberNameSpan.Value.Length);
+                        }
+
+                        if (descendingCounter == 1)
+                        {
+                            var valueStart = element.NameSpan.Start.Position + 1 + element.NameSpan.Length;
+                            var valueLength = start - element.ClosingNameSpan.Value.Start - 1;
+                            if (valueLength <= 0)
+                                break;
+
+                            var result = text.Substring(valueStart, valueLength);
+                            if (String.IsNullOrWhiteSpace(result) || result.Contains('<') || result.Contains('>'))
+                                break;
+
+                            element.ValueSpan = new SnapshotSpan(snapshot, valueStart, valueLength);
+                            element.Value = result;
                         }
                         
                         break;

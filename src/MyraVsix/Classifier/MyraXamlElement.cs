@@ -6,14 +6,17 @@ using System.Collections.Generic;
 namespace Myra.Classifier
 {
 
-    internal sealed class MyraXamlElement
+    internal sealed class MyraXamlElement : IMyraValueType
     {
-        public MyraXamlElement(ITextSnapshot snapshot, string name, string? prefix, bool isValid)
+        public MyraXamlElement(ITextSnapshot snapshot, string name, string? prefix, bool isValid, SnapshotSpan tagSpan)
         {
             Snapshot = snapshot;
             Name = name;
             Prefix = prefix;
             IsValid = isValid;
+
+            TagSpan = tagSpan;
+            ValueSpan = tagSpan; // overridden later if need be.
         }
 
         public ITextSnapshot Snapshot { get; }
@@ -25,7 +28,7 @@ namespace Myra.Classifier
 
         public string? Prefix { get; }
 
-        public INamedTypeSymbol? Type { get; set; }
+        public ITypeSymbol? TypeSymbol { get; set; }
         public bool IsValid { get; }
 
         public bool IsPropertyElement { get; set; }
@@ -37,7 +40,10 @@ namespace Myra.Classifier
 
         public MyraXamlElement? Parent { get; set; }
 
-        public SnapshotSpan TagSpan { get; set; }
+        public SnapshotSpan TagSpan { get; }
+
+        public SnapshotSpan ValueSpan { get; set; }
+        public string Value { get; set; }
 
         public List<MyraXamlAttribute> Attributes { get; } = [];
 
