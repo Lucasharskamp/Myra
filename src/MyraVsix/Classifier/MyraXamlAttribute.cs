@@ -1,6 +1,5 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.VisualStudio.Text;
-using System; 
 
 namespace Myra.Classifier
 {
@@ -14,7 +13,7 @@ namespace Myra.Classifier
         {
             Name = name;
             Prefix = prefix;
-            NameSpan =nameSpan
+            NameSpan = nameSpan;
             ValueSpan = valueSpan;
             IsValid = isValid;
             IsFeature = isFeature;
@@ -28,13 +27,13 @@ namespace Myra.Classifier
         public bool? IsOwnerValid { get; set; }
         public SnapshotSpan? OwnerNameSpan { get; set; }
 
-        public INamedTypeSymbol? OwnerType { get; set; }
+        public ITypeSymbol? TypeSymbol { get; set; }
 
         public bool IsAttachedProperty { get; set; }
         public bool IsFeature { get; }
 
         public bool IsValid { get; }
 
-        public SnapshotSpan? ValueSpan { get; }
+        public SnapshotSpan ValueSpan { get; }
     }
 }

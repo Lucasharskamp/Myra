@@ -32,19 +32,9 @@ namespace Myra
             ThreadHelper.ThrowIfNotOnUIThread();
 
             if (!Helpers.IsMyraXamlFile(textBuffer, _documents))
-                return null;
-
-            var typeClassification = _classificationTypes.GetClassificationType("myraXamlType");
-            var memberClassification = _classificationTypes.GetClassificationType("myraXamlMember");
-            var featureClassification = _classificationTypes.GetClassificationType("myraXamlFeature");
-            var errorClassification = _classificationTypes.GetClassificationType("myraXamlError");
-            if (typeClassification == null || memberClassification == null|| errorClassification == null)
-                return null;
+                return null; 
              
-            return new MyraXamlClassifier(typeClassification, 
-                memberClassification,
-                featureClassification,
-                errorClassification,
+            return new MyraXamlClassifier(_classificationTypes,
                 MyraXamlBufferServices.GetModelProvider(_workspace, textBuffer));
         }
     }

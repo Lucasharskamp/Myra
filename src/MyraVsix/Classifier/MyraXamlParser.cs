@@ -47,10 +47,8 @@ namespace Myra.Classifier
                 \.
                 (?<member>[A-Za-z_][A-Za-z0-9_-]*)
             )?
-            \s*=
-            "(?:
-                (?<value>[A-Za-z0-9_.:\-\*\[\]\(\)\^\%\$\#\@\!]*)
-            )?"
+            \s*=\s*
+            "(?:(?<value>[\sA-Za-z0-9-–_.,:;={}&\/+'*\[\]()^%$#@!]*))?"
             """,
             RegexOptions.Compiled |
             RegexOptions.IgnorePatternWhitespace);
@@ -309,14 +307,12 @@ namespace Myra.Classifier
                 var ownerStart =  nameGroup.Index;
                 var memberStart =  nameGroup.Index + dot +  1;
                 var ownerType = ResolveType(prefix, ownerName, namespaces);
-                var isValid = ownerType != null && IsInstancePropertyOrEvent(ownerType, memberName);
+                var isValid = ownerType != null && IsInstancePropertyOrEvent(ownerType, memberName, out var memberSymbol);
 
                 return new MyraXamlElement(snapshot, rawName, null, isValid)
                 { 
-                    Type = ownerType,
-
-                    IsPropertyElement = true,
-
+                    Type = ownerType, 
+                    IsPropertyElement = true, 
                     NameSpan = new SnapshotSpan(snapshot,  snapshot.Length > 0 ? ownerStart : 0,  rawName.Length),
                     OwnerNameSpan =  new SnapshotSpan(snapshot, ownerStart,  ownerName.Length),
                     MemberNameSpan = new SnapshotSpan(snapshot, memberStart, memberName.Length),
@@ -407,7 +403,8 @@ namespace Myra.Classifier
 
                     // For a qualified owner, classify the entire
                     // "Grid" or "prefix:Grid" as the owner. 
-                    var isValid = ownerType != null && IsStaticAttachedProperty(ownerType, member);
+                    ITypeSymbol? typeSymbol = null;
+                    var isValid = ownerType != null && IsStaticAttachedProperty(ownerType, member, out typeSymbol);
                     var memberSpan = new SnapshotSpan(snapshot, tagStart + memberGroup.Index, member.Length);
 
                     var attr =
@@ -415,7 +412,7 @@ namespace Myra.Classifier
                         {  
                             IsAttachedProperty = true,
                             OwnerNameSpan = ownerSpan,
-                            OwnerType = ownerType,
+                            TypeSymbol = typeSymbol,
                             IsOwnerValid = ownerType != null
                         };
 
@@ -425,6 +422,7 @@ namespace Myra.Classifier
                 } 
 
                 bool valid, isFeature;
+                ITypeSymbol? memberSymbol = null;
                 // Check for "x:Name" (code-behind reference)
                 if (prefix != null && namespaces.TryGetValue(prefix, out var behindNamespace)
                     && String.Equals(behindNamespace, MyraShared.Xaml2006Schema, StringComparison.Ordinal))
@@ -434,16 +432,14 @@ namespace Myra.Classifier
                 }
                 else  // regular property, say Width="100" or Text="Hello world!"
                 {
-                    valid = element.Type != null && IsInstancePropertyOrEvent(element.Type, owner);
+                    valid = element.Type != null && IsInstancePropertyOrEvent(element.Type, owner, out memberSymbol);
                     isFeature = false;
                 }
                  
-                var attributeStart = tagStart + ownerGroup.Index;
-
                 var attribute =
                     new MyraXamlAttribute(owner, prefix, ownerSpan, valueSpan, valid, isFeature)
                     {  
-                        OwnerType = element.Type
+                        TypeSymbol = memberSymbol
                     };
 
                 element.Attributes.Add(attribute);
@@ -451,17 +447,19 @@ namespace Myra.Classifier
         }
          
 
-        public static bool IsStaticAttachedProperty(INamedTypeSymbol type, string name)
+        public static bool IsStaticAttachedProperty(INamedTypeSymbol type, string name, out ITypeSymbol? found)
         {
+            found = null;
             var innerName = "Get" + name;
             for (var current = type; current is not null; current = current.BaseType)
             {
                 foreach (var member in current.GetMembers(innerName))
                 {
-                    if (member is IMethodSymbol
-                        && member.IsStatic
-                        && member.DeclaredAccessibility == Accessibility.Public)
+                    if (member is IMethodSymbol memberSymbol
+                        && memberSymbol.IsStatic
+                        && memberSymbol.DeclaredAccessibility == Accessibility.Public)
                     {
+                        found = memberSymbol.ReturnType;
                         return true;
                     }
                 }
@@ -470,16 +468,25 @@ namespace Myra.Classifier
         }
 
 
-        public static  bool IsInstancePropertyOrEvent(INamedTypeSymbol type, string name)
+        public static bool IsInstancePropertyOrEvent(INamedTypeSymbol type, string name, out ITypeSymbol? found)
         {
+            found = null;
             for (var current = type; current is not null; current = current.BaseType)
             {
                 foreach (var member in current.GetMembers(name))
                 {
-                    if (member is IPropertySymbol or IEventSymbol
-                        && !member.IsStatic
-                        && member.DeclaredAccessibility == Accessibility.Public)
+                    if (member.IsStatic || member.DeclaredAccessibility != Accessibility.Public)
+                        continue;
+
+                    if (member is IPropertySymbol propertySymbol)
                     {
+                        found = propertySymbol.Type;
+                        return true;
+                    }
+
+                    if (member is IEventSymbol eventSymbol)
+                    {
+                        found = eventSymbol.Type;
                         return true;
                     }
                 }

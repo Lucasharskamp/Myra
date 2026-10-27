@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Microsoft.CodeAnalysis;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Classification;
 
@@ -7,23 +8,28 @@ namespace Myra.Classifier
 { 
     internal sealed class MyraXamlClassifier : IClassifier
     {
-        private readonly IClassificationType _elementClassification;
+        private readonly IClassificationType _typeClassification;
         private readonly IClassificationType _memberClassification;
-        private readonly IClassificationType _errorClassification; 
         private readonly IClassificationType _featureClassification;
+        private readonly IClassificationType _numberClassification;
+        private readonly IClassificationType _stringClassification;
+        private readonly IClassificationType _errorClassification;
+        private readonly IClassificationType _methodClassification;
+        private readonly IClassificationType _enumClassification;
         private readonly MyraXamlDocumentModelProvider _modelProvider;
 
         public MyraXamlClassifier(
-            IClassificationType elementClassification,
-            IClassificationType memberClassification,
-            IClassificationType featureClassification,
-            IClassificationType errorClassification,
+            IClassificationTypeRegistryService classificationTypes,
             MyraXamlDocumentModelProvider modelProvider)
         {
-            _elementClassification = elementClassification;
-            _memberClassification = memberClassification;
-            _featureClassification = featureClassification;
-            _errorClassification = errorClassification;
+            _typeClassification = classificationTypes.GetClassificationType("myraXamlType");
+            _memberClassification = classificationTypes.GetClassificationType("myraXamlMember");
+            _featureClassification = classificationTypes.GetClassificationType("myraXamlFeature");
+            _stringClassification = classificationTypes.GetClassificationType("string");
+            _numberClassification = classificationTypes.GetClassificationType("number");
+            _methodClassification = classificationTypes.GetClassificationType("method name");
+            _enumClassification = classificationTypes.GetClassificationType("enum member name");
+            _errorClassification = classificationTypes.GetClassificationType("myraXamlError");
             _modelProvider = modelProvider;
 
             _modelProvider.ModelChanged += OnModelChanged;
@@ -63,7 +69,7 @@ namespace Myra.Classifier
                 return;
 
             // use a red error highlight if the type is not found. Otherwise, use a yellow golden element classification.
-            var elementClassificationToUse = element.Type != null ? _elementClassification : _errorClassification;
+            var elementClassificationToUse = element.Type != null ? _typeClassification : _errorClassification;
  
             // Check if the element is about the a child property, like <Grid.ColumnsProportions> 
             // If not, the classifications are straightforward.
@@ -126,8 +132,37 @@ namespace Myra.Classifier
             // provide class classification if it is a property reference to another type, like 'Grid.Row'
             if (attribute.OwnerNameSpan is SnapshotSpan ownerSpan && ownerSpan.IntersectsWith(requestedSpan))
             {
-                result.Add(new ClassificationSpan(ownerSpan, (attribute.IsOwnerValid ?? true) ? _elementClassification : _errorClassification));
+                result.Add(new ClassificationSpan(ownerSpan, (attribute.IsOwnerValid ?? true) ? _typeClassification : _errorClassification));
             } 
+
+            if (attribute.ValueSpan.IntersectsWith(requestedSpan) && attribute.TypeSymbol != null)
+            {
+                if (attribute.IsFeature ||
+                    String.Equals(attribute.TypeSymbol.Name, "MyraEventHandler", StringComparison.OrdinalIgnoreCase))
+                {
+                    result.Add(new ClassificationSpan(attribute.ValueSpan, _methodClassification));
+                    return;
+                }
+
+                if (attribute.TypeSymbol.TypeKind == TypeKind.Enum)
+                {
+                    result.Add(new ClassificationSpan(attribute.ValueSpan, _enumClassification));
+                    return;
+                }
+
+                if (String.Equals(attribute.TypeSymbol.Name, "String", StringComparison.OrdinalIgnoreCase))
+                {
+                    result.Add(new ClassificationSpan(attribute.ValueSpan, _stringClassification));
+                    return;
+                } 
+
+                if (attribute.TypeSymbol.Name.StringMatchesAnyOf("Byte", "Int16", "Int32", "Int64", "Single", "Double", "UInt16", "UInt32", "UInt64"))
+                {
+                    result.Add(new ClassificationSpan(attribute.ValueSpan, _numberClassification));
+                    return;
+                }
+                 
+            }
         }
 
         private void OnModelChanged(object? sender, MyraXamlDocumentModelChangedEventArgs e)
