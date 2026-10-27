@@ -106,7 +106,7 @@ namespace Myra.Xaml.Compiler
             }
 
             // ensure the Myra assembly is included
-            var assemblyMappings = Configuration.XmlnsMappings.Namespaces[MyraShared.XamlMyraNamespace];
+            var assemblyMappings = Configuration.XmlnsMappings.Namespaces[MyraShared.XamlMyraSchema];
             if (assemblyMappings.Any(a => a.ns != currentClass.Namespace && a.asm != currentClass.Assembly))
             {
                 assemblyMappings.Add((currentClass.Assembly!, currentClass.Namespace!));

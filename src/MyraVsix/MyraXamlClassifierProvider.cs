@@ -4,7 +4,6 @@ using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Classification;
 using Microsoft.VisualStudio.Utilities;
 using Myra.Classifier;
-using System;
 using System.ComponentModel.Composition; 
 
 namespace Myra
@@ -35,13 +34,17 @@ namespace Myra
             if (!Helpers.IsMyraXamlFile(textBuffer, _documents))
                 return null;
 
-            var elementClassification = _classificationTypes.GetClassificationType("myraXamlElement");
-            var attributeClassification = _classificationTypes.GetClassificationType("myraXamlAttribute");
-            if (elementClassification == null || attributeClassification == null)
+            var typeClassification = _classificationTypes.GetClassificationType("myraXamlType");
+            var memberClassification = _classificationTypes.GetClassificationType("myraXamlMember");
+            var featureClassification = _classificationTypes.GetClassificationType("myraXamlFeature");
+            var errorClassification = _classificationTypes.GetClassificationType("myraXamlError");
+            if (typeClassification == null || memberClassification == null|| errorClassification == null)
                 return null;
              
-            return new MyraXamlClassifier(elementClassification, 
-                attributeClassification, 
+            return new MyraXamlClassifier(typeClassification, 
+                memberClassification,
+                featureClassification,
+                errorClassification,
                 MyraXamlBufferServices.GetModelProvider(_workspace, textBuffer));
         }
     }

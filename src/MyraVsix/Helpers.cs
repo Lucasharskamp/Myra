@@ -68,18 +68,18 @@ namespace Myra
                 || String.Equals(trim, "true", StringComparison.OrdinalIgnoreCase));
         }
 
-        public static bool IsAssignableFrom(this MyraXamlType target, MyraXamlType source)
+        public static bool IsAssignableFrom(this INamedTypeSymbol target, INamedTypeSymbol source)
         {
-            return SymbolEqualityComparer.Default.Equals(target.Type, source.Type)
-                || source.Type.AllInterfaces.Contains(target.Type, SymbolEqualityComparer.Default)
+            return SymbolEqualityComparer.Default.Equals(target, source)
+                || source.AllInterfaces.Contains(target, SymbolEqualityComparer.Default)
                 || IsBaseTypeOf(target, source);
         }
 
-        static bool IsBaseTypeOf(MyraXamlType target, MyraXamlType source)
+        static bool IsBaseTypeOf(INamedTypeSymbol target, INamedTypeSymbol source)
         {
-            for (var type = source.Type.BaseType; type != null; type = type.BaseType)
+            for (var type = source.BaseType; type != null; type = type.BaseType)
             {
-                if (SymbolEqualityComparer.Default.Equals(target.Type, type))
+                if (SymbolEqualityComparer.Default.Equals(target, type))
                     return true;
             }
 

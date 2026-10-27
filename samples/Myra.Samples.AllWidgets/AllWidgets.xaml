@@ -23,7 +23,7 @@
         </HorizontalMenu>
         <HorizontalSplitPane StackPanel.ProportionType="Fill">
             <ScrollViewer ShowHorizontalScrollBar="False">
-                <Grid ColumnSpacing="8" RowSpacing="8" x:Name="_gridRight">
+                <Grid ColumnSpacing="8" RowSpacing="8" x:Name="_gridRight"> 
                     <Grid.DefaultRowProportion>Auto</Grid.DefaultRowProportion>
                     <Grid.ColumnsProportions>
                         <Proportion>Auto</Proportion>

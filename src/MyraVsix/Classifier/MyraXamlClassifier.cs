@@ -4,21 +4,26 @@ using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Classification;
 
 namespace Myra.Classifier
-{
-
+{ 
     internal sealed class MyraXamlClassifier : IClassifier
     {
         private readonly IClassificationType _elementClassification;
-        private readonly IClassificationType _attributeClassification;
+        private readonly IClassificationType _memberClassification;
+        private readonly IClassificationType _errorClassification; 
+        private readonly IClassificationType _featureClassification;
         private readonly MyraXamlDocumentModelProvider _modelProvider;
 
         public MyraXamlClassifier(
             IClassificationType elementClassification,
-            IClassificationType attributeClassification,
+            IClassificationType memberClassification,
+            IClassificationType featureClassification,
+            IClassificationType errorClassification,
             MyraXamlDocumentModelProvider modelProvider)
         {
             _elementClassification = elementClassification;
-            _attributeClassification = attributeClassification;
+            _memberClassification = memberClassification;
+            _featureClassification = featureClassification;
+            _errorClassification = errorClassification;
             _modelProvider = modelProvider;
 
             _modelProvider.ModelChanged += OnModelChanged;
@@ -50,7 +55,6 @@ namespace Myra.Classifier
 
         private void ClassifyElement(MyraXamlElement element, SnapshotSpan requestedSpan,  List<ClassificationSpan> result)
         {
-
             var nameSpanIntersects = element.NameSpan.IntersectsWith(requestedSpan);
             var closingNameSpanIntersects = element.ClosingNameSpan.HasValue
                 && element.ClosingNameSpan.Value.IntersectsWith(requestedSpan);
@@ -58,120 +62,72 @@ namespace Myra.Classifier
             if (!nameSpanIntersects && !closingNameSpanIntersects)
                 return;
 
-            // A property element consists of:
-            //
-            //     <Grid.ColumnsProportions>
-            //      ^^^^ ^^^^^^^^^^^^^^^^^
-            //      type       property
-            //
-            // The model has already established that this is a real
-            // property element, so the classifier only needs to project
-            // the two semantic pieces onto their respective colors.
-
-            if (element.IsPropertyElement)
+            // use a red error highlight if the type is not found. Otherwise, use a yellow golden element classification.
+            var elementClassificationToUse = element.Type != null ? _elementClassification : _errorClassification;
+ 
+            // Check if the element is about the a child property, like <Grid.ColumnsProportions> 
+            // If not, the classifications are straightforward.
+            if (!element.IsPropertyElement)
             {
-                if (element.OwnerNameSpan is SnapshotSpan ownerSpan &&
-                    ownerSpan.IntersectsWith(requestedSpan))
-                {
-                    result.Add(
-                        new ClassificationSpan(
-                            ownerSpan,
-                            _elementClassification));
-                }
+                // Normal element:  <Grid> or: <local:MyButton>
+                result.Add(new ClassificationSpan(element.NameSpan, elementClassificationToUse));
 
-                if (element.MemberNameSpan is SnapshotSpan memberSpan &&
-                    memberSpan.IntersectsWith(requestedSpan))
+                // if present, classify the </Grid> or </local:MyButton>
+                if (closingNameSpanIntersects)
                 {
-                    result.Add(
-                        new ClassificationSpan(
-                            memberSpan,
-                            _attributeClassification));
+                    result.Add(new ClassificationSpan(element.ClosingNameSpan!.Value, elementClassificationToUse));
                 }
-
-                if (element.ClosingOwnerNameSpan is SnapshotSpan closingOwnerSpan &&
-                     closingOwnerSpan.IntersectsWith(requestedSpan))
-                {
-                    result.Add(
-                        new ClassificationSpan(
-                            closingOwnerSpan,
-                            _elementClassification));
-                }
-
-                if (element.ClosingMemberNameSpan is SnapshotSpan closingMemberSpan &&
-                        closingMemberSpan.IntersectsWith(requestedSpan))
-                {
-                    result.Add(
-                        new ClassificationSpan(
-                            closingMemberSpan,
-                            _attributeClassification));
-                }
-
                 return;
             }
 
-            // Normal element:
-            //
-            //     <Grid>
-            //      ^^^^
-            //
-            // or:
-            //
-            //     <local:MyButton>
-            //      ^^^^^^^^^^^^^^
-            //
-            result.Add(new ClassificationSpan(element.NameSpan, _elementClassification));
+            var memberClassificationToUse = element.Type != null ? _memberClassification : _errorClassification;
 
-            if (closingNameSpanIntersects)
-            {
-                result.Add(new ClassificationSpan(element.ClosingNameSpan!.Value, _elementClassification));
-            }
-        }
-
-        private void ClassifyAttribute(MyraXamlAttribute attribute, SnapshotSpan requestedSpan,    List<ClassificationSpan> result)
-        {
-            if (!attribute.IsValid)
-                return;
-
-            // Normal property:
-            //
-            //     Text="Hello"
-            //     ^^^^
-            //
-            if (!attribute.IsAttachedProperty)
-            {
-                if (attribute.NameSpan.IntersectsWith(requestedSpan))
-                {
-                    result.Add(
-                        new ClassificationSpan(
-                            attribute.NameSpan,
-                            _attributeClassification));
-                }
-
-                return;
-            }
-
-            // Attached property:
-            //
-            //     Grid.Column="1"
-            //     ^^^^ ^^^^^^
-            //
-            // The model has already established that Grid.Column is a
-            // valid attached property.
-
-            if (attribute.OwnerNameSpan is SnapshotSpan ownerSpan &&
+            // classify the <'owner'.member> area
+            if (element.OwnerNameSpan is SnapshotSpan ownerSpan &&
                 ownerSpan.IntersectsWith(requestedSpan))
             {
-                result.Add(
-                    new ClassificationSpan(
-                        ownerSpan,
-                        _elementClassification));
+                result.Add(new ClassificationSpan(ownerSpan, elementClassificationToUse));
             }
 
-            if (attribute.MemberNameSpan is SnapshotSpan memberSpan &&
+            // classify the <owner.'member'> area
+            if (element.MemberNameSpan is SnapshotSpan memberSpan &&
                 memberSpan.IntersectsWith(requestedSpan))
             {
-                result.Add(new ClassificationSpan(memberSpan, _attributeClassification));
+                result.Add(new ClassificationSpan(memberSpan, memberClassificationToUse));
             }
+
+            // do the same for the closing </owner.member> tag
+            if (element.ClosingOwnerNameSpan is SnapshotSpan closingOwnerSpan &&
+                    closingOwnerSpan.IntersectsWith(requestedSpan))
+            {
+                result.Add(new ClassificationSpan(closingOwnerSpan, elementClassificationToUse));
+            }
+
+            if (element.ClosingMemberNameSpan is SnapshotSpan closingMemberSpan &&
+                    closingMemberSpan.IntersectsWith(requestedSpan))
+            {
+                result.Add(new ClassificationSpan(closingMemberSpan, memberClassificationToUse));
+            }
+
+            return; 
+        }
+
+        private void ClassifyAttribute(MyraXamlAttribute attribute, SnapshotSpan requestedSpan, List<ClassificationSpan> result)
+        { 
+            // Resolve Property name, like "Text" in 'Text="Hello World"'
+            if (attribute.NameSpan.IntersectsWith(requestedSpan))
+            { 
+                result.Add(new ClassificationSpan(attribute.NameSpan,
+                    attribute.IsValid ?
+                    attribute.IsFeature ? _featureClassification : _memberClassification 
+                    : _errorClassification));
+            } 
+             
+            // provide class classification if it is a property reference to another type, like 'Grid.Row'
+            if (attribute.OwnerNameSpan is SnapshotSpan ownerSpan && ownerSpan.IntersectsWith(requestedSpan))
+            {
+                result.Add(new ClassificationSpan(ownerSpan, (attribute.IsOwnerValid ?? true) ? _elementClassification : _errorClassification));
+            } 
         }
 
         private void OnModelChanged(object? sender, MyraXamlDocumentModelChangedEventArgs e)

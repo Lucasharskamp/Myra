@@ -1,4 +1,5 @@
-﻿using Microsoft.VisualStudio.Text;
+﻿using Microsoft.CodeAnalysis;
+using Microsoft.VisualStudio.Text;
 using System;
 using System.Collections.Generic; 
 
@@ -7,11 +8,12 @@ namespace Myra.Classifier
 
     internal sealed class MyraXamlElement
     {
-        public MyraXamlElement(ITextSnapshot snapshot, string name, string? prefix)
+        public MyraXamlElement(ITextSnapshot snapshot, string name, string? prefix, bool isValid)
         {
             Snapshot = snapshot;
             Name = name;
             Prefix = prefix;
+            IsValid = isValid;
         }
 
         public ITextSnapshot Snapshot { get; }
@@ -23,8 +25,8 @@ namespace Myra.Classifier
 
         public string? Prefix { get; }
 
-        public MyraXamlType? Type { get; set; }
-        public MyraXamlType? MemberType { get; set; }
+        public INamedTypeSymbol? Type { get; set; }
+        public bool IsValid { get; }
 
         public bool IsPropertyElement { get; set; }
 

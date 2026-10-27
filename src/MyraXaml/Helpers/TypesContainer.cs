@@ -1,9 +1,7 @@
-﻿using System;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Linq;
 using XamlX.Ast;
 using XamlX.TypeSystem;
-using static XamlX.Parsers.CommaSeparatedParenthesesTreeParser;
 
 namespace Myra.Xaml.Helpers
 {

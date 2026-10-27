@@ -1,8 +1,6 @@
 ﻿
 using Microsoft.VisualStudio.LanguageServices;
-using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Text;
-using System;
 
 namespace Myra.Classifier
 {  

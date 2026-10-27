@@ -1,4 +1,5 @@
-﻿using Microsoft.CodeAnalysis; 
+﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.VisualStudio.LanguageServices;
 using Microsoft.VisualStudio.Text;
 using System;
@@ -39,21 +40,22 @@ namespace Myra.Classifier
             """
             (?<![A-Za-z0-9_.:-])
             (?:
-                (?<prefix>[A-Za-z_][A-Za-z0-9_.-]*):
+                (?<prefix>[A-Za-z_][A-Za-z0-9_-]*):
             )?
-            (?<owner>[A-Za-z_][A-Za-z0-9_.-]*)
+            (?<owner>[A-Za-z_][A-Za-z0-9_-]*)
             (?:
                 \.
-                (?<member>[A-Za-z_][A-Za-z0-9_.-]*)
+                (?<member>[A-Za-z_][A-Za-z0-9_-]*)
             )?
             \s*=
+            "(?:
+                (?<value>[A-Za-z0-9_.:\-\*\[\]\(\)\^\%\$\#\@\!]*)
+            )?"
             """,
             RegexOptions.Compiled |
             RegexOptions.IgnorePatternWhitespace);
 
-        private readonly Dictionary<string, MyraXamlType> _widgetTypes = new(StringComparer.Ordinal);
-
-        private readonly Dictionary<string, MyraXamlType?> _typeCache = new(StringComparer.Ordinal);
+        private readonly Dictionary<string, INamedTypeSymbol?> _typeCache = new(StringComparer.Ordinal);
         private readonly object _typeCacheLock = new();
         private readonly VisualStudioWorkspace _workspace; 
 
@@ -71,7 +73,7 @@ namespace Myra.Classifier
 
             if (!_isLoaded)
             {
-                await LoadTypesAsync(buffer);
+                await LoadTypesAsync(buffer, cancellationToken);
             }
 
             if (currentCompilation == null)
@@ -96,14 +98,15 @@ namespace Myra.Classifier
                     continue;
 
                 var tagStart = match.Index;
+                var nameGroup = match.Groups["name"];
+                  
+                if (!nameGroup.Success)
+                    continue;
+
 
                 var closingGroup = match.Groups["closing"];
                 var prefixGroup = match.Groups["prefix"];
-                var nameGroup = match.Groups["name"];
-
-                if (!nameGroup.Success)
-                    continue; 
-
+ 
                 var rawName = nameGroup.Value;
 
                 // Closing tags don't create semantic elements.
@@ -128,13 +131,12 @@ namespace Myra.Classifier
                    : null;
 
                 var element =
-                    CreateElement(snapshot, text, match, tagStart, tagEnd, prefix,
+                    CreateElement(snapshot, match, tagStart, tagEnd, prefix,
                     rawName, parent, namespaces, cancellationToken);
 
                 elements.Add(element);
 
-                if (parent != null)
-                    parent.Children.Add(element);
+                parent?.Children.Add(element);
 
                 ParseAttributes(snapshot, text, tagStart,  tagEnd,  element,  namespaces,  cancellationToken);
 
@@ -150,7 +152,7 @@ namespace Myra.Classifier
             };
         }
 
-        private async Task LoadTypesAsync(ITextBuffer buffer)
+        private async Task LoadTypesAsync(ITextBuffer buffer, CancellationToken cancellationToken)
         {
             var snapshot = buffer.CurrentSnapshot;
             var filePath = buffer.GetFileName();
@@ -170,19 +172,51 @@ namespace Myra.Classifier
                 return;
             }
 
-            var compilation = await project.GetCompilationAsync();
-             
+            var compilation = await project.GetCompilationAsync(cancellationToken);
             if (compilation is null)
                 return;
 
             currentCompilation = compilation;
 
-            LoadWidgetType(MyraShared.WidgetAddress); 
+            // get default Widget type. 
+            _typeCache[":Widget"] = LoadType(MyraShared.WidgetAddress);
 
+            // get code-behind type
+            var codeBehindDocument = project.Documents.FirstOrDefault(d => String.Equals(d.FilePath, filePath + ".cs", StringComparison.OrdinalIgnoreCase));
+            if (codeBehindDocument != null)
+            {
+                var typesInDocument = await GetTypesAsync(codeBehindDocument, cancellationToken);
+                var start = filePath.LastIndexOf('\\'); 
+                var typeName = filePath.Substring(start+1, filePath.LastIndexOf('.') - start - 1);
+                var type = typesInDocument.FirstOrDefault(t => String.Equals(t.Name, typeName, StringComparison.Ordinal));
+                if (type != null)
+                {
+                    lock (_typeCacheLock)
+                    {
+                        _typeCache[":" + type.Name] = type;
+                    }
+                }
+            } 
+ 
             _isLoaded = true;
         }
 
-        private MyraXamlType? LoadType(string name)
+        public static async Task<IReadOnlyList<INamedTypeSymbol>> GetTypesAsync(Document document, CancellationToken cancellationToken)
+        {
+            var root = await document.GetSyntaxRootAsync(cancellationToken);
+            var semanticModel = await document.GetSemanticModelAsync(cancellationToken);
+
+            if (root is null || semanticModel is null)
+                return [];
+
+            return [.. root.DescendantNodes()
+                .OfType<TypeDeclarationSyntax>()
+                .Select(node => semanticModel.GetDeclaredSymbol(node, cancellationToken))
+                .OfType<INamedTypeSymbol>()];
+        }
+
+
+        private INamedTypeSymbol? LoadType(string name)
         {
             if (currentCompilation == null)
                 throw new InvalidOperationException();
@@ -192,19 +226,11 @@ namespace Myra.Classifier
             { 
                 return null;
             }
-            return new MyraXamlType(type);
+            return type;
         }
+         
 
-        private void LoadWidgetType(string name)
-        {
-            var type = LoadType(name);
-            if (type != null) 
-            {
-                _widgetTypes[name] = type;
-            }
-        }
-
-        private MyraXamlType? ResolveType(string? prefix, string name, IReadOnlyDictionary<string, string> namespaces)
+        private INamedTypeSymbol? ResolveType(string? prefix, string name, IReadOnlyDictionary<string, string> namespaces)
         {
             var key = (prefix ?? string.Empty) + ":" + name;
 
@@ -228,14 +254,14 @@ namespace Myra.Classifier
             }
             else
             {
+                lock (_typeCacheLock)
+                {
+                    _typeCache[key] = null;
+                }
                 return null;
             }
 
             var result = LoadType(typeNamespace + "." + name);
-            if (result == null)
-            {
-                return null;
-            }    
 
             lock (_typeCacheLock)
             {
@@ -249,7 +275,6 @@ namespace Myra.Classifier
 
         private MyraXamlElement CreateElement(
             ITextSnapshot snapshot,
-            string text,
             Match tagMatch,
             int tagStart,
             int tagEnd,
@@ -261,27 +286,17 @@ namespace Myra.Classifier
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var nameGroup =
-                tagMatch.Groups["name"];
-
-            var prefixGroup =
-                tagMatch.Groups["prefix"];
+            var nameGroup = tagMatch.Groups["name"]; 
+            var prefixGroup = tagMatch.Groups["prefix"];
 
             /*
-             * Property element:
-             *
-             *     <Grid.ColumnsProportions>
-             *
-             * The lexical name is split into:
-             *
+             * Check if it is a property element, like <Grid.ColumnsProportions>
+             * If so, the name is split:
              *     owner   = Grid
-             *     member  = ColumnsProportions
-             *
-             * It is only a property element if:
-             *
-             *   1. there is no namespace prefix;
-             *   2. the owner resolves to a type;
-             *   3. the member is a property on the parent element's type.
+             *     member  = ColumnsProportions 
+             * It is only a property element if:  
+             *   1. the owner resolves to a type;
+             *   2. the member is a property on the parent element's type.
              */ 
             var dot = rawName.IndexOf('.');
 
@@ -294,8 +309,9 @@ namespace Myra.Classifier
                 var ownerStart =  nameGroup.Index;
                 var memberStart =  nameGroup.Index + dot +  1;
                 var ownerType = ResolveType(prefix, ownerName, namespaces);
+                var isValid = ownerType != null && IsInstancePropertyOrEvent(ownerType, memberName);
 
-                return new MyraXamlElement(snapshot, rawName, null)
+                return new MyraXamlElement(snapshot, rawName, null, isValid)
                 { 
                     Type = ownerType,
 
@@ -320,23 +336,16 @@ namespace Myra.Classifier
                 nameGroup.Length -
                 elementStart;
 
-            var nameSpan = new SnapshotSpan(
-                        snapshot,
-                        elementStart,
-                        elementLength);
+            var nameSpan = new SnapshotSpan(snapshot, elementStart, elementLength);
             var type = ResolveType(prefix, rawName, namespaces);
 
-            return new MyraXamlElement(snapshot, rawName, prefix)
+            return new MyraXamlElement(snapshot, rawName, prefix, type != null)
             {
                 Type = type,
                 IsPropertyElement = false,
                 NameSpan = nameSpan,
                 Parent = parent,
-                TagSpan =
-                    new SnapshotSpan(
-                        snapshot,
-                        tagStart,
-                        Math.Max(0, tagEnd - tagStart + 1))
+                TagSpan = new SnapshotSpan(snapshot, tagStart, Math.Max(0, tagEnd - tagStart + 1))
             };
         }
 
@@ -358,10 +367,7 @@ namespace Myra.Classifier
             if (length <= 0)
                 return;
 
-            var tagText =
-                text.Substring(
-                    tagStart,
-                    length);
+            var tagText = text.Substring(tagStart, length);
 
             foreach (Match match in AttributeRegex.Matches(tagText))
             {
@@ -370,217 +376,120 @@ namespace Myra.Classifier
                 if (!match.Success)
                     continue;
 
-                var prefixGroup =
-                    match.Groups["prefix"];
+                var prefixGroup = match.Groups["prefix"];
+                var ownerGroup = match.Groups["owner"];
+                var memberGroup = match.Groups["member"];
+                var valueGroup = match.Groups["value"];
 
-                var ownerGroup =
-                    match.Groups["owner"];
-
-                var memberGroup =
-                    match.Groups["member"];
-
-                if (!ownerGroup.Success)
+                if (!ownerGroup.Success || !valueGroup.Success)
                     continue;
 
-                var prefix =
-                    prefixGroup.Success
-                        ? prefixGroup.Value
-                        : null;
-
-                var owner =
-                    ownerGroup.Value;
-
-                var member =
-                    memberGroup.Success
-                        ? memberGroup.Value
-                        : null;
-
+                var prefix = prefixGroup.Success ? prefixGroup.Value : null;
+                var owner = ownerGroup.Value; 
+                var valueSpan = new SnapshotSpan(snapshot, tagStart + valueGroup.Index, valueGroup.Length);
+                var ownerSpan = new SnapshotSpan(snapshot, tagStart + ownerGroup.Index, owner.Length);
+                var member = memberGroup.Success ? memberGroup.Value : null;
+ 
                 /*
                  * XML namespace declarations are attributes lexically,
                  * but are not Myra properties.
                  */
-                if (string.Equals(
-                        owner,
-                        "xmlns",
-                        StringComparison.Ordinal))
+                if (string.Equals(owner, "xmlns",  StringComparison.Ordinal)
+                    || string.Equals(prefix, "xmlns", StringComparison.Ordinal))
                 {
                     continue;
                 }
 
-                /*
-                 * Attached property:
-                 *
-                 *     Grid.Column="1"
-                 *
-                 * The owner is the type declaring the attached
-                 * property, not necessarily the current element.
-                 */
+                // if member is not null, it means it's a member-based attribute, like Grid.Row
                 if (member != null)
                 {
-                    var ownerType =  ResolveType(prefix, owner, namespaces);
-
-                    var ownerStart =
-                        tagStart +
-                        (prefixGroup.Success
-                            ? prefixGroup.Index
-                            : ownerGroup.Index);
-
-                    var ownerLength =
-                        prefixGroup.Success
-                            ? prefixGroup.Length +
-                              ownerGroup.Length -
-                              prefixGroup.Length
-                            : owner.Length;
+                    var ownerType = ResolveType(prefix, owner, namespaces);
 
                     // For a qualified owner, classify the entire
-                    // "Grid" or "prefix:Grid" as the owner.
-                    var actualOwnerStart =
-                        tagStart +
-                        ownerGroup.Index;
-
-                    var memberStart =
-                        tagStart +
-                        memberGroup.Index;
+                    // "Grid" or "prefix:Grid" as the owner. 
+                    var isValid = ownerType != null && IsStaticAttachedProperty(ownerType, member);
+                    var memberSpan = new SnapshotSpan(snapshot, tagStart + memberGroup.Index, member.Length);
 
                     var attr =
-                        new MyraXamlAttribute(member)
-                        { 
-                            Prefix = prefix,
-                            OwnerNameSpan =
-                                new SnapshotSpan(
-                                    snapshot,
-                                    actualOwnerStart,
-                                    owner.Length),
-                            MemberNameSpan =
-                                new SnapshotSpan(
-                                    snapshot,
-                                    memberStart,
-                                    member.Length),
-                            NameSpan =
-                                new SnapshotSpan(
-                                    snapshot,
-                                    memberStart,
-                                    member.Length),
-                            OwnerType = ownerType
+                        new MyraXamlAttribute(member, prefix, memberSpan, valueSpan, isValid, false)
+                        {  
+                            IsAttachedProperty = true,
+                            OwnerNameSpan = ownerSpan,
+                            OwnerType = ownerType,
+                            IsOwnerValid = ownerType != null
                         };
 
                     element.Attributes.Add(attr);
 
                     continue;
+                } 
+
+                bool valid, isFeature;
+                // Check for "x:Name" (code-behind reference)
+                if (prefix != null && namespaces.TryGetValue(prefix, out var behindNamespace)
+                    && String.Equals(behindNamespace, MyraShared.Xaml2006Schema, StringComparison.Ordinal))
+                {
+                    valid = String.Equals(owner, "Name", StringComparison.Ordinal);
+                    isFeature = true;
                 }
-
-                /*
-                 * Ordinary property:
-                 *
-                 *     Width="100"
-                 *     Text="Hello"
-                 *
-                 * The property must exist on the current element
-                 * type.
-                 */
-                var propertyName =
-                    owner;
-
-                var valid =
-                                    element.Type != null &&
-                                    IsInstanceProperty(
-                                        element.Type,
-                                        propertyName);
-
-                var attributeStart =
-                    tagStart +
-                    ownerGroup.Index;
+                else  // regular property, say Width="100" or Text="Hello world!"
+                {
+                    valid = element.Type != null && IsInstancePropertyOrEvent(element.Type, owner);
+                    isFeature = false;
+                }
+                 
+                var attributeStart = tagStart + ownerGroup.Index;
 
                 var attribute =
-                    new MyraXamlAttribute(propertyName)
-                    {
-                        Prefix =
-                            prefix,
-
-                        NameSpan =
-                            new SnapshotSpan(
-                                snapshot,
-                                attributeStart,
-                                propertyName.Length),
-
-                        OwnerType =
-                            element.Type,
-
-                        IsAttachedProperty =
-                            false,
-
-                        IsValid = valid
+                    new MyraXamlAttribute(owner, prefix, ownerSpan, valueSpan, valid, isFeature)
+                    {  
+                        OwnerType = element.Type
                     };
 
-                element.Attributes.Add(
-                    attribute);
+                element.Attributes.Add(attribute);
             }
         }
+         
 
-        private bool IsPropertyElement(MyraXamlType parentType, MyraXamlType ownerType, string memberName)
+        public static bool IsStaticAttachedProperty(INamedTypeSymbol type, string name)
         {
-            /*
-             * The owner in:
-             *
-             *     <Grid.ColumnsProportions>
-             *
-             * must describe the parent element's type.
-             *
-             * This permits base classes as well:
-             *
-             *     <SomeDerivedWidget.SomeBaseProperty>
-             */
-            if (!ownerType.IsAssignableFrom(parentType) &&
-                !parentType.IsAssignableFrom(ownerType))
+            var innerName = "Get" + name;
+            for (var current = type; current is not null; current = current.BaseType)
             {
-                return false;
+                foreach (var member in current.GetMembers(innerName))
+                {
+                    if (member is IMethodSymbol
+                        && member.IsStatic
+                        && member.DeclaredAccessibility == Accessibility.Public)
+                    {
+                        return true;
+                    }
+                }
             }
-
-            return IsInstanceProperty(
-                parentType,
-                memberName);
-        }
-
-        private static bool IsInstanceProperty(MyraXamlType type,string propertyName)
-        {
-            return type.Type.GetMembers(propertyName).OfType<IPropertySymbol>().Any(p => !p.IsStatic);
-        }
-
-        private static bool IsAttachedProperty(MyraXamlType ownerType,   string propertyName)
-        {
-            /*
-             * XAML attached-property convention:
-             *
-             *     public static T GetColumn(...)
-             *     public static void SetColumn(...)
-             *
-             * We accept either accessor, since some frameworks
-             * expose only one side.
-             */ 
-            var getter = ownerType.Type.GetMembers("Get" + propertyName);
-
-            if (getter != null)
-            {
-                return true;
-            }
-
-            var setter = ownerType.Type.GetMembers("Set" + propertyName);
-
-            if (setter != null)
-            {
-                return true;
-            }
-
             return false;
         }
 
 
-        private static Dictionary<string, string> ParseNamespaces(
-            string text)
+        public static  bool IsInstancePropertyOrEvent(INamedTypeSymbol type, string name)
         {
-            var result =
-                new Dictionary<string, string>(
-                    StringComparer.Ordinal);
+            for (var current = type; current is not null; current = current.BaseType)
+            {
+                foreach (var member in current.GetMembers(name))
+                {
+                    if (member is IPropertySymbol or IEventSymbol
+                        && !member.IsStatic
+                        && member.DeclaredAccessibility == Accessibility.Public)
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        private static Dictionary<string, string> ParseNamespaces(string text)
+        {
+            var result = new Dictionary<string, string>(StringComparer.Ordinal);
 
             foreach (Match match in XmlnsRegex.Matches(text))
             {
@@ -656,19 +565,14 @@ namespace Myra.Classifier
             }
         }
 
-        private static bool IsSelfClosing(
-            string text,
-            int start,
-            int end)
+        private static bool IsSelfClosing(ReadOnlySpan<char> text, int start, int end)
         {
             if (end <= start)
                 return false;
 
-            var i =
-                end - 1;
+            var i = end - 1;
 
-            while (i > start &&
-                   char.IsWhiteSpace(text[i]))
+            while (i > start && char.IsWhiteSpace(text[i]))
             {
                 i--;
             }
@@ -676,15 +580,11 @@ namespace Myra.Classifier
             return text[i] == '/';
         }
 
-        private static int FindTagEnd(
-            string text,
-            int start)
+        private static int FindTagEnd(string text, int start)
         {
             char quote = '\0';
 
-            for (var i = start;
-                 i < text.Length;
-                 i++)
+            for (var i = start; i < text.Length; i++)
             {
                 var c = text[i];
 
@@ -707,11 +607,8 @@ namespace Myra.Classifier
             }
 
             /*
-             * The user may currently be typing:
-             *
-             *     <Grid Width="100
-             *
-             * There is no '>' yet. Treat the rest of the
+             * The user may currently be half-way through typing an element out. 
+             * If so, there is no '>' yet. In that case we treat the rest of the
              * document as the current tag.
              */
             return text.Length - 1;

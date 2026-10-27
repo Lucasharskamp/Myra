@@ -2,8 +2,7 @@
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Myra.Xaml.Compiler;
-using System;
-using System.Diagnostics;
+using System; 
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
@@ -152,7 +151,7 @@ namespace Myra.Xaml.Helpers
 
             // get default components, brushes and styles
             mappings.Namespaces.Add(
-                MyraShared.XamlMyraNamespace,
+                MyraShared.XamlMyraSchema,
                 [
                     (myraAssembly, "Myra.Graphics2D.Brushes"),
                     (myraAssembly, "Myra.Graphics2D.UI"),

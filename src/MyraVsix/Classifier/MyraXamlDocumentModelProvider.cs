@@ -155,11 +155,9 @@ namespace Myra.Classifier
         }
     }
 
-    internal sealed class MyraXamlDocumentModelChangedEventArgs
-        : EventArgs
+    internal sealed class MyraXamlDocumentModelChangedEventArgs : EventArgs
     {
-        public MyraXamlDocumentModelChangedEventArgs(
-            ITextSnapshot snapshot)
+        public MyraXamlDocumentModelChangedEventArgs(ITextSnapshot snapshot)
         {
             Snapshot = snapshot;
         }

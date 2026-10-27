@@ -1,7 +1,5 @@
 ﻿using Microsoft.CodeAnalysis;
-using Microsoft.VisualStudio.Language.StandardClassification;
 using Microsoft.VisualStudio.Text;
-using Microsoft.VisualStudio.Text.Classification;
 using Microsoft.VisualStudio.Text.Tagging;
 using Myra.Classifier;
 using System;
@@ -11,15 +9,13 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace Myra.Tagger
-{
-
-    internal sealed class MyraXamlTagger : ITagger<ClassificationTag>
+{ 
+    internal sealed class MyraXamlTagger : ITagger<IErrorTag>
     {
         private readonly ITextBuffer _buffer; 
         private readonly MyraXamlDocumentModelProvider _registry;
-        private readonly IClassificationTypeRegistryService _classificationRegistry;
         private readonly object _gate = new();
-        private List<TagSpan<ClassificationTag>> _tags = [];
+        private List<TagSpan<IErrorTag>> _tags = [];
 
         private CancellationTokenSource? _updateCancellation;
         private readonly CancellationTokenSource _lifetime = new();
@@ -27,13 +23,10 @@ namespace Myra.Tagger
         private int _generation;
         private bool _disposed; 
 
-        public MyraXamlTagger(ITextBuffer buffer,
-            MyraXamlDocumentModelProvider modelProvider,
-            IClassificationTypeRegistryService classificationRegistry)
+        public MyraXamlTagger(ITextBuffer buffer, MyraXamlDocumentModelProvider modelProvider)
         {
             _buffer = buffer;
             _registry = modelProvider;
-            this._classificationRegistry = classificationRegistry;
 
             _buffer.Changed += OnBufferChanged;
             _ = UpdateAsync();
@@ -41,12 +34,12 @@ namespace Myra.Tagger
 
         public event EventHandler<SnapshotSpanEventArgs>? TagsChanged;
 
-        public IEnumerable<ITagSpan<ClassificationTag>> GetTags(NormalizedSnapshotSpanCollection spans)
+        public IEnumerable<ITagSpan<IErrorTag>> GetTags(NormalizedSnapshotSpanCollection spans)
         {
             if (spans.Count == 0)
                 yield break;
 
-            List<TagSpan<ClassificationTag>> cached;
+            List<TagSpan<IErrorTag>> cached;
 
             lock (_gate)
             {
@@ -104,7 +97,7 @@ namespace Myra.Tagger
 
                 cancellation.Token.ThrowIfCancellationRequested();
 
-                var tags = new List<TagSpan<ClassificationTag>>();
+                var tags = new List<TagSpan<IErrorTag>>();
                 foreach (var element in model.Elements)
                 {
                     CreateTags(tags, element);
@@ -128,57 +121,44 @@ namespace Myra.Tagger
             }
         }
 
-        private void CreateTags(List<TagSpan<ClassificationTag>> tags, MyraXamlElement element)
+        private void CreateTags(List<TagSpan<IErrorTag>> tags, MyraXamlElement element)
         {
-            if (element.MemberType != null && element.MemberNameSpan.HasValue)
+            if (!element.IsValid)
             {
-                tags.Add(new TagSpan<ClassificationTag>(
-                    element.MemberNameSpan.Value,
-                    new ClassificationTag(_classificationRegistry.GetClassificationType(PredefinedClassificationTypeNames.SymbolDefinition))));
-
-                if (element.ClosingMemberNameSpan.HasValue)
+                if (element.MemberNameSpan.HasValue)
                 {
-                    tags.Add(new TagSpan<ClassificationTag>(
-                    element.ClosingMemberNameSpan.Value,
-                    new ClassificationTag(_classificationRegistry.GetClassificationType(PredefinedClassificationTypeNames.SymbolDefinition))));
+                    var memberTag = new ErrorTag(MyraShared.ErrorCodeTypeNotExist, String.Format(MyraShared.ErrorHintTypeNotExist, element.Name));
+                    tags.Add(new TagSpan<IErrorTag>(element.MemberNameSpan.Value, memberTag));
+
+                    if (element.ClosingMemberNameSpan.HasValue)
+                    {
+                        tags.Add(new TagSpan<IErrorTag>(element.ClosingMemberNameSpan.Value, memberTag));
+                    }
                 }
-            }
 
-            if (element.Type != null)
-            {
-                tags.Add(new TagSpan<ClassificationTag>(
-                          element.NameSpan,
-                          new ClassificationTag(
-                              _classificationRegistry.GetClassificationType(
-                                  PredefinedClassificationTypeNames.SymbolDefinition))));
+                var tag = new ErrorTag(MyraShared.ErrorCodeTypeNotExist, String.Format(MyraShared.ErrorHintTypeNotExist, element.Name));
+                tags.Add(new TagSpan<IErrorTag>(element.NameSpan, tag));
+
                 if (element.ClosingNameSpan.HasValue)
-                {
-                    tags.Add(new TagSpan<ClassificationTag>(
-                      element.ClosingNameSpan.Value,
-                      new ClassificationTag(
-                          _classificationRegistry.GetClassificationType(
-                              PredefinedClassificationTypeNames.SymbolDefinition))));
+                { 
+                    tags.Add(new TagSpan<IErrorTag>(element.ClosingNameSpan.Value, tag));
                 }
             }
 
             foreach (var attr in element.Attributes)
             {
-                if (attr.OwnerType != null) 
+                if (!attr.IsValid) 
                 {
-                    tags.Add(new TagSpan<ClassificationTag>(
-                    attr.NameSpan,
-                    new ClassificationTag(
-                        _classificationRegistry.GetClassificationType(
-                            PredefinedClassificationTypeNames.SymbolDefinition))));
+                    tags.Add(new TagSpan<IErrorTag>(attr.NameSpan,
+                                new ErrorTag(MyraShared.ErrorTypeDoesNotHaveProperty, 
+                                String.Format(MyraShared.ErrorHintDoesNotHaveProperty, element.Type?.Name ?? "???", attr.Name))));
                 }
             } 
         }
 
-        private void Publish(ITextSnapshot snapshot,  int generation, List<TagSpan<ClassificationTag>> tags)
+        private void Publish(ITextSnapshot snapshot,  int generation, List<TagSpan<IErrorTag>> tags)
         {
-            if (_disposed ||
-                generation != Volatile.Read(ref _generation) ||
-                snapshot != _buffer.CurrentSnapshot)
+            if (_disposed ||  generation != Volatile.Read(ref _generation) || snapshot != _buffer.CurrentSnapshot)
             {
                 return;
             }
