@@ -13,19 +13,16 @@ namespace Myra
     [ContentType("XML")]
     internal sealed class MyraXamlClassifierProvider : IClassifierProvider
     {
-        private readonly IServiceProvider _provider;
         private readonly ITextDocumentFactoryService _documents;
         private readonly IClassificationTypeRegistryService _classificationTypes;
         private readonly VisualStudioWorkspace _workspace;
 
         [ImportingConstructor]
         public MyraXamlClassifierProvider(
-            [Import(typeof(SVsServiceProvider))] IServiceProvider serviceProvider,
             ITextDocumentFactoryService documents,
             IClassificationTypeRegistryService classificationTypes,
             VisualStudioWorkspace workspace)
         {
-            _provider = serviceProvider;
             _documents = documents;
             _classificationTypes = classificationTypes;
             _workspace = workspace;
@@ -45,7 +42,7 @@ namespace Myra
              
             return new MyraXamlClassifier(elementClassification, 
                 attributeClassification, 
-                MyraXamlBufferServices.GetModelProvider(_provider, _workspace, textBuffer));
+                MyraXamlBufferServices.GetModelProvider(_workspace, textBuffer));
         }
     }
 }

@@ -1,7 +1,5 @@
 ﻿using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.VisualStudio.Language.StandardClassification;
-using Microsoft.VisualStudio.LanguageServices;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Classification;
 using Microsoft.VisualStudio.Text.Tagging;
@@ -9,7 +7,6 @@ using Myra.Classifier;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -18,8 +15,7 @@ namespace Myra.Tagger
 
     internal sealed class MyraXamlTagger : ITagger<ClassificationTag>
     {
-        private readonly ITextBuffer _buffer;
-        private readonly Workspace _workspace;
+        private readonly ITextBuffer _buffer; 
         private readonly MyraXamlDocumentModelProvider _registry;
         private readonly IClassificationTypeRegistryService _classificationRegistry;
         private readonly object _gate = new();
@@ -32,14 +28,12 @@ namespace Myra.Tagger
         private bool _disposed; 
 
         public MyraXamlTagger(ITextBuffer buffer,
-            VisualStudioWorkspace workspace,
             MyraXamlDocumentModelProvider modelProvider,
             IClassificationTypeRegistryService classificationRegistry)
         {
             _buffer = buffer;
             _registry = modelProvider;
             this._classificationRegistry = classificationRegistry;
-            _workspace = workspace;
 
             _buffer.Changed += OnBufferChanged;
             _ = UpdateAsync();

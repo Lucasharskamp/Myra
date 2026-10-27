@@ -3,7 +3,6 @@ using Microsoft.VisualStudio.LanguageServices;
 using Microsoft.VisualStudio.Text;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq; 
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -12,10 +11,7 @@ using System.Threading.Tasks;
 namespace Myra.Classifier
 {
     internal sealed class MyraXamlParser
-    {
-        private const string MyraNamespace = "https://github.com/MyraUI/Myra";
-        private const string ClrNamespacePrefix = "clr-namespace:";
-
+    { 
         private static readonly Regex XmlnsRegex = new(
             """
             \bxmlns
@@ -55,29 +51,17 @@ namespace Myra.Classifier
             RegexOptions.Compiled |
             RegexOptions.IgnorePatternWhitespace);
 
-        private static readonly Regex NamespaceRegex = new(
-            """
-            ^
-            (?<namespace>[^;]+)
-            (?:;\s*assembly=(?<assembly>.+))?
-            $
-            """,
-            RegexOptions.Compiled |
-            RegexOptions.IgnorePatternWhitespace);
-
         private readonly Dictionary<string, MyraXamlType> _widgetTypes = new(StringComparer.Ordinal);
 
         private readonly Dictionary<string, MyraXamlType?> _typeCache = new(StringComparer.Ordinal);
         private readonly object _typeCacheLock = new();
-        private readonly VisualStudioWorkspace _workspace;
-        private readonly IServiceProvider _serviceProvider;
+        private readonly VisualStudioWorkspace _workspace; 
 
         private Compilation? currentCompilation;
         private bool _isLoaded = false;
 
-        public MyraXamlParser(IServiceProvider serviceProvider, VisualStudioWorkspace workspace)
-        {
-            _serviceProvider = serviceProvider;
+        public MyraXamlParser(VisualStudioWorkspace workspace)
+        { 
             _workspace = workspace;
         }
 
@@ -193,7 +177,7 @@ namespace Myra.Classifier
 
             currentCompilation = compilation;
 
-            LoadWidgetType("Myra.Graphics2D.UI.Widget"); 
+            LoadWidgetType(MyraShared.WidgetAddress); 
 
             _isLoaded = true;
         }
@@ -236,7 +220,7 @@ namespace Myra.Classifier
 
             if (prefix == null)
             {
-                typeNamespace = "Myra.Graphics2D.UI";
+                typeNamespace = MyraShared.DefaultWidgetsNamespace;
             }
             else if (namespaces.TryGetValue(prefix, out var uri))
             {

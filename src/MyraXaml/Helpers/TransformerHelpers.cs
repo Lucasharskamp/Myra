@@ -15,9 +15,7 @@ using XamlX.TypeSystem;
 namespace Myra.Xaml.Helpers
 {
     internal static class TransformerHelpers
-    {
-        public const string MyraMappings = "https://github.com/MyraUI/Myra";
-
+    {  
         public static MyraXamlCompileTask CurrentTask { get; set; } = default!;
 
         public static void EnsureAssignability(IXamlLineInfo lineInfo, XamlAstClrProperty targetProperty, string sourceFieldName, IXamlType sourceType)
@@ -154,7 +152,7 @@ namespace Myra.Xaml.Helpers
 
             // get default components, brushes and styles
             mappings.Namespaces.Add(
-                MyraMappings,
+                MyraShared.XamlMyraNamespace,
                 [
                     (myraAssembly, "Myra.Graphics2D.Brushes"),
                     (myraAssembly, "Myra.Graphics2D.UI"),

@@ -1,5 +1,6 @@
 ﻿
 using Microsoft.VisualStudio.LanguageServices;
+using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Text;
 using System;
 
@@ -9,12 +10,11 @@ namespace Myra.Classifier
     {
         private static readonly object ModelProviderKey = new();
 
-        public static MyraXamlDocumentModelProvider GetModelProvider(
-            IServiceProvider serviceProvider, VisualStudioWorkspace workspace, ITextBuffer buffer)
+        public static MyraXamlDocumentModelProvider GetModelProvider(VisualStudioWorkspace workspace, ITextBuffer buffer)
         {
             return buffer.Properties.GetOrCreateSingletonProperty(
                 ModelProviderKey,
-                () => new MyraXamlDocumentModelProvider(buffer, new MyraXamlParser(serviceProvider, workspace)));
+                () => new MyraXamlDocumentModelProvider(buffer, new MyraXamlParser(workspace)));
         }
     }
 } 

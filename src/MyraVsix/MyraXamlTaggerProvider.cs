@@ -7,7 +7,6 @@ using Microsoft.VisualStudio.Text.Tagging;
 using Microsoft.VisualStudio.Utilities;
 using Myra.Classifier;
 using Myra.Tagger;
-using System;
 using System.ComponentModel.Composition; 
 
 namespace Myra
@@ -16,20 +15,17 @@ namespace Myra
     [ContentType("XML")]
     [TagType(typeof(ClassificationTag))]
     internal sealed class MyraXamlTaggerProvider : ITaggerProvider
-    {
-        private readonly IServiceProvider serviceProvider;
+    { 
         private readonly ITextDocumentFactoryService _documents;
         private readonly IClassificationTypeRegistryService _classificationRegistry;
         private readonly SVsServiceProvider _vsServiceProvider;
 
         [ImportingConstructor]
-        public MyraXamlTaggerProvider(
-             [Import(typeof(SVsServiceProvider))] IServiceProvider serviceProvider,
+        public MyraXamlTaggerProvider( 
             ITextDocumentFactoryService documents, 
             IClassificationTypeRegistryService classificationRegistry,
             SVsServiceProvider vsServiceProvider)
-        {
-            this.serviceProvider = serviceProvider;
+        { 
             _documents = documents;
             _classificationRegistry = classificationRegistry;
             _vsServiceProvider = vsServiceProvider;
@@ -46,12 +42,10 @@ namespace Myra
                 return null;
 
             var componentModel = (IComponentModel)_vsServiceProvider.GetService(typeof(SComponentModel))!;
+            var workspace = componentModel.GetService<VisualStudioWorkspace>();
 
-            var workspace =
-                componentModel.GetService<VisualStudioWorkspace>();
-
-            return new MyraXamlTagger(textBuffer, workspace,
-                MyraXamlBufferServices.GetModelProvider(serviceProvider, workspace, textBuffer), _classificationRegistry) as ITagger<T>;
+            return new MyraXamlTagger(textBuffer, 
+                MyraXamlBufferServices.GetModelProvider(workspace, textBuffer), _classificationRegistry) as ITagger<T>;
         }
     }
 }

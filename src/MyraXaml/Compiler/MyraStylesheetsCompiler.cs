@@ -31,7 +31,7 @@ namespace Myra.Xaml.Compiler
         private static readonly Dictionary<string, string> _compabilityMappings
             = new()
             {
-                { "", TransformerHelpers.MyraMappings }
+                { "", MyraShared.XamlMyraNamespace }
             };
 
         public MyraStylesheetsCompiler(CecilTypeSystem typeSystem, TransformerConfiguration configuration, TaskLoggingHelper log)

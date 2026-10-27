@@ -24,7 +24,7 @@ namespace MyraVsix
     /// </para>
     /// </remarks>
     [PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
-    [Guid(MyraVsixPackage.PackageGuidString)]
+    [Guid(PackageGuidString)]
     public sealed class MyraVsixPackage : AsyncPackage
     {
         /// <summary>

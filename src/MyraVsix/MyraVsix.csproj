@@ -19,16 +19,13 @@
     <PackageReference Include="Microsoft.VisualStudio.LanguageServices" Version="4.14.0" />
     <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.14.40265" ExcludeAssets="runtime" />
     <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="18.9.820" />
-    <PackageReference Include="System.ComponentModel.Composition" Version="10.0.12" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Myra\Myra.MonoGame.csproj" />
-  </ItemGroup>
-  <ItemGroup>
+    <PackageReference Include="System.ComponentModel.Composition" Version="10.0.12" /> 
+    <ProjectReference Include="..\Myra\Myra.MonoGame.csproj" /> 
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Xaml" />
+    <Compile Include="../Shared/*.cs" />
   </ItemGroup> 
 </Project>
