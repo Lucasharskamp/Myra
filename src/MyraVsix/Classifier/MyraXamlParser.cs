@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Myra.Classifier
 {
-    internal sealed class MyraXamlParser
+    internal sealed class MyraXamlParser(VisualStudioWorkspace workspace)
     { 
         private static readonly Regex XmlnsRegex = new(
             """
@@ -55,15 +55,10 @@ namespace Myra.Classifier
 
         private readonly Dictionary<string, INamedTypeSymbol?> _typeCache = new(StringComparer.Ordinal);
         private readonly object _typeCacheLock = new();
-        private readonly VisualStudioWorkspace _workspace; 
+        private readonly VisualStudioWorkspace _workspace = workspace; 
 
         private Compilation? currentCompilation;
         private bool _isLoaded = false;
-
-        public MyraXamlParser(VisualStudioWorkspace workspace)
-        { 
-            _workspace = workspace;
-        }
 
         public async Task<MyraXamlDocumentModel?> ParseAsync(ITextBuffer buffer, CancellationToken cancellationToken)
         {
@@ -142,7 +137,7 @@ namespace Myra.Classifier
                     stack.Push(element);
             }
 
-            return new MyraXamlDocumentModel(snapshot, elements, namespaces);
+            return new MyraXamlDocumentModel(snapshot, elements, namespaces, currentCompilation);
         }
 
         private async Task LoadTypesAsync(ITextBuffer buffer, CancellationToken cancellationToken)

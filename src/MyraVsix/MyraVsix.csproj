@@ -20,7 +20,6 @@
     <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.14.40265" ExcludeAssets="runtime" />
     <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="18.9.820" />
     <PackageReference Include="System.ComponentModel.Composition" Version="10.0.12" /> 
-    <ProjectReference Include="..\Myra\Myra.MonoGame.csproj" /> 
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />

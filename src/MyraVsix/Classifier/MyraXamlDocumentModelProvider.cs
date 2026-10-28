@@ -30,11 +30,11 @@ namespace Myra.Classifier
 
         public event EventHandler<MyraXamlDocumentModelChangedEventArgs>? ModelChanged;
 
-        public MyraXamlDocumentModel? GetModel(ITextSnapshot snapshot)
+        public MyraXamlDocumentModel? GetModel(ITextSnapshot snapshot, bool force = false)
         {
             lock (_gate)
             {
-                if (_model?.Snapshot == snapshot)
+                if (force || _model?.Snapshot == snapshot)
                     return _model;
 
                 return null;
@@ -155,13 +155,8 @@ namespace Myra.Classifier
         }
     }
 
-    internal sealed class MyraXamlDocumentModelChangedEventArgs : EventArgs
+    internal sealed class MyraXamlDocumentModelChangedEventArgs(ITextSnapshot snapshot) : EventArgs
     {
-        public MyraXamlDocumentModelChangedEventArgs(ITextSnapshot snapshot)
-        {
-            Snapshot = snapshot;
-        }
-
-        public ITextSnapshot Snapshot { get; }
+        public ITextSnapshot Snapshot { get; } = snapshot;
     }
 }

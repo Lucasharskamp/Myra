@@ -1,24 +1,36 @@
-﻿using Microsoft.VisualStudio.Text;
+﻿using Microsoft.CodeAnalysis;
+using Microsoft.VisualStudio.Text;
 using System.Collections.Generic;
 
 namespace Myra.Classifier
 {
-    internal sealed class MyraXamlDocumentModel
+    internal sealed class MyraXamlDocumentModel(ITextSnapshot snapshot,
+                                 IReadOnlyList<MyraXamlElement> elements,
+                                 IReadOnlyDictionary<string, string> namespaces,
+                                 Compilation compilation)
     {
-        public MyraXamlDocumentModel(ITextSnapshot snapshot, 
-                                     IReadOnlyList<MyraXamlElement> elements, 
-                                     IReadOnlyDictionary<string, string> namespaces)
+        public ITextSnapshot Snapshot { get; } = snapshot;
+
+        public IReadOnlyList<MyraXamlElement> Elements { get; } = elements;
+
+        public IReadOnlyDictionary<string, string> Namespaces { get; } = namespaces;
+        public Compilation Compilation { get; } = compilation;
+
+        public MyraXamlElement? FindElementAt(int position)
         {
-            Snapshot = snapshot;
-            Elements = elements;
-            Namespaces = namespaces;
+            foreach (var element in Elements)
+            {
+                if (element.NameSpan.Contains(position))
+                    return element;
+
+                if (element.MemberNameSpan.HasValue && element.MemberNameSpan.Value.Contains(position))
+                    return element;
+
+                if (element.ClosingNameSpan.HasValue && element.ClosingNameSpan.Value.Contains(position))
+                    return element;
+            }
+            return null;
         }
 
-        public ITextSnapshot Snapshot { get; }
-
-        public IReadOnlyList<MyraXamlElement> Elements { get; }
-
-        public IReadOnlyDictionary<string, string> Namespaces { get; }
-         
     }
 }

@@ -1,35 +1,21 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.VisualStudio.Text;
-using System;
 using System.Collections.Generic; 
 
 namespace Myra.Classifier
 {
 
-    internal sealed class MyraXamlElement : IMyraValueType
+    internal sealed class MyraXamlElement(ITextSnapshot snapshot, string name, string? prefix, bool isValid, SnapshotSpan tagSpan) : IMyraValueType
     {
-        public MyraXamlElement(ITextSnapshot snapshot, string name, string? prefix, bool isValid, SnapshotSpan tagSpan)
-        {
-            Snapshot = snapshot;
-            Name = name;
-            Prefix = prefix;
-            IsValid = isValid;
-
-            TagSpan = tagSpan;
-            ValueSpan = tagSpan; // overridden later if need be.
-        }
-
-        public ITextSnapshot Snapshot { get; }
-
+        public ITextSnapshot Snapshot { get; } = snapshot;
         public SnapshotSpan NameSpan { get; set; }
         public SnapshotSpan? ClosingNameSpan { get; set; }
+        public string Name { get; } = name;
 
-        public string Name { get; }
-
-        public string? Prefix { get; }
+        public string? Prefix { get; } = prefix;
 
         public ITypeSymbol? TypeSymbol { get; set; }
-        public bool IsValid { get; }
+        public bool IsValid { get; } = isValid;
 
         public bool IsPropertyElement { get; set; }
 
@@ -40,9 +26,9 @@ namespace Myra.Classifier
 
         public MyraXamlElement? Parent { get; set; }
 
-        public SnapshotSpan TagSpan { get; }
+        public SnapshotSpan TagSpan { get; } = tagSpan;
 
-        public SnapshotSpan ValueSpan { get; set; }
+        public SnapshotSpan ValueSpan { get; set; } = tagSpan; // overridden later if need be.
         public string Value { get; set; }
 
         public List<MyraXamlAttribute> Attributes { get; } = [];
