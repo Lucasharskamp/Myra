@@ -150,8 +150,8 @@ namespace Myra.Tagger
                 if (!attr.IsValid) 
                 {
                     tags.Add(new TagSpan<IErrorTag>(attr.NameSpan,
-                                new ErrorTag(MyraShared.ErrorTypeDoesNotHaveProperty, 
-                                String.Format(MyraShared.ErrorHintDoesNotHaveProperty, element.TypeSymbol?.Name ?? "???", attr.Name))));
+                                new ErrorTag(MyraShared.ErrorCodeTypeDoesNotHaveProperty, 
+                                String.Format(MyraShared.ErrorHintTypeDoesNotHaveProperty, element.TypeSymbol?.Name ?? "???", attr.Name))));
                 }
             } 
         }

@@ -1,7 +1,6 @@
 ﻿using Microsoft.Build.Utilities;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Threading.Tasks;
 using XamlX;
 using XamlX.Transform;
@@ -12,7 +11,7 @@ namespace Myra.Xaml.Compiler
     {
         private XamlDiagnosticSeverity MinimumSeverity { get; }
 
-        public List<XamlDiagnostic> Diagnostics { get; } = new();
+        public List<XamlDiagnostic> Diagnostics { get; } = [];
         public bool HasError { get; private set; }
 
         public MyraDiagnosticHandler(XamlDiagnosticSeverity minimumSeverity)
@@ -24,8 +23,8 @@ namespace Myra.Xaml.Compiler
 
         private readonly Dictionary<Type, string> ExceptionCodes = new()
         {
-            { typeof(XamlLoadException), "MYRA001" },
-            { typeof(XamlTransformException), "MYRA002" }
+            { typeof(XamlLoadException), MyraShared.ErrorCodeTypeNotExist },
+            { typeof(XamlTransformException), MyraShared.ErrorCodeTypeDoesNotHaveProperty }
         };
 
 

@@ -2,6 +2,7 @@
 using Microsoft.VisualStudio.Core.Imaging;
 using Microsoft.VisualStudio.Imaging;
 using Microsoft.VisualStudio.Imaging.Interop;
+using Microsoft.VisualStudio.Language.Intellisense;
 using Microsoft.VisualStudio.Language.Intellisense.AsyncCompletion;
 using Microsoft.VisualStudio.Language.Intellisense.AsyncCompletion.Data;
 using Microsoft.VisualStudio.Text;
@@ -21,9 +22,8 @@ namespace Myra.Completion
     internal sealed class MyraXamlCompletionSource(ITextView textView, MyraXamlDocumentModelProvider modelProvider) : IAsyncCompletionSource
     { 
         private readonly ITextView _textView = textView;
-        private readonly MyraXamlDocumentModelProvider _modelProvider = modelProvider;
-        private bool _isLoaded = false;
-        private List<INamedTypeSymbol> _types = [];
+        private readonly MyraXamlDocumentModelProvider _modelProvider = modelProvider; 
+        private MyraXamlDocumentModel? _model = null; 
         private readonly Dictionary<INamedTypeSymbol, List<ISymbol>> _typeMembers = [];
 
 
@@ -48,65 +48,9 @@ namespace Myra.Completion
             return new CompletionStartData(
                 CompletionParticipation.ProvidesItems,
                 span.Value);
-        }
-
-        public bool TryGetApplicableToSpan(
-            char typedChar,
-            SnapshotPoint triggerLocation,
-            SnapshotSpan applicableToSpan,
-            out SnapshotSpan? applicableToSpanOut)
-        {
-            applicableToSpanOut = null;
-
-            if (!IsMyraDocument(triggerLocation.Snapshot))
-                return false;
-             
-            var span = GetApplicableSpan(triggerLocation);
-
-            if (span is null)
-                return false;
-
-            applicableToSpanOut = span.Value;
-            return true;
-        }
-
-        private void LoadTypes(Compilation compilation)
-        {
-            var widgetType = compilation.GetTypeByMetadataName(MyraShared.WidgetAddress);
-            if (widgetType == null)
-                return;
-
-            var types = GetTypesInNamespace(compilation.GlobalNamespace, widgetType);
-            _types = types.OrderBy(t => t.Name).ToList();
-            _isLoaded = true;
-        }
-
-        static IEnumerable<INamedTypeSymbol> GetTypesInNamespace(INamespaceSymbol ns, INamedTypeSymbol widgetType)
-        {
-            var isMyraItems = ns.ToDisplayString(SymbolDisplayFormat.CSharpErrorMessageFormat).StartsWith("Myra");
-            foreach (var type in ns.GetTypeMembers())
-            { 
-
-                // skip non-public types, abstract types
-                // skip types those not derived from Widget AND not part of Myra.Graphics2D.UI
-                if (type.DeclaredAccessibility != Accessibility.Public
-                    || type.IsAbstract)
-                    continue;
-
-                if (!isMyraItems && !widgetType.IsAssignableFrom(type))
-                    continue;
-
-                yield return type;
-            } 
-
-            foreach (var childNamespace in ns.GetNamespaceMembers())
-            {
-                foreach (var type in GetTypesInNamespace(childNamespace, widgetType))
-                {
-                    yield return type;
-                }
-            }
-        }
+        } 
+         
+         
 
         public Task<CompletionContext> GetCompletionContextAsync(
             IAsyncCompletionSession session,
@@ -152,21 +96,19 @@ namespace Myra.Completion
             CancellationToken token)
         {
             token.ThrowIfCancellationRequested();
+            var snapshot = triggerLocation.Snapshot;  
 
-            var snapshot = triggerLocation.Snapshot;
-            var model = _modelProvider.GetModel(snapshot, true);
-
-            if (model is null)
-                return new CompletionContext([]);
-
-            if (!_isLoaded)
+            if (_model == null)
             {
-                LoadTypes(model.Compilation);
+                _model = _modelProvider.GetModel(snapshot, true);
+                if (_model == null)
+                    return new CompletionContext([]); 
+                  
             }
 
             var position = triggerLocation.Position;
 
-            var candidates = GetCandidates(model, snapshot, position, token);
+            var candidates = GetCandidates(snapshot, position, token);
 
             var items = candidates
                 .Select(c => {
@@ -186,9 +128,17 @@ namespace Myra.Completion
             if (string.IsNullOrEmpty(xml))
                 return String.Empty;
 
-            return XElement.Parse(xml)
-                .Element("summary")?
-                .Value.Trim() ?? String.Empty;
+            try
+            {
+                return XElement.Parse(xml)
+                    .Element("summary")?
+                    .Value.Trim() ?? String.Empty;
+            }
+            catch
+            {
+                // in case of broken XML
+                return String.Empty; 
+            }
         }
 
         static CompletionFilter GetFilter(ISymbol symbol)
@@ -207,7 +157,7 @@ namespace Myra.Completion
 
         static string GetInsertText(ISymbol symbol)
         {
-            if (symbol is IPropertySymbol or IEventSymbol)
+            if (symbol is IPropertySymbol or IEventSymbol or IMethodSymbol)
                 return $"{symbol.Name}=\"\"";
 
             return symbol.Name + " ";
@@ -240,10 +190,10 @@ namespace Myra.Completion
              
         }
 
-        private IEnumerable<ISymbol> GetCandidates(MyraXamlDocumentModel model,  ITextSnapshot snapshot, int position, CancellationToken token)
+        private IEnumerable<ISymbol> GetCandidates(ITextSnapshot snapshot, int position, CancellationToken token)
         {
             var text = snapshot.GetText();
-            var element = model.FindElementAt(position);
+            var element = _model!.FindElementAt(position);
 
             // After '<', suggest widget types.
             if (IsElementNamePosition(text, position, out var currentlyWritten))
@@ -251,10 +201,10 @@ namespace Myra.Completion
                 if (String.IsNullOrEmpty(currentlyWritten))
                     yield break;
 
-                var options = _types.Where(t => t.Name.StartsWith(currentlyWritten, StringComparison.OrdinalIgnoreCase)).ToList();
+                var options = _model!.TypeCache.Where(t => t.Value != null && t.Value.Name.StartsWith(currentlyWritten, StringComparison.OrdinalIgnoreCase)).ToList();
                 foreach (var type in options)
                 {
-                    yield return type;
+                    yield return type.Value!;
                 }
 
                 yield break;
@@ -268,7 +218,7 @@ namespace Myra.Completion
 
                 if (String.IsNullOrEmpty(ownerName))
                     yield break;
-                var finalType = _types.FirstOrDefault(t => t.Name.StartsWith(ownerName, StringComparison.OrdinalIgnoreCase));
+                var finalType = _model!.TypeCache.FirstOrDefault(t => t.Value != null && t.Value.Name.StartsWith(ownerName, StringComparison.OrdinalIgnoreCase)).Value;
                 if (finalType == null)
                     yield break;
 
@@ -289,7 +239,81 @@ namespace Myra.Completion
                 {
                     yield return member;
                 } 
-            } 
+            }
+
+
+            // Inside an attribute value, suggest code-behind members.
+            // Examples: Foo="B... and x:Name="Ab...
+            // However, we only do this if a code-behind type is known to exist
+            // and if the element has a known type symbol to work from. 
+            if (_model.CodeBehindType == null || element?.TypeSymbol == null)
+                yield break; 
+
+            var openQuote = text.LastIndexOf('"', Math.Max(0, position - 1));
+
+            if (openQuote >= 0)
+            {
+                var equals = text.LastIndexOf('=', openQuote);
+
+                if (equals >= 0)
+                {
+                    var attributeStart = equals - 1;
+
+                    while (attributeStart >= 0 &&
+                           (char.IsLetterOrDigit(text[attributeStart]) ||
+                            text[attributeStart] == '_' ||
+                            text[attributeStart] == ':' ||
+                            text[attributeStart] == '.'))
+                    {
+                        attributeStart--;
+                    }
+
+                    var attributeName = text.Substring(
+                        attributeStart + 1,
+                        equals - attributeStart - 1);
+
+                    // get the text already written within the quotation mark(s)
+                    var prefix = text.Substring(openQuote + 1, position - openQuote - 1).Trim();
+
+                    if (attributeName == "x:Name")
+                    { 
+                        foreach (var candidate in _model.CodeBehindFields)
+                        { 
+                            if (String.IsNullOrEmpty(prefix) || candidate.Name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                            {
+                                yield return candidate;
+                            }
+                        } 
+
+                        foreach (var candidate in _model.CodeBehindProperties)
+                        { 
+                            if (String.IsNullOrEmpty(prefix) || candidate.Name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                            {
+                                yield return candidate;
+                            }
+                        }
+
+                        yield break;
+                    }
+
+                    var behindSymbol = element.TypeSymbol.GetMembers().FirstOrDefault(m => String.Equals(attributeName, m.Name));
+                    if (behindSymbol == null)
+                        yield break;
+
+                    if (behindSymbol.Kind == SymbolKind.Event)
+                    {
+                        foreach (var candidate in _model.CodeBehindMethods)
+                        {
+                            if (String.IsNullOrEmpty(prefix) || candidate.Name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                            {
+                                yield return candidate;
+                            }
+                        }
+                        yield break;
+                    } 
+                }
+            }
+
         }
 
         private SnapshotSpan? GetApplicableSpan(SnapshotPoint point)

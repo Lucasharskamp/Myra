@@ -226,14 +226,13 @@ namespace Myra.Xaml.Transformers
             {
                 if (TransformerHelpers.CurrentTask.IsAotBuild)
                 {
-                    context.ReportDiagnostic(new XamlDiagnostic("Myra003", XamlDiagnosticSeverity.Fatal,
-                        $"Method '{lastMethod.Name}' is used for an event, but lacks the 'object sender, MyraEventArgs e' parameters."));
+                    context.ReportDiagnostic(new XamlDiagnostic(MyraShared.ErrorCodeEventMethodMissingParameters, XamlDiagnosticSeverity.Fatal,
+                        String.Format(MyraShared.ErrorCodeEventMethodMissingParameters, lastMethod.Name)));
                 }
                 else
                 {
-                    context.ReportDiagnostic(new XamlDiagnostic("Myra003", XamlDiagnosticSeverity.Warning,
-                    $"Method '{lastMethod.Name}' is used for an event, but lacks the 'object sender, MyraEventArgs e' parameters." +
-                    $"This will prevent AOT compilations from being built!"));
+                    context.ReportDiagnostic(new XamlDiagnostic(MyraShared.ErrorCodeEventMethodMissingParameters, XamlDiagnosticSeverity.Warning,
+                    String.Format(MyraShared.ErrorHintWarningEventMethodMissingParameters, lastMethod.Name)));
                 }
                 return lastMethod;
             }

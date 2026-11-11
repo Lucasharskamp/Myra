@@ -5,11 +5,11 @@
     <DisplayName>MyraVsix</DisplayName>
     <Description>Empty VSIX Project.</Description>
   </Metadata>
-  <Installation> 
-    <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.0,18.0)" >
+  <Installation>
+    <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.0,18.0)">
       <ProductArchitecture>amd64</ProductArchitecture>
     </InstallationTarget>
-    <InstallationTarget Id="Microsoft.VisualStudio.Pro" Version="[17.0,18.0)" >
+    <InstallationTarget Id="Microsoft.VisualStudio.Pro" Version="[17.0,18.0)">
       <ProductArchitecture>amd64</ProductArchitecture>
     </InstallationTarget>
     <InstallationTarget Id="Microsoft.VisualStudio.Enterprise" Version="[17.0,18.0)">
@@ -23,9 +23,8 @@
     <Prerequisite Id="Microsoft.VisualStudio.Component.CoreEditor" DisplayName="Visual Studio core editor" Version="[17.0,18.0)" />
   </Prerequisites>
   <Assets>
-    <Asset Type="Microsoft.VisualStudio.MefComponent"
-           Path="MyraVsix.dll" />
-    <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%;PkgdefProjectOutputGroup|" />
-
+    <Asset Type="Microsoft.VisualStudio.MefComponent" Path="MyraVsix.dll" />
+    <Asset Type="Microsoft.VisualStudio.VsPackage" Path="|%CurrentProject%;PkgdefProjectOutputGroup|" d:Source="Project" d:ProjectName="%CurrentProject%" />
+    <Asset Type="Microsoft.VisualStudio.ItemTemplate" Path="|Myra.ItemTemplate;TemplateProjectOutputGroup|" d:Source="Project" d:ProjectName="Myra.ItemTemplate" />
   </Assets>
 </PackageManifest>

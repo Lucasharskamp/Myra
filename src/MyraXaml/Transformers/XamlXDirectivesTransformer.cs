@@ -52,18 +52,18 @@ namespace Myra.Xaml.Transformers
 
             if (targetProperty == null)
             {
-                context.ReportDiagnostic(new XamlDiagnostic("MYRA001",
+                context.ReportDiagnostic(new XamlDiagnostic(MyraShared.ErrorCodeTypeDoesNotHaveProperty,
                     XamlDiagnosticSeverity.Error,
-                    $"property '{text}' not found in type '{rootClrType.FullName}'",
+                    String.Format(MyraShared.ErrorHintTypeDoesNotHaveProperty, text, rootClrType.FullName),
                     directive));
                 return node;
             }
 
             if (targetProperty.Setter == null)
             {
-                context.ReportDiagnostic(new XamlDiagnostic("MYRA002",
-                   XamlDiagnosticSeverity.Error,
-                   $"property '{text}' in type '{rootClrType.FullName}' does not have a setter!",
+                context.ReportDiagnostic(new XamlDiagnostic(MyraShared.ErrorCodePropertyDoesNotHaveSetter,
+                   XamlDiagnosticSeverity.Error, 
+                   String.Format(MyraShared.ErrorHintPropertyDoesNotHaveSetter, text, rootClrType.FullName), 
                    directive));
                 return node;
             } 

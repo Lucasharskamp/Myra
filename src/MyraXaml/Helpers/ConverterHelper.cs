@@ -157,7 +157,7 @@ namespace Myra.Xaml.Helpers
             var constructor = type.FindConstructor([.. arguments.Select(a => context.Configuration.WellKnownTypes.Int32)]);
             if (constructor == null)
             {
-                context.ReportDiagnostic(new XamlDiagnostic("MYRA003", XamlDiagnosticSeverity.Fatal, $"No constructor for Thickness has {arguments.Count} parameters!", node));
+                context.ReportDiagnostic(new XamlDiagnostic(MyraShared.ErrorCodeConstructorInvalidParameters, XamlDiagnosticSeverity.Fatal, String.Format(MyraShared.ErrorHintConstructorInvalidParameters, type.FullName, arguments.Count), node));
                 return false;
             }
 
@@ -231,7 +231,7 @@ namespace Myra.Xaml.Helpers
             {
                 if (hex.Length != 6 && hex.Length != 8)
                 {
-                    context.ReportDiagnostic(new XamlDiagnostic("MYRA004", XamlDiagnosticSeverity.Fatal, "Hex number must have 6 or 8 hexadecimal characters!", node));
+                    context.ReportDiagnostic(new XamlDiagnostic(MyraShared.ErrorCodeHexLengthInvalid, XamlDiagnosticSeverity.Fatal, MyraShared.ErrorHintHexLengthInvalid, node));
                     return false;
                 }
 
@@ -240,7 +240,7 @@ namespace Myra.Xaml.Helpers
                                    CultureInfo.CurrentCulture,
                                    out var color))
                 {
-                    context.ReportDiagnostic(new XamlDiagnostic("MYRA005", XamlDiagnosticSeverity.Fatal, "Hex number is not valid!", node));
+                    context.ReportDiagnostic(new XamlDiagnostic(MyraShared.ErrorCodeHexInvalid, XamlDiagnosticSeverity.Fatal, MyraShared.ErrorHintHexInvalid, node));
                     return false;
                 }
 

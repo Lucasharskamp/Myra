@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.VisualStudio.LanguageServices;
 using Microsoft.VisualStudio.Text;
 using System;
+using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Linq; 
 using System.Text.RegularExpressions;
@@ -21,7 +22,8 @@ namespace Myra.Classifier
             (?:"(?<uri>[^"]*)"|'(?<uri>[^']*)')
             """,
             RegexOptions.Compiled |
-            RegexOptions.IgnorePatternWhitespace);
+            RegexOptions.IgnorePatternWhitespace |
+            RegexOptions.CultureInvariant);
 
         private static readonly Regex TagRegex = new(
             """
@@ -34,7 +36,8 @@ namespace Myra.Classifier
             (?<name>[A-Za-z_][A-Za-z0-9_.-]*)
             """,
             RegexOptions.Compiled |
-            RegexOptions.IgnorePatternWhitespace);
+            RegexOptions.IgnorePatternWhitespace |
+            RegexOptions.CultureInvariant);
 
         private static readonly Regex AttributeRegex = new(
             """
@@ -51,7 +54,8 @@ namespace Myra.Classifier
             "(?:(?<value>[\sA-Za-z0-9-–_.,:;={}&\/+'*\[\]()^%$#@!]*))?"
             """,
             RegexOptions.Compiled |
-            RegexOptions.IgnorePatternWhitespace);
+            RegexOptions.IgnorePatternWhitespace |
+            RegexOptions.CultureInvariant);
 
         private readonly Dictionary<string, INamedTypeSymbol?> _typeCache = new(StringComparer.Ordinal);
         private readonly object _typeCacheLock = new();
@@ -59,6 +63,10 @@ namespace Myra.Classifier
 
         private Compilation? currentCompilation;
         private bool _isLoaded = false;
+        private INamedTypeSymbol? _codeBehindType = null;
+        private FrozenSet<IMethodSymbol> _codeBehindMethods = [];
+        private FrozenSet<IFieldSymbol> _codeBehindFields = [];
+        private FrozenSet<IPropertySymbol> _codeBehindProperties = [];
 
         public async Task<MyraXamlDocumentModel?> ParseAsync(ITextBuffer buffer, CancellationToken cancellationToken)
         {
@@ -137,7 +145,8 @@ namespace Myra.Classifier
                     stack.Push(element);
             }
 
-            return new MyraXamlDocumentModel(snapshot, elements, namespaces, currentCompilation);
+            return new MyraXamlDocumentModel(snapshot, elements, namespaces, currentCompilation, _typeCache,
+                _codeBehindType, _codeBehindMethods, _codeBehindFields, _codeBehindProperties);
         }
 
         private async Task LoadTypesAsync(ITextBuffer buffer, CancellationToken cancellationToken)
@@ -176,17 +185,36 @@ namespace Myra.Classifier
                 var typesInDocument = await GetTypesAsync(codeBehindDocument, cancellationToken);
                 var start = filePath.LastIndexOf('\\'); 
                 var typeName = filePath.Substring(start+1, filePath.LastIndexOf('.') - start - 1);
-                var type = typesInDocument.FirstOrDefault(t => String.Equals(t.Name, typeName, StringComparison.Ordinal));
-                if (type != null)
+                _codeBehindType = typesInDocument.FirstOrDefault(t => String.Equals(t.Name, typeName, StringComparison.Ordinal));
+                if (_codeBehindType != null)
                 {
                     lock (_typeCacheLock)
                     {
-                        _typeCache[":" + type.Name] = type;
+                        _typeCache[":" + _codeBehindType.Name] = _codeBehindType;
                     }
+                    _codeBehindMethods = GetSymbolsOfType<IMethodSymbol>(_codeBehindType);
+                    _codeBehindFields = GetSymbolsOfType<IFieldSymbol>(_codeBehindType);
+                    _codeBehindProperties = GetSymbolsOfType<IPropertySymbol>(_codeBehindType);
                 }
+
             } 
  
             _isLoaded = true;
+        }
+
+        private FrozenSet<T> GetSymbolsOfType<T>(INamedTypeSymbol type)
+        {
+            var methods = new List<T>();
+
+            for (var current = type;
+                 current != null;
+                 current = current.BaseType)
+            {
+                methods.AddRange(
+                    current.GetMembers()
+                        .OfType<T>());
+            }
+            return methods.ToFrozenSet();
         }
 
         public static async Task<IReadOnlyList<INamedTypeSymbol>> GetTypesAsync(Document document, CancellationToken cancellationToken)

@@ -1,10 +1,12 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.VisualStudio.Text;
-using System.Collections.Generic; 
+using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace Myra.Classifier
 {
 
+    [DebuggerDisplay("{Name}")]
     internal sealed class MyraXamlElement(ITextSnapshot snapshot, string name, string? prefix, bool isValid, SnapshotSpan tagSpan) : IMyraValueType
     {
         public ITextSnapshot Snapshot { get; } = snapshot;
@@ -29,7 +31,7 @@ namespace Myra.Classifier
         public SnapshotSpan TagSpan { get; } = tagSpan;
 
         public SnapshotSpan ValueSpan { get; set; } = tagSpan; // overridden later if need be.
-        public string Value { get; set; }
+        public string Value { get; set; } = string.Empty;
 
         public List<MyraXamlAttribute> Attributes { get; } = [];
 
