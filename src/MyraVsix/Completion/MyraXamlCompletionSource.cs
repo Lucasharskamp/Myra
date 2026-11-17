@@ -1,8 +1,7 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.VisualStudio.Core.Imaging;
 using Microsoft.VisualStudio.Imaging;
-using Microsoft.VisualStudio.Imaging.Interop;
-using Microsoft.VisualStudio.Language.Intellisense;
+using Microsoft.VisualStudio.Imaging.Interop; 
 using Microsoft.VisualStudio.Language.Intellisense.AsyncCompletion;
 using Microsoft.VisualStudio.Language.Intellisense.AsyncCompletion.Data;
 using Microsoft.VisualStudio.Text;
@@ -32,10 +31,39 @@ namespace Myra.Completion
         private static readonly CompletionFilter MethodFilter = new("Method", "M", new ImageElement(KnownMonikers.Method.ToImageId()));
         private static readonly CompletionFilter EventFilter = new("Events", "E", new ImageElement(KnownMonikers.Event.ToImageId()));
 
-        public CompletionStartData InitializeCompletion(
-            CompletionTrigger trigger,
-            SnapshotPoint triggerLocation,
-            CancellationToken token)
+        /// <summary>
+        /// Where inside the Xaml the cursor is currently located.
+        /// </summary>
+        private enum CursorLocation
+        {
+            /// <summary>
+            /// Cursor is outside any element.
+            /// </summary>
+            Root,
+            /// <summary>
+            /// user wrote a left-chevron, making a new element.
+            /// </summary>
+            StartOfElement,
+            /// <summary>
+            /// E.g. "widget.Property" area
+            /// </summary>
+            ElementProperty,
+            /// <summary>
+            /// user wrote an element name, and is now defining attributes
+            /// </summary>
+            DefiningAttribute,
+            /// <summary>
+            /// Cursor is inside the quotations of an attribute value
+            /// </summary>
+            AttributeValue,
+            /// <summary>
+            /// Cursor is inside element value. 
+            /// </summary>
+            ElementValue
+        }
+
+        /// <inheritdoc />
+        public CompletionStartData InitializeCompletion(CompletionTrigger trigger, SnapshotPoint triggerLocation, CancellationToken token)
         {
             if (!IsMyraDocument(triggerLocation.Snapshot))
                 return CompletionStartData.DoesNotParticipateInCompletion;
@@ -45,13 +73,10 @@ namespace Myra.Completion
             if (span is null)
                 return CompletionStartData.DoesNotParticipateInCompletion;
 
-            return new CompletionStartData(
-                CompletionParticipation.ProvidesItems,
-                span.Value);
-        } 
-         
-         
+            return new CompletionStartData(CompletionParticipation.ProvidesItems, span.Value);
+        }
 
+        /// <inheritdoc />
         public Task<CompletionContext> GetCompletionContextAsync(
             IAsyncCompletionSession session,
             CompletionTrigger trigger,
@@ -62,6 +87,7 @@ namespace Myra.Completion
             return CreateCompletionContextAsync(triggerLocation, applicableToSpan, token);
         }
 
+        /// <inheritdoc />
         public Task<CompletionContext> GetCompletionContextAsync(
             SnapshotPoint triggerLocation,
             SnapshotSpan applicableToSpan,
@@ -69,8 +95,10 @@ namespace Myra.Completion
         {
             return CreateCompletionContextAsync(triggerLocation, applicableToSpan, token);
         }
+          
 
-        public Task<object> GetDescriptionAsync(CompletionItem item, CancellationToken token)
+        /// <inheritdoc />
+        public Task<object> GetDescriptionAsync(IAsyncCompletionSession session, CompletionItem item,  CancellationToken token)
         {
             token.ThrowIfCancellationRequested();
 
@@ -80,14 +108,6 @@ namespace Myra.Completion
             }
 
             return Task.FromResult<object>(item.DisplayText);
-        }
-
-        public Task<object> GetDescriptionAsync(
-            IAsyncCompletionSession session,
-            CompletionItem item,
-            CancellationToken token)
-        {
-            return GetDescriptionAsync(item, token);
         }
 
         private async Task<CompletionContext> CreateCompletionContextAsync(
@@ -108,13 +128,14 @@ namespace Myra.Completion
 
             var position = triggerLocation.Position;
 
-            var candidates = GetCandidates(snapshot, position, token);
+            var candidates = GetCandidates(snapshot, applicableToSpan, position, token);
 
-            var items = candidates
+            var items = candidates 
                 .Select(c => {
                     var fullName = c.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-                    return new CompletionItem(c.Name, this, new ImageElement(GetTypeImage(c).ToImageId()), 
-                        [GetFilter(c)], GetSummary(c), GetInsertText(c), fullName, fullName, []); 
+                    var insertText = GetInsertText(c);
+                    return new CompletionItem(c.Name, this, new ImageElement(GetTypeImage(c).ToImageId()),
+                        [GetFilter(c)], GetSummary(c), insertText, fullName, fullName, fullName, [], [.. insertText], default, false, false);
                 })
                 .ToImmutableArray();
 
@@ -174,6 +195,9 @@ namespace Myra.Completion
             if (symbol is IEventSymbol)
                 return KnownMonikers.Event;
 
+            if (symbol is IFieldSymbol)
+                return KnownMonikers.Field;
+
             if (symbol is INamedTypeSymbol typeSymbol)
             {
                 return typeSymbol.TypeKind switch
@@ -184,19 +208,20 @@ namespace Myra.Completion
                     TypeKind.Enum => KnownMonikers.Enumeration,
                     _ => KnownMonikers.Type
                 };
-            }
+            } 
 
             throw new InvalidOperationException();
              
         }
 
-        private IEnumerable<ISymbol> GetCandidates(ITextSnapshot snapshot, int position, CancellationToken token)
+        private IEnumerable<ISymbol> GetCandidates(ITextSnapshot snapshot, SnapshotSpan applicableToSpan, int position, CancellationToken token)
         {
             var text = snapshot.GetText();
-            var element = _model!.FindElementAt(position);
+
+            var location = GetCursorLocation(text, position, out var currentlyWritten, out string? ownerName);
 
             // After '<', suggest widget types.
-            if (IsElementNamePosition(text, position, out var currentlyWritten))
+            if (location == CursorLocation.StartOfElement)
             {
                 if (String.IsNullOrEmpty(currentlyWritten))
                     yield break;
@@ -208,16 +233,17 @@ namespace Myra.Completion
                 }
 
                 yield break;
-            }
+            } 
 
             // Inside an opening tag, suggest attributes or attached properties and events.
             // or when <Widget. has been written, suggesting we need to show properties.
-            if (IsInsideOpeningTag(text, position, out var ownerName)
-                || IsPropertyElementPosition(text, position, out ownerName))
+            if (location == CursorLocation.ElementProperty
+                || location == CursorLocation.DefiningAttribute)
             {
 
                 if (String.IsNullOrEmpty(ownerName))
                     yield break;
+
                 var finalType = _model!.TypeCache.FirstOrDefault(t => t.Value != null && t.Value.Name.StartsWith(ownerName, StringComparison.OrdinalIgnoreCase)).Value;
                 if (finalType == null)
                     yield break;
@@ -238,15 +264,23 @@ namespace Myra.Completion
                 foreach (var member in members)
                 {
                     yield return member;
-                } 
+                }
+
+                yield break;
             }
 
+            if (_model?.CodeBehindType == null)
+                yield break;
+
+            var open = text.LastIndexOf('<', Math.Max(0, position - 1)) + 1;
+            var element = _model!.FindElementAt(open); 
 
             // Inside an attribute value, suggest code-behind members.
             // Examples: Foo="B... and x:Name="Ab...
             // However, we only do this if a code-behind type is known to exist
             // and if the element has a known type symbol to work from. 
-            if (_model.CodeBehindType == null || element?.TypeSymbol == null)
+            if (element == null 
+                || element.TypeSymbol == null)
                 yield break; 
 
             var openQuote = text.LastIndexOf('"', Math.Max(0, position - 1));
@@ -311,6 +345,22 @@ namespace Myra.Completion
                         }
                         yield break;
                     } 
+
+                    if (behindSymbol is IPropertySymbol propertySymbol)
+                    {
+                        if (propertySymbol.Type.TypeKind == TypeKind.Enum)
+                        {
+                            var enumOptions = propertySymbol.Type
+                                .GetMembers()
+                                .OfType<IFieldSymbol>()
+                                .Where(f => f.HasConstantValue);
+
+                            foreach (var enumOption in enumOptions)
+                            {
+                                yield return enumOption;
+                            }
+                        }
+                    }
                 }
             }
 
@@ -351,86 +401,59 @@ namespace Myra.Completion
             return snapshot.TextBuffer.ContentType.IsOfType("XML") &&
                    filePath?.EndsWith(".xaml", StringComparison.OrdinalIgnoreCase) == true;
         }
-
-        private static bool IsInsideOpeningTag(
-            string text,
-            int position,
-            out string ownerName)
-        {
-            ownerName = "";
-            var open = text.LastIndexOf('<', Math.Max(0, position - 1));
-            var close = text.LastIndexOf('>', Math.Max(0, position - 1));
-
-            if (open <= close)
-                return false; 
- 
-            var end = open + 1;
-
-            if (end < text.Length && text[end] == '/')
-                return false;
-
-            while (end < position && IsNameCharacter(text[end]))
-                end++;
-
-            ownerName = text.Substring(open + 1, end - open - 1);
-            return !String.IsNullOrEmpty(ownerName);
-        }
-
-        private static bool IsElementNamePosition(string text, int position, out string currentlyWritten)
+         
+        private static CursorLocation GetCursorLocation(string text, int position, out string currentlyWritten, out string? ownerName)
         {
             currentlyWritten = "";
             var open = text.LastIndexOf('<', Math.Max(0, position - 1));
             var close = text.LastIndexOf('>', Math.Max(0, position - 1));
+            ownerName = null;
 
-            if(open > close &&
-                open + 1 < text.Length &&
-                text[open + 1] != '/' &&
-                !char.IsWhiteSpace(text[open + 1]))
+            if (open == -1)
+                return CursorLocation.Root;
+
+            if (open <= close || 
+                text[open + 1] == '/' ||
+                char.IsWhiteSpace(text[open + 1]))
             {
-                int length = 0;
-                var currentChar = text[open + length];
-                while (currentChar != '\r' && currentChar != '\n'&& currentChar != '/')
-                {
-                    // we can allow for line breaks in case a user is creating a new element in the middle
-                    // however, a space or tab indicates we're in a new element which is already defined
-                    if (currentChar == ' ' || currentChar == '\t')
-                        return false;
-
-                    length++;
-                    currentChar = text[open + length];
-                }
-                currentlyWritten = text.Substring(open+1, Math.Max(0, length-1));
-                return true;
+                return CursorLocation.ElementValue;
             }
-            return false;
-        }
+              
+            int length = 0;
+            var currentChar = text[open + length];
+            int until = Math.Min(position, text.Length);
+            var location = CursorLocation.StartOfElement;
+            while (open + length < until)
+            {
+                if (location == CursorLocation.StartOfElement || location == CursorLocation.ElementProperty)
+                {
+                    if (Char.IsWhiteSpace(currentChar))
+                    {
+                        ownerName = text.Substring(open + 1, Math.Max(0, length - 1));
+                        location = CursorLocation.DefiningAttribute;
+                    }
+                    else if (currentChar == '.')
+                    {
+                        ownerName = text.Substring(open + 1, Math.Max(0, length - 1));
+                        location = CursorLocation.ElementProperty;
+                    }
+                }
+                else if (location == CursorLocation.DefiningAttribute && currentChar == '"')
+                    location = CursorLocation.AttributeValue;
+                else if (location == CursorLocation.AttributeValue && currentChar == '"')
+                    location = CursorLocation.DefiningAttribute;
+                
+                if (currentChar == '>')
+                    location = CursorLocation.ElementValue;
+                else if (currentChar == '<')
+                    location = CursorLocation.StartOfElement;
 
-        private static bool IsPropertyElementPosition(
-            string text,
-            int position,
-            out string ownerName)
-        {
-            ownerName = string.Empty;
-            var open = text.LastIndexOf('<', Math.Max(0, position - 1));
-            var close = text.LastIndexOf('>', Math.Max(0, position - 1));
-
-            if (open <= close)
-                return false;
-
-            var dot = text.LastIndexOf('.', position - 1);
-
-            if (dot <= open)
-                return false;
-
-            var start = open + 1;
-
-            if (start < text.Length && text[start] == '/')
-                return false;
-
-            ownerName = text.Substring(start, dot - start);
-            return ownerName.Length > 0;
-        }
-
+                length++;
+                currentChar = text[open + length];
+            }
+            currentlyWritten = text.Substring(open + 1, Math.Max(0, length - 1));
+            return location;
+        } 
 
         private static bool IsNameCharacter(char c) =>
             char.IsLetterOrDigit(c) ||

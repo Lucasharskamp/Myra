@@ -34,6 +34,8 @@ namespace Myra.Classifier
                 (?<prefix>[A-Za-z_][A-Za-z0-9_.-]*):
             )?
             (?<name>[A-Za-z_][A-Za-z0-9_.-]*)
+            (?<internals>[A-Za-z0-9_.-:\s]*)?
+            (?<end>[><])?
             """,
             RegexOptions.Compiled |
             RegexOptions.IgnorePatternWhitespace |
@@ -192,9 +194,13 @@ namespace Myra.Classifier
                     {
                         _typeCache[":" + _codeBehindType.Name] = _codeBehindType;
                     }
-                    _codeBehindMethods = GetSymbolsOfType<IMethodSymbol>(_codeBehindType);
-                    _codeBehindFields = GetSymbolsOfType<IFieldSymbol>(_codeBehindType);
-                    _codeBehindProperties = GetSymbolsOfType<IPropertySymbol>(_codeBehindType);
+                    _codeBehindMethods = _codeBehindType.GetMembers().OfType<IMethodSymbol>().Where(
+                                                                        m => !m.IsAbstract && !m.IsImplicitlyDeclared 
+                                                                        && m.MethodKind == MethodKind.Ordinary).ToFrozenSet();
+                    _codeBehindFields = GetSymbolsOfType<IFieldSymbol>(_codeBehindType,
+                                                                        m => !m.IsAbstract && !m.IsImplicitlyDeclared);
+                    _codeBehindProperties = GetSymbolsOfType<IPropertySymbol>(_codeBehindType, 
+                                                                        m => !m.IsAbstract && !m.IsImplicitlyDeclared);
                 }
 
             } 
@@ -202,7 +208,7 @@ namespace Myra.Classifier
             _isLoaded = true;
         }
 
-        private FrozenSet<T> GetSymbolsOfType<T>(INamedTypeSymbol type)
+        private FrozenSet<T> GetSymbolsOfType<T>(INamedTypeSymbol type, Func<T, bool> filter)
         {
             var methods = new List<T>();
 
@@ -214,7 +220,7 @@ namespace Myra.Classifier
                     current.GetMembers()
                         .OfType<T>());
             }
-            return methods.ToFrozenSet();
+            return methods.Where(filter).ToFrozenSet();
         }
 
         public static async Task<IReadOnlyList<INamedTypeSymbol>> GetTypesAsync(Document document, CancellationToken cancellationToken)
@@ -315,6 +321,7 @@ namespace Myra.Classifier
              *   2. the member is a property on the parent element's type.
              */ 
             var dot = rawName.IndexOf('.');
+            var entireOpeningSpan = new SnapshotSpan(snapshot, tagMatch.Index, tagMatch.Length);
 
             if (dot > 0 &&
                 dot < rawName.Length - 1
@@ -327,8 +334,8 @@ namespace Myra.Classifier
                 var ownerType = ResolveType(prefix, ownerName, namespaces);
                 var elementSpan = new SnapshotSpan(snapshot, tagStart, Math.Max(0, tagEnd - tagStart + 1));
                 var isValid = ownerType != null && IsInstancePropertyOrEvent(ownerType, memberName, out var memberSymbol);
-
-                return new MyraXamlElement(snapshot, rawName, null, isValid, elementSpan)
+ 
+                return new MyraXamlElement(snapshot, rawName, null, isValid, elementSpan, entireOpeningSpan)
                 { 
                     TypeSymbol = ownerType, 
                     IsPropertyElement = true, 
@@ -354,7 +361,7 @@ namespace Myra.Classifier
             var type = ResolveType(prefix, rawName, namespaces);
             var tagSpan = new SnapshotSpan(snapshot, tagStart, Math.Max(0, tagEnd - tagStart + 1));
 
-            return new MyraXamlElement(snapshot, rawName, prefix, type != null, tagSpan)
+            return new MyraXamlElement(snapshot, rawName, prefix, type != null, tagSpan, entireOpeningSpan)
             {
                 TypeSymbol = type,
                 IsPropertyElement = false,

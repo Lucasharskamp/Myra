@@ -29,16 +29,16 @@ namespace Myra.Classifier
 
         public MyraXamlElement? FindElementAt(int position)
         {
+            MyraXamlElement? previous = null;
             foreach (var element in Elements)
             {
-                if (element.NameSpan.Contains(position))
+                if (element.EntireOpeningSpan.Contains(position))
                     return element;
 
-                if (element.MemberNameSpan.HasValue && element.MemberNameSpan.Value.Contains(position))
-                    return element;
+                if (previous != null && position <= element.EntireOpeningSpan.Start)
+                    return previous;
 
-                if (element.OwnerNameSpan.HasValue && element.OwnerNameSpan.Value.Contains(position))
-                    return element;
+                previous = element;
             }
             return null;
         }

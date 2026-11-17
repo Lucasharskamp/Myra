@@ -7,7 +7,8 @@ namespace Myra.Classifier
 {
 
     [DebuggerDisplay("{Name}")]
-    internal sealed class MyraXamlElement(ITextSnapshot snapshot, string name, string? prefix, bool isValid, SnapshotSpan tagSpan) : IMyraValueType
+    internal sealed class MyraXamlElement(ITextSnapshot snapshot, string name, string? prefix, bool isValid,
+        SnapshotSpan tagSpan, SnapshotSpan entireOpeningSpan) : IMyraValueType
     {
         public ITextSnapshot Snapshot { get; } = snapshot;
         public SnapshotSpan NameSpan { get; set; }
@@ -21,6 +22,7 @@ namespace Myra.Classifier
 
         public bool IsPropertyElement { get; set; }
 
+        public SnapshotSpan EntireOpeningSpan { get; } = entireOpeningSpan;
         public SnapshotSpan? OwnerNameSpan { get; set; }
         public SnapshotSpan? ClosingOwnerNameSpan { get; set; }
         public SnapshotSpan? MemberNameSpan { get; set; }
