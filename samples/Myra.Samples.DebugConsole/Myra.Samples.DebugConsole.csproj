@@ -9,18 +9,5 @@
     <PackageReference Include="MonoGame.Framework.DesktopGL" Version="$(AppMonoGameVersion)" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\src\Myra\Myra.MonoGame.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <MyraXaml Include="**\*.xaml" />
-  </ItemGroup>
- 
-  <UsingTask TaskFactory="MyraXamlTaskFactory" TaskName="MyraXamlCompileTask" AssemblyFile="..\..\src\MyraXaml\bin\Debug\netstandard2.0\Myra.Xaml.dll" />
-
-  <Target Name="MyraXamlCompile" AfterTargets="Build" Condition="'$(DesignTimeBuild)' != 'true'">
-    <MyraXamlCompileTask TargetPath="$(TargetPath)" MyraFiles="@(MyraXaml)" RootNamespace="$(RootNamespace)" ProjectDirectory="$(MSBuildProjectDirectory)" ReferenceAssemblies="@(ReferencePath)" Debug="$(DebugSymbols)" />
-
-  </Target>
+  <Import Project="$(MSBuildThisFileDirectory)..\samples.props" />
 </Project>

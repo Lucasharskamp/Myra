@@ -197,10 +197,8 @@ namespace Myra.Classifier
                     _codeBehindMethods = _codeBehindType.GetMembers().OfType<IMethodSymbol>().Where(
                                                                         m => !m.IsAbstract && !m.IsImplicitlyDeclared 
                                                                         && m.MethodKind == MethodKind.Ordinary).ToFrozenSet();
-                    _codeBehindFields = GetSymbolsOfType<IFieldSymbol>(_codeBehindType,
-                                                                        m => !m.IsAbstract && !m.IsImplicitlyDeclared);
-                    _codeBehindProperties = GetSymbolsOfType<IPropertySymbol>(_codeBehindType, 
-                                                                        m => !m.IsAbstract && !m.IsImplicitlyDeclared);
+                    _codeBehindFields = GetSymbolsOfType<IFieldSymbol>(_codeBehindType);
+                    _codeBehindProperties = GetSymbolsOfType<IPropertySymbol>(_codeBehindType);
                 }
 
             } 
@@ -208,7 +206,7 @@ namespace Myra.Classifier
             _isLoaded = true;
         }
 
-        private FrozenSet<T> GetSymbolsOfType<T>(INamedTypeSymbol type, Func<T, bool> filter)
+        private FrozenSet<T> GetSymbolsOfType<T>(INamedTypeSymbol type) where T : ISymbol
         {
             var methods = new List<T>();
 
@@ -220,7 +218,7 @@ namespace Myra.Classifier
                     current.GetMembers()
                         .OfType<T>());
             }
-            return methods.Where(filter).ToFrozenSet();
+            return methods.Where(m => !m.IsAbstract && !m.IsImplicitlyDeclared).ToFrozenSet();
         }
 
         public static async Task<IReadOnlyList<INamedTypeSymbol>> GetTypesAsync(Document document, CancellationToken cancellationToken)

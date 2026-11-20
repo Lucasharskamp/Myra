@@ -3,8 +3,7 @@ using System.ComponentModel;
 using Myra.Graphics2D.UI.Styles;
 using Myra.Utility;
 using System.Xml.Serialization;
-using Myra.MML;
-using Myra.Graphics2D.UI.Properties;
+using Myra.MML; 
 using Myra.Attributes;
 using Myra.Events;
 using System.Collections;
@@ -45,7 +44,7 @@ namespace Myra.Graphics2D.UI
 	/// <summary>
 	/// The base class for all UI widgets in the Myra framework.
 	/// </summary>
-	public partial class Widget : BaseObject, ITransformable
+	public partial class Widget : BaseObject, ITransformable, INotifyPropertyChanged
 	{
 		/// <summary>The widget is in its normal state.</summary>
 		internal const int WidgetVisualStateNormal = 0;
@@ -118,8 +117,10 @@ namespace Myra.Graphics2D.UI
 				_left = value;
 				InvalidateTransform();
 				FireLocationChanged();
-			}
-		}
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Left)));
+
+            }
+        }
 
 		/// <summary>
 		/// Gets or sets the top position of the widget in pixels.
@@ -140,8 +141,10 @@ namespace Myra.Graphics2D.UI
 				_top = value;
 				InvalidateTransform();
 				FireLocationChanged();
-			}
-		}
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Top)));
+
+            }
+        }
 
 		/// <summary>
 		/// Gets or sets the minimum width of the widget in pixels.
@@ -161,8 +164,10 @@ namespace Myra.Graphics2D.UI
 				_minWidth = value;
 				InvalidateMeasure();
 				FireSizeChanged();
-			}
-		}
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(MinWidth)));
+
+            }
+        }
 
 		/// <summary>
 		/// Gets or sets the maximum width of the widget in pixels.
@@ -182,7 +187,8 @@ namespace Myra.Graphics2D.UI
 				_maxWidth = value;
 				InvalidateMeasure();
 				FireSizeChanged();
-			}
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(MaxWidth)));
+            }
 		}
 
 		/// <summary>
@@ -207,7 +213,8 @@ namespace Myra.Graphics2D.UI
 				_width = value;
 				InvalidateMeasure();
 				FireSizeChanged();
-			}
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Width)));
+            }
 		}
 
 		/// <summary>
@@ -228,7 +235,8 @@ namespace Myra.Graphics2D.UI
 				_minHeight = value;
 				InvalidateMeasure();
 				FireSizeChanged();
-			}
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(MinHeight)));
+            }
 		}
 
 		/// <summary>
@@ -249,7 +257,8 @@ namespace Myra.Graphics2D.UI
 				_maxHeight = value;
 				InvalidateMeasure();
 				FireSizeChanged();
-			}
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(MaxHeight)));
+            }
 		}
 
 		/// <summary>
@@ -274,7 +283,8 @@ namespace Myra.Graphics2D.UI
 				_height = value;
 				InvalidateMeasure();
 				FireSizeChanged();
-			}
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Height)));
+            }
 		}
 
 		/// <summary>
@@ -297,7 +307,8 @@ namespace Myra.Graphics2D.UI
 
 				_margin = value;
 				InvalidateMeasure();
-			}
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Margin)));
+            }
 		}
 
 		/// <summary>
@@ -320,7 +331,8 @@ namespace Myra.Graphics2D.UI
 
 				_borderThickness = value;
 				InvalidateMeasure();
-			}
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(BorderThickness)));
+            }
 		}
 
 		/// <summary>
@@ -343,7 +355,8 @@ namespace Myra.Graphics2D.UI
 
 				_padding = value;
 				InvalidateMeasure();
-			}
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Padding)));
+            }
 		}
 
 		/// <summary>
@@ -364,7 +377,8 @@ namespace Myra.Graphics2D.UI
 
 				_horizontalAlignment = value;
 				InvalidateMeasure();
-			}
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HorizontalAlignment)));
+            }
 		}
 
 		/// <summary>
@@ -385,7 +399,8 @@ namespace Myra.Graphics2D.UI
 
 				_verticalAlignment = value;
 				InvalidateMeasure();
-			}
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(VerticalAlignment)));
+            }
 		}
 
 		/// <summary>
@@ -415,7 +430,8 @@ namespace Myra.Graphics2D.UI
 				}
 
 				EnabledChanged.Invoke(this, InputEventType.EnabledChanged);
-			}
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Enabled))); 
+            }
 		}
 
 		/// <summary>
@@ -439,7 +455,8 @@ namespace Myra.Graphics2D.UI
 				LocalTouchPosition = null;
 
 				OnVisibleChanged();
-			}
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Visible)));
+            }
 		}
 
 		/// <summary>
@@ -862,12 +879,22 @@ namespace Myra.Graphics2D.UI
 					BorderThickness.Top + BorderThickness.Bottom +
 					Padding.Top + Padding.Bottom;
 
-		/// <summary>
-		/// Gets or sets a value indicating whether the widget can accept keyboard focus.
-		/// </summary>
-		[Browsable(false)]
+		private bool _acceptsKeyboardFocus;
+        /// <summary>
+        /// Gets or sets a value indicating whether the widget can accept keyboard focus.
+        /// </summary>
+        [Browsable(false)]
 		[XmlIgnore]
-		public bool AcceptsKeyboardFocus { get; set; }
+		public bool AcceptsKeyboardFocus {
+			get => _acceptsKeyboardFocus;
+			set {
+				if (_acceptsKeyboardFocus != value)
+				{
+					_acceptsKeyboardFocus = value;
+					PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(AcceptsKeyboardFocus)));
+				}
+			}
+		}
 
 
 		/// <summary>
@@ -940,10 +967,13 @@ namespace Myra.Graphics2D.UI
 		/// </summary>
 		public event MyraEventHandler<ValueChangingEventArgs<bool>> PressedChangingByUser;
 
-		/// <summary>
-		/// Initializes a new instance of the Widget class.
-		/// </summary>
-		public Widget()
+		/// <inheritdoc />
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        /// <summary>
+        /// Initializes a new instance of the Widget class.
+        /// </summary>
+        public Widget()
 		{
 			Visible = true;
 			Enabled = true;

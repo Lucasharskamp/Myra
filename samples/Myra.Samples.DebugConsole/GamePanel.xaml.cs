@@ -6,9 +6,9 @@ namespace Myra.Samples.DebugConsole
 {
 	public partial class GamePanel : Panel
 	{
-		private Button DebugModalButton { get; set; } = default!;
+		private Button DebugModalButton { get; set; } 
 
-		private GamePanelViewModel ViewModel { get; set; } = new();
+		private GamePanelViewModel ViewModel { get; set; }
 
 
         private void ShowDebugPanel(bool isModal)

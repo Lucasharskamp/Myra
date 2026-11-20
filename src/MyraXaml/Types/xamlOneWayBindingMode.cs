@@ -1,8 +1,5 @@
-﻿using Mono.Cecil;
-using Myra.Xaml.Helpers;
-using System;
+﻿using Myra.Xaml.Helpers;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Reflection.Emit;
 using XamlX.Ast;
@@ -47,10 +44,7 @@ namespace Myra.Xaml.Types
         {
 
             /*
-             * Subscribe:
-             *
-             * this.ViewModel.PropertyChanged +=
-             *     this.__MyraBinding_0;
+             * this.ViewModel.PropertyChanged += this.__MyraBinding_0;
              */
 
             il.Ldarg(1);
@@ -58,13 +52,7 @@ namespace Myra.Xaml.Types
 
             il.Ldarg(1);
             il.Emit(OpCodes.Ldftn, Handler);
-
-            il.Emit(
-                OpCodes.Newobj,
-                TypesContainer
-                    .PropertyChangedEventHandler
-                    .Constructors
-                    .First(c => c.Parameters.Count == 2));
+            il.Emit(OpCodes.Newobj, TypesContainer.PropertyChangedEventHandler );
 
 
             // get PropertyChanged from ViewModelCall

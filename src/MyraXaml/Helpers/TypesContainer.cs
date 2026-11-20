@@ -53,9 +53,9 @@ namespace Myra.Xaml.Helpers
         public static IXamlType PropertyChangedEventArgs { get; private set; } = default!;
 
         /// <summary>
-        /// <see cref="System.ComponentModel.PropertyChangedEventHandler"/> method.
+        /// constructor for <see cref="System.ComponentModel.PropertyChangedEventHandler"/>
         /// </summary>
-        public static IXamlType PropertyChangedEventHandler { get; private set; } = default!;
+        public static IXamlConstructor PropertyChangedEventHandler { get; private set; } = default!;
 
         /// <summary>
         /// "Microsoft.Xna.Framework.Color" class
@@ -173,7 +173,9 @@ namespace Myra.Xaml.Helpers
             UInt64 = typeSystem.GetType(typeof(ulong).FullName);
             Single = typeSystem.GetType(typeof(float).FullName);
             PropertyChangedEventArgs = typeSystem.GetType(typeof(PropertyChangedEventArgs).FullName);
-            PropertyChangedEventHandler = typeSystem.GetType(typeof(PropertyChangedEventHandler).FullName);
+            PropertyChangedEventHandler = typeSystem.GetType(typeof(PropertyChangedEventHandler).FullName)
+                                            .Constructors
+                                            .First(c => c.Parameters.Count == 2);
 
             Color = typeSystem.GetType("Microsoft.Xna.Framework.Color");
             Color_HexConstructor = Color.GetConstructor([UInt32]);

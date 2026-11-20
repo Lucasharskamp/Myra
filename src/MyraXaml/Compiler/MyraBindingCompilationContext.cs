@@ -207,5 +207,122 @@ namespace Myra.Xaml.Compiler
             il.MarkLabel(returnLabel);
             il.Ret();
         }
+
+
+        public MyraOneWayBinding CreateOneWayFromTargetBinding(
+                XamlAstNode source,
+                IXamlType widgetType,
+                IXamlProperty widgetProperty,
+                IXamlProperty viewModelProperty,
+                IXamlProperty viewModelSource)
+        {
+            if (widgetProperty.Getter == null)
+                throw new InvalidOperationException(
+                    $"Target property '{widgetProperty.Name}' has no getter.");
+
+            if (viewModelSource.Getter == null)
+                throw new InvalidOperationException(
+                    $"ViewModel property '{viewModelSource.Name}' has no getter.");
+
+            if (viewModelProperty.Setter == null)
+                throw new InvalidOperationException(
+                    $"ViewModel property '{viewModelProperty.Name}' has no setter.");
+
+            var targetField = TypeBuilder.DefineField(
+                widgetType,
+                $"__MyraBindingTarget{_handlerIndex}",
+                FieldModifiers.TryGetValue($"{source.Line}-{source.Position}", out var visibility)
+                    ? visibility
+                    : XamlVisibility.Private,
+                false);
+
+            var handler = TypeBuilder.DefineMethod(
+                TypeSystem.WellKnownTypes.Void,
+                [TypeSystem.WellKnownTypes.Object, TypesContainer.PropertyChangedEventArgs],
+                $"__MyraBinding_{_handlerIndex}",
+                XamlVisibility.Private,
+                false,
+                false);
+
+            _handlerIndex++;
+
+            EmitOneWayFromTargetBindingHandler(
+                handler,
+                targetField,
+                widgetProperty,
+                viewModelProperty,
+                viewModelSource);
+
+            return new MyraOneWayBinding(targetField, handler);
+        }
+
+        private void EmitOneWayFromTargetBindingHandler(
+                IXamlMethodBuilder<IXamlILEmitter> method,
+                IXamlField targetField,
+                IXamlProperty widgetProperty,
+                IXamlProperty viewModelProperty,
+                IXamlProperty viewModelSource)
+        {
+            var il = method.Generator;
+
+            var propertyName = TypesContainer.PropertyChangedEventArgs
+                .GetAllProperties()
+                .First(x => x.Name == nameof(PropertyChangedEventArgs.PropertyName));
+
+            var propertyNameGetter = propertyName.Getter
+                ?? throw new InvalidOperationException(
+                    "PropertyChangedEventArgs.PropertyName has no getter.");
+
+            var stringIsNullOrEmpty =
+                TypeSystem.WellKnownTypes.String.FindMethod(
+                    m => m.IsStatic &&
+                         m.Name == nameof(string.IsNullOrEmpty) &&
+                         m.Parameters.Count == 1)
+                ?? throw new InvalidOperationException();
+
+            var stringEquals =
+                TypeSystem.WellKnownTypes.String.FindMethod(
+                    m => m.IsStatic &&
+                         m.Name == nameof(string.Equals) &&
+                         m.Parameters.Count == 2)
+                ?? throw new InvalidOperationException();
+
+            var returnLabel = il.DefineLabel();
+
+            // if (string.IsNullOrEmpty(e.PropertyName))
+            //     return;
+
+            il.Ldarg(2);
+            il.EmitCall(propertyNameGetter, false);
+            il.Emit(OpCodes.Call, stringIsNullOrEmpty);
+            il.Brtrue(returnLabel);
+
+            // if (e.PropertyName != widgetProperty.Name)
+            //     return;
+
+            il.Ldarg(2);
+            il.EmitCall(propertyNameGetter, false);
+            il.Emit(OpCodes.Ldstr, widgetProperty.Name);
+            il.Emit(OpCodes.Call, stringEquals);
+            il.Brfalse(returnLabel);
+
+            // this.ViewModel
+
+            il.Ldarg(0);
+            il.EmitCall(viewModelSource.Getter!, false);
+
+            // widget.Property
+
+            il.Ldarg(0);
+            il.Emit(OpCodes.Ldfld, targetField);
+            il.EmitCall(widgetProperty.Getter!, false);
+
+            // this.ViewModel.Property = widget.Property
+
+            il.EmitCall(viewModelProperty.Setter!, true);
+
+            il.MarkLabel(returnLabel);
+            il.Ret();
+        }
     }
 }

@@ -329,7 +329,7 @@ namespace Myra.Completion
 
                         yield break;
                     }
-
+                     
                     var behindSymbol = element.TypeSymbol.GetMembers().FirstOrDefault(m => String.Equals(attributeName, m.Name));
                     if (behindSymbol == null)
                         yield break;

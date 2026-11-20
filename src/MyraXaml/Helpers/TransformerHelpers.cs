@@ -1,6 +1,7 @@
 ﻿using Microsoft.Build.Framework;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Mono.Cecil.Rocks;
 using Myra.Xaml.Compiler;
 using System; 
 using System.Diagnostics.CodeAnalysis;
@@ -278,6 +279,7 @@ namespace Myra.Xaml.Helpers
 
             var constructor = constructors.FirstOrDefault();
             var buildMethod = type.Methods.First(m => m.Name == BuildMethodName);
+            var viewModelProperty = type.Properties.FirstOrDefault(m => String.Equals(m.Name, "ViewModel") && m.SetMethod != null);
 
             var baseConstructorDef = GetBaseConstructor(type, out var hasParameters);
             var baseConstructor = type.BaseType.Module.ImportReference(baseConstructorDef);
@@ -302,7 +304,8 @@ namespace Myra.Xaml.Helpers
                 if (instructionsCount > 3)
                 {
                     var beginLocation = constructor.Body.Method.DebugInformation.GetSequencePoint(constructor.Body.Instructions[0]);
-                    var endLocation = constructor.Body.Method.DebugInformation.GetSequencePoint(constructor.Body.Instructions.Last());
+                    var endLocation = constructor.Body.Method.DebugInformation.GetSequencePoint(constructor.Body.Instructions.Last())
+                        ?? beginLocation;
                     // user code is overridden, so we need to warn about that.
                     log.LogWarning(subcategory: "",
                         warningCode: "Myr003",
@@ -332,6 +335,22 @@ namespace Myra.Xaml.Helpers
                 il.Emit(OpCodes.Ldstr, "");
             }
             il.Emit(OpCodes.Call, baseConstructor);
+
+
+
+            // ensure ViewModel created (if one exists)
+            if (viewModelProperty != null)
+            {
+                var viewModelConstructor = viewModelProperty.PropertyType.Resolve().GetConstructors()
+                    .FirstOrDefault(m => m.IsConstructor && m.Parameters.Count == 0)
+                    ?? throw new InvalidOperationException(
+                        $"ViewModel '{viewModelProperty.PropertyType.FullName}' must have a parameterless constructor.");
+
+                il.Emit(OpCodes.Ldarg_0);
+                il.Emit(OpCodes.Newobj, viewModelConstructor);
+                il.Emit(OpCodes.Callvirt, viewModelProperty.SetMethod);
+            }
+
 
             // this.InitializeComponent(IServiceProvider, this, Stylesheet);
             il.Emit(OpCodes.Ldnull);

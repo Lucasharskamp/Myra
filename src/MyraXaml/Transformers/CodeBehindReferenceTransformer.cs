@@ -184,6 +184,30 @@ namespace Myra.Xaml.Transformers
                         binding.Handler));
             }
 
+            // If two-way or one-way-from-target, add functionality to listen to changes from the UI element
+            if (bindingMode == BindingMode.OneWayFromTarget || bindingMode == BindingMode.TwoWay)
+            {
+                var widgetProperty = source.DeclaringType.Properties
+                                    .First(f => f.Name == source.Name);
+
+                var binding = _bindings.CreateOneWayFromTargetBinding(
+                    source: valueNode,
+                    widgetType: source.DeclaringType,
+                    widgetProperty: widgetProperty,
+                    viewModelProperty: targetProperty,
+                    viewModelSource: viewModel.Property);
+
+                result.Add(new XamlAssignFieldValueNode(
+                    value,
+                    valueNode.Property.GetClrProperty().DeclaringType,
+                    binding.TargetField));
+
+                result.Add(new XamlOneWayFromTargetBindingNode(
+                    propertyTextNode, 
+                    binding.TargetField,
+                    binding.Handler));
+            }
+
             return new XamlManipulationGroupNode(source, result);
         }
 

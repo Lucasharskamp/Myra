@@ -46,6 +46,7 @@ namespace Myra.Xaml.Compiler
             _compiler.Transformers.Insert(7, new XamlRootDirectivesTransformer());
             _compiler.Transformers.Insert(7, new XamlXDirectivesTransformer(BindingContext));
             _compiler.Transformers.Insert(18, new ConstructableWidgetTransformer());
+            _compiler.Transformers.RemoveAt(4);
         }
 
         public void CompileXamlFile(TaskLoggingHelper log,
